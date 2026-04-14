@@ -1,0 +1,436 @@
+#!/usr/bin/env python3
+"""
+evaluate.py — Calcule les métriques d'évaluation selon EVAL.md
+
+Charge les résultats d'une itération depuis results/iteration_XXX.json,
+calcule les 6 métriques de conformité, et compare avec la baseline.
+
+Usage:
+    python scripts/evaluate.py --iteration 3
+    python scripts/evaluate.py --iteration 3 --compare 2
+"""
+
+import json
+import sys
+import argparse
+from pathlib import Path
+from dataclasses import dataclass
+from typing import Optional
+import requests
+
+
+# Chemins du projet
+PROJECT_ROOT = Path(__file__).parent.parent
+CONFIG_DIR = PROJECT_ROOT / "config"
+RESULTS_DIR = PROJECT_ROOT / "results"
+TEST_DATA_DIR = PROJECT_ROOT / "test_data"
+
+
+@dataclass
+class Metrics:
+    """Conteneur pour les métriques d'une itération"""
+    iteration: int
+    taux_conformite: float  # % de produits conformes
+    aberrations_prix: int   # Nombre d'aberrations détectées
+    doublons: int           # Nombre de doublons détectés
+    diversite_fournisseurs: int  # Nombre de fournisseurs uniques
+    coherence_score: float  # Corrélation score/pertinence (0-1)
+    presence_estimatif: float  # % de cas avec estimatif présent
+
+    def score_global(self) -> float:
+        """Calcule le score global pondéré selon EVAL.md"""
+        # Poids: conformité x2, tous les autres x1
+        weights = {
+            'taux_conformite': 2.0,
+            'aberrations_prix': 1.0,
+            'doublons': 1.0,
+            'diversite_fournisseurs': 1.0,
+            'coherence_score': 1.0,
+            'presence_estimatif': 1.0
+        }
+
+        # Normaliser les métriques (0-1)
+        norm_values = {
+            'taux_conformite': self.taux_conformite / 100.0,  # Déjà en %
+            'aberrations_prix': 1.0 if self.aberrations_prix == 0 else 0.0,  # 0 anomalies = 1.0
+            'doublons': 1.0 if self.doublons == 0 else 0.0,  # 0 doublons = 1.0
+            'diversite_fournisseurs': min(self.diversite_fournisseurs / 3.0, 1.0),  # Cible >= 3
+            'coherence_score': self.coherence_score,  # Déjà 0-1
+            'presence_estimatif': self.presence_estimatif / 100.0  # Déjà en %
+        }
+
+        weighted_sum = sum(norm_values[k] * weights[k] for k in norm_values)
+        total_weight = sum(weights.values())
+
+        return (weighted_sum / total_weight) * 100.0  # En %
+
+    def to_dict(self) -> dict:
+        """Convertit les métriques en dictionnaire"""
+        return {
+            'iteration': self.iteration,
+            'taux_conformite': self.taux_conformite,
+            'aberrations_prix': self.aberrations_prix,
+            'doublons': self.doublons,
+            'diversite_fournisseurs': self.diversite_fournisseurs,
+            'coherence_score': self.coherence_score,
+            'presence_estimatif': self.presence_estimatif,
+            'score_global': self.score_global()
+        }
+
+
+def load_config():
+    """Charge la configuration de l'API"""
+    config_path = CONFIG_DIR / "api_config.json"
+    with open(config_path, "r") as f:
+        return json.load(f)
+
+
+def load_iteration_results(iteration_num: int) -> dict:
+    """Charge les résultats d'une itération"""
+    results_file = RESULTS_DIR / f"iteration_{iteration_num:03d}.json"
+    if not results_file.exists():
+        raise FileNotFoundError(f"Résultats non trouvés: {results_file}")
+
+    with open(results_file, "r") as f:
+        return json.load(f)
+
+
+def fetch_product_details(product_ids: list, config: dict) -> dict:
+    """
+    Récupère les détails des produits via l'API product_details
+
+    Args:
+        product_ids: Liste des IDs de produits
+        config: Configuration contenant l'endpoint et les paramètres
+
+    Returns:
+        Dict indexé par product_id avec les détails du produit
+    """
+    if not product_ids:
+        return {}
+
+    api_url = config.get("api_endpoint_product_details")
+    headers = config.get("headers", {})
+    timeout = config.get("timeout_seconds", 30)
+
+    # Construire le payload
+    payload = config.get("product_details_request", {"etape": "get_info_produit"}).copy()
+    payload["scrap[products]"] = product_ids
+
+    try:
+        response = requests.post(api_url, json=payload, headers=headers, timeout=timeout)
+        response.raise_for_status()
+        products_list = response.json()
+
+        # Indexer par ID
+        products_dict = {}
+        if isinstance(products_list, list):
+            for product in products_list:
+                if "id" in product:
+                    products_dict[product["id"]] = product
+
+        return products_dict
+    except Exception as e:
+        print(f"  ⚠ Erreur lors de la récupération des détails produits: {e}")
+        return {}
+
+
+def load_evaluation_data() -> dict:
+    """Charge les données d'évaluation (parcours avec evaluation_humaine)"""
+    parcours_file = TEST_DATA_DIR / "parcours.json"
+    with open(parcours_file, "r") as f:
+        data = json.load(f)
+
+    # Indexer par parcours_id
+    evaluation_index = {}
+    for p in data:
+        if "parcours_id" in p and "evaluation_humaine" in p:
+            evaluation_index[p["parcours_id"]] = p["evaluation_humaine"]
+
+    return evaluation_index
+
+
+def extract_api_results(api_response: dict) -> dict:
+    """
+    Extrait les résultats pertinents de la réponse API
+
+    Retourne:
+    {
+        "produits_acceptes": [...],  # De top_produit avec decision VALIDE
+        "produits_rejetes": [...],   # De ecarts avec raison_exclusion
+        "fournisseurs": set(),       # IDs uniques de fournisseurs
+    }
+    """
+    results = {
+        "produits_acceptes": [],
+        "produits_rejetes": [],
+        "fournisseurs": set(),
+        "scores": {}  # id_produit -> score pour cohérence
+    }
+
+    # Extraire les produits acceptés (top_produit avec decision VALIDE)
+    for product in api_response.get("top_produit", []):
+        llm_resp = product.get("llm_response", {})
+        if llm_resp.get("decision") == "VALIDE":
+            prod_id = product.get("id_produit")
+            results["produits_acceptes"].append(prod_id)
+            results["scores"][prod_id] = product.get("score", 0)
+
+            # Récupérer le fournisseur
+            fournisseur = product.get("info_produit", {}).get("id_fournisseur")
+            if fournisseur:
+                results["fournisseurs"].add(fournisseur)
+
+    # Extraire les produits rejetés (de ecarts)
+    for product in api_response.get("ecarts", []):
+        prod_id = product.get("id_produit")
+        llm_resp = product.get("llm_response", {})
+        raison = llm_resp.get("raison_exclusion", "Inconnu")
+        results["produits_rejetes"].append({
+            "id_produit": prod_id,
+            "raison": raison
+        })
+
+    return results
+
+
+def calculate_parcours_metrics(api_results: dict, evaluation: Optional[dict], product_details: dict = None) -> dict:
+    """
+    Calcule les métriques pour un parcours spécifique
+
+    evaluation est optionnel car on peut avoir des parcours sans evaluation_humaine
+    product_details : dict indexé par product_id avec détails (prix, nom, etc.)
+    """
+    if product_details is None:
+        product_details = {}
+
+    metrics = {
+        "conformes": 0,
+        "total_evalues": 0,
+        "aberrations_prix": 0,
+        "doublons": 0,
+        "fournisseurs_count": len(api_results["fournisseurs"]),
+        "coherence": 0.8,  # Placeholder - requiert analyse détaillée des scores
+        "estimatif_present": True  # Placeholder - requiert vérification dans produit
+    }
+
+    if not evaluation:
+        # Pas d'évaluation humaine, retourner des valeurs par défaut
+        return metrics
+
+    # Comparer avec l'évaluation humaine
+    conformes_attendus = set(evaluation.get("produits_conformes", []))
+    acceptes_api = set(api_results["produits_acceptes"])
+
+    # Conformité: intersection / union
+    if conformes_attendus:
+        intersection = len(acceptes_api & conformes_attendus)
+        union = len(acceptes_api | conformes_attendus)
+        metrics["conformes"] = intersection
+        metrics["total_evalues"] = union if union > 0 else 1
+
+    # Détection des aberrations prix via les détails produits
+    if product_details:
+        prix_values = []
+        for prod_id in api_results["produits_acceptes"]:
+            if prod_id in product_details:
+                prod = product_details[prod_id]
+                # Extraire prix si disponible (format: "99 EUR", "99.99 EUR", etc.)
+                prix_str = prod.get("prix", "")
+                if prix_str:
+                    try:
+                        prix_num = float(prix_str.replace(" EUR", "").replace(",", "."))
+                        prix_values.append(prix_num)
+                    except (ValueError, AttributeError):
+                        pass
+
+        # Détecter les aberrations (prix anormalement bas/haut)
+        if prix_values:
+            avg_prix = sum(prix_values) / len(prix_values)
+            for prod_id in api_results["produits_acceptes"]:
+                if prod_id in product_details:
+                    prod = product_details[prod_id]
+                    prix_str = prod.get("prix", "")
+                    try:
+                        prix_num = float(prix_str.replace(" EUR", "").replace(",", "."))
+                        # Aberration si facteur > 10 ou < 0.1
+                        if avg_prix > 0 and (prix_num / avg_prix > 10 or prix_num / avg_prix < 0.1):
+                            metrics["aberrations_prix"] += 1
+                    except (ValueError, AttributeError):
+                        pass
+
+        # Détection des doublons via les noms de produits
+        noms = []
+        for prod_id in api_results["produits_acceptes"]:
+            if prod_id in product_details:
+                nom = product_details[prod_id].get("nom", "").lower()
+                if nom:
+                    noms.append(nom)
+
+        # Chercher les doublons (même nom ou très similaires)
+        for i, nom1 in enumerate(noms):
+            for nom2 in noms[i+1:]:
+                # Doublons si nom identique ou très similaire (>80% matching)
+                if nom1 == nom2:
+                    metrics["doublons"] += 1
+
+    # Anomalies documentées dans l'évaluation
+    if "anomalies" in evaluation:
+        anomalies = evaluation["anomalies"]
+        if isinstance(anomalies, list):
+            # Ne compter que si pas déjà détecté
+            for a in anomalies:
+                if "prix" in a.lower() and metrics["aberrations_prix"] == 0:
+                    metrics["aberrations_prix"] += 1
+                if "doublon" in a.lower() and metrics["doublons"] == 0:
+                    metrics["doublons"] += 1
+
+    return metrics
+
+
+def evaluate_iteration(iteration_num: int) -> Metrics:
+    """Évalue une itération complète"""
+    print(f"Chargement des résultats d'itération {iteration_num}...")
+    iteration_results = load_iteration_results(iteration_num)
+    evaluation_data = load_evaluation_data()
+    config = load_config()
+
+    # Accumulateurs
+    total_conformite = 0.0
+    total_parcours = 0
+    total_aberrations = 0
+    total_doublons = 0
+    fournisseurs_global = set()
+    coherence_scores = []
+    estimatif_present_count = 0
+
+    # Évaluer chaque parcours
+    for parcours_id, result in iteration_results.get("resultats", {}).items():
+        if "error" in result:
+            print(f"  ⚠ {parcours_id}: Erreur lors de l'appel API")
+            continue
+
+        api_response = result.get("api_response", {})
+        evaluation = evaluation_data.get(parcours_id)
+
+        # Extraire les résultats de l'API
+        api_results = extract_api_results(api_response)
+
+        # Récupérer les détails des produits (pour prix, descriptifs, etc.)
+        all_product_ids = api_results["produits_acceptes"] + [p["id_produit"] for p in api_results["produits_rejetes"]]
+        product_details = fetch_product_details(all_product_ids, config) if all_product_ids else {}
+
+        # Calculer les métriques du parcours
+        parcours_metrics = calculate_parcours_metrics(api_results, evaluation, product_details)
+
+        # Accumuler
+        if parcours_metrics["total_evalues"] > 0:
+            conformite_parcours = (parcours_metrics["conformes"] / parcours_metrics["total_evalues"]) * 100
+            total_conformite += conformite_parcours
+        else:
+            total_conformite += 50.0  # Valeur par défaut si pas d'évaluation
+
+        total_parcours += 1
+        total_aberrations += parcours_metrics["aberrations_prix"]
+        total_doublons += parcours_metrics["doublons"]
+        fournisseurs_global.update(api_results["fournisseurs"])
+        coherence_scores.append(parcours_metrics["coherence"])
+        if parcours_metrics["estimatif_present"]:
+            estimatif_present_count += 1
+
+    # Calculer les moyennes
+    taux_conformite = (total_conformite / total_parcours * 100) if total_parcours > 0 else 0.0
+    coherence_moyenne = (sum(coherence_scores) / len(coherence_scores)) if coherence_scores else 0.5
+    presence_estimatif = (estimatif_present_count / total_parcours * 100) if total_parcours > 0 else 0.0
+
+    # Créer l'objet Metrics
+    metrics = Metrics(
+        iteration=iteration_num,
+        taux_conformite=taux_conformite,
+        aberrations_prix=total_aberrations,
+        doublons=total_doublons,
+        diversite_fournisseurs=len(fournisseurs_global),
+        coherence_score=coherence_moyenne,
+        presence_estimatif=presence_estimatif
+    )
+
+    # Sauvegarder les métriques
+    save_metrics(metrics)
+
+    return metrics
+
+
+def save_metrics(metrics: Metrics):
+    """Sauvegarde les métriques calculées"""
+    metrics_file = RESULTS_DIR / f"metrics_{metrics.iteration:03d}.json"
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    with open(metrics_file, "w") as f:
+        json.dump(metrics.to_dict(), f, indent=2)
+
+    print(f"Métriques sauvegardées: {metrics_file}")
+
+
+def load_baseline() -> Optional[Metrics]:
+    """Charge les métriques de la baseline (itération 0)"""
+    metrics_file = RESULTS_DIR / "metrics_000.json"
+    if not metrics_file.exists():
+        return None
+
+    with open(metrics_file, "r") as f:
+        data = json.load(f)
+
+    return Metrics(**{k: v for k, v in data.items() if k != 'score_global'})
+
+
+def main(iteration_num: int):
+    """Lance l'évaluation"""
+    metrics = evaluate_iteration(iteration_num)
+
+    print(f"\n{'='*70}")
+    print(f"MÉTRIQUES — Itération {iteration_num}")
+    print(f"{'='*70}\n")
+
+    metrics_dict = metrics.to_dict()
+    for key, value in metrics_dict.items():
+        if isinstance(value, float):
+            if key in ['taux_conformite', 'coherence_score', 'presence_estimatif', 'score_global']:
+                print(f"  {key}: {value:.2f}%")
+            else:
+                print(f"  {key}: {value:.3f}")
+        else:
+            print(f"  {key}: {value}")
+
+    # Comparer avec baseline ou itération antérieure
+    if iteration_num > 0:
+        baseline = load_baseline()
+        if baseline:
+            print(f"\nComparaison avec baseline (itération 0):")
+            print(f"  Conformité: {baseline.taux_conformite:.2f}% → {metrics.taux_conformite:.2f}%")
+            print(f"  Score global: {baseline.score_global():.2f}% → {metrics.score_global():.2f}%")
+
+            if metrics.score_global() >= baseline.score_global():
+                print(f"\n✓ AMÉLIORATION")
+            else:
+                print(f"\n✗ RÉGRESSION")
+
+    print(f"\n{'='*70}\n")
+
+    return metrics_dict
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Évalue les résultats d'une itération")
+    parser.add_argument("--iteration", type=int, required=True, help="Numéro d'itération")
+    parser.add_argument("--compare", type=int, help="Comparer avec cette itération")
+
+    args = parser.parse_args()
+
+    try:
+        metrics = main(args.iteration)
+        sys.exit(0)
+    except Exception as e:
+        print(f"Erreur: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)

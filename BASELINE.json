@@ -1,0 +1,16 @@
+{
+  "_info": "Ce fichier sera rempli après l'exécution de l'itération 0 (baseline). Il devient IMMUTABLE après.",
+  "_status": "EN ATTENTE — exécuter run_pipeline.py sans modification pour générer la baseline",
+  "generated_at": null,
+  "parcours_count": 34,
+  "metrics": {
+    "taux_conformite": null,
+    "aberrations_prix": null,
+    "doublons": null,
+    "diversite_fournisseurs": null,
+    "coherence_score_pertinence": null,
+    "presence_estimatif": null,
+    "score_global": null
+  },
+  "results_par_parcours": []
+}

@@ -1,0 +1,18 @@
+# Prompt de nettoyage GPT-4o
+# ================================================
+# À REMPLACER par le prompt fourni par l'équipe produit
+#
+# Ce fichier contient le prompt envoyé à GPT-4o via l'API OpenAI
+# pour filtrer les produits hors sujet après le scoring Neo4j.
+#
+# Structure attendue :
+#   - PROMPT SYSTÈME : instructions générales pour le modèle
+#   - PROMPT USER : contexte acheteur + liste des produits scorés
+#
+# ================================================
+
+## PROMPT SYSTÈME
+[COLLER LE PROMPT SYSTÈME ICI]
+
+## PROMPT USER (template)
+[COLLER LE TEMPLATE DU PROMPT USER ICI]

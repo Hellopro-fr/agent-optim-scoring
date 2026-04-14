@@ -1,0 +1,18 @@
+{
+  "api_endpoint_matching": "https://api.hellopro.eu/graph-service/produits/matching-optim",
+  "api_endpoint_product_details": "https://api.hellopro.eu/api/hg/view/index.php",
+  "timeout_seconds": 30,
+  "max_retries": 3,
+  "retry_delay_seconds": 2,
+  "headers": {
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+  },
+  "default_top_k": 12,
+  "default_rerank_top_k": 24,
+  "rerank_enabled": true,
+  "default_output_fields": ["url"],
+  "product_details_request": {
+    "etape": "get_info_produit"
+  }
+}

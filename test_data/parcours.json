@@ -1,0 +1,26 @@
+[
+  {
+    "_info": "Template — à remplir avec les 34 parcours audités",
+    "parcours_id": "2001065_P3_tracteur_vigneron",
+    "categorie": "Tracteur agricole",
+    "sous_type": "Vigneron",
+    "questions_reponses": [
+      {"question": "Usage principal ?", "reponse": "Vigneron"},
+      {"question": "Puissance souhaitée ?", "reponse": "<70ch"},
+      {"question": "État souhaité ?", "reponse": "Neuf"}
+    ],
+    "caracteristiques_deduites": {
+      "type": "vigneron",
+      "puissance_max": 70,
+      "etat": "neuf"
+    },
+    "evaluation_humaine": {
+      "produits_conformes": ["Tracteur vigneron John Deere 5075GV"],
+      "produits_hors_sujet": ["Micro-tracteur Kubota B1181", "Micro-tracteur Iseki TM3217", "Micro-tracteur compact 26ch"],
+      "anomalies": ["scoring inversé", "micro-tracteurs sur-représentés", "fourchette facteur 20x"]
+    }
+  },
+  {
+    "_info": "Ajouter les 33 autres parcours ci-dessous en suivant ce format"
+  }
+]
