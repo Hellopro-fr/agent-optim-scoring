@@ -24,5 +24,12 @@ desktop.ini
 *.swo
 
 # logs
-/logs
-BASELINE.JSON
+/logs/
+logs/api_iteration_*.log
+
+# Fichiers générés par le pipeline (propres à chaque run local)
+BASELINE.json
+results/iteration_*.json
+results/metrics_*.json
+reports/diagnostic.md
+reports/final.md
