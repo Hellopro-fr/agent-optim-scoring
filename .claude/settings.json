@@ -1,19 +1,7 @@
 {
-  "mcpServers": {
-    "hellopro-gateway": {
-      "command": "cmd",
-      "args": [
-        "/c",
-        "npx",
-        "-y",
-        "mcp-remote",
-        "https://mcp.hellopro.eu/mcp",
-        "--header",
-        "X-MCP-Scope-Token:${MCP_TOKEN}"
-      ],
-      "env": {
-        "MCP_TOKEN": "mcp_3f8ac3280c5cda4a8952cf34d8ba04e63e030b8d837a4583"
-      }
-    }
+  "permissions": {
+    "allow": [
+      "Bash(python *)"
+    ]
   }
 }

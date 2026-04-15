@@ -34,6 +34,4 @@ results/metrics_*.json
 reports/diagnostic.md
 reports/final.md
 results/iteration_000.json
-BASELINE.json
-.claude/settings.local.json
 .claude/settings.local.json
