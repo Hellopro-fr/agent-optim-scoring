@@ -7,14 +7,14 @@ Ton objectif est d'améliorer les 6 métriques définies dans EVAL.md.
 
 ## Repos et rôles
 - **optim-scoring** (ce repo) : harness d'évaluation uniquement. Tu n'y modifies rien.
-  - Appelle l'endpoint `/matching-optim` de l'API
+  - Appelle l'endpoint `graphoptim-service/matching` de l'API
   - Mesure les 6 métriques EVAL.md
   - Compare avec baseline, décide GARDER/ROLLBACK
   - Log dans ITERATIONS.md
   
-- **RAG-HP-PUB** : API en production. Tu y modifies l'endpoint `/matching-optim` uniquement.
-  - Jamais toucher `/matching` (endpoint prod)
-  - Fichiers mutables : Cypher de scoring, prompt LLM, logique matching (pour `/matching-optim` uniquement)
+- **RAG-HP-PUB** : API en production. Tu y modifies l'endpoint `graphoptim-service/matching` uniquement.
+  - Jamais toucher `graph-service/matching` (endpoint prod)
+  - Fichiers mutables : Cypher de scoring, prompt LLM, logique matching (pour `graphoptim-service/matching` uniquement)
   - API redémarrée après chaque modification
 
 ## Fichiers immuables (NEVER modifie)
@@ -22,7 +22,7 @@ Ton objectif est d'améliorer les 6 métriques définies dans EVAL.md.
 2. BASELINE.json — itération 0 locked (après init)
 3. CLAUDE.md — ces règles
 4. test_data/parcours.json — 34 parcours audités
-5. Tout ce qui concerne `/matching` prod dans RAG-HP-PUB
+5. Tout ce qui concerne `graph-service/matching` prod dans RAG-HP-PUB
 
 ## Protocole d'itération
 
@@ -35,9 +35,9 @@ Ton objectif est d'améliorer les 6 métriques définies dans EVAL.md.
 1. **Formuler une hypothèse** : "Je modifie [fichier dans RAG-HP-PUB] car [raison basée sur les métriques]"
 2. **Documenter dans ITERATIONS.md AVANT d'exécuter** (voir format ci-dessous)
 3. **Modifier UN SEUL fichier** dans RAG-HP-PUB :
-   - Soit le fichier Cypher de scoring (relatif à `/matching-optim`)
-   - Soit le prompt LLM de nettoyage (relatif à `/matching-optim`)
-   - Soit la logique de matching (relatif à `/matching-optim`)
+   - Soit le fichier Cypher de scoring (relatif à `graphoptim-service/matching`)
+   - Soit le prompt LLM de nettoyage (relatif à `graphoptim-service/matching`)
+   - Soit la logique de matching (relatif à `graphoptim-service/matching`)
    - **Jamais plus qu'un par itération**
 4. **Redémarrer l'API** (pour que le changement soit appliqué)
 5. **Exécuter le pipeline** :
@@ -133,14 +133,14 @@ Pour chaque itération, ajouter une section :
 
 - Tous les critères EVAL.md atteints ? Ou plateau définitif ?
 - Review final du code dans RAG-HP-PUB
-- Préparer le merge de `/matching-optim` vers `/matching` prod
+- Préparer le merge de `graphoptim-service/matching` vers `graph-service/matching` prod
 
 ---
 
 ## Contraintes
 
 1. **Une seule modification par itération** — deux fichiers = deux itérations
-2. **Jamais modifier `/matching` prod** — uniquement `/matching-optim`
+2. **Jamais modifier `graph-service/matching` prod** — uniquement `graphoptim-service/matching`
 3. **Toujours exécuter le pipeline réellement** — pas de simulation
 4. **Documenter AVANT d'exécuter** — ITERATIONS.md avant modification
 5. **Rollback immédiat si régression** — ne pas espérer une récupération

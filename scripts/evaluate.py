@@ -10,9 +10,11 @@ Usage:
     python scripts/evaluate.py --iteration 3 --compare 2
 """
 
+import copy
 import json
 import sys
 import argparse
+from datetime import datetime
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional
@@ -24,6 +26,37 @@ PROJECT_ROOT = Path(__file__).parent.parent
 CONFIG_DIR = PROJECT_ROOT / "config"
 RESULTS_DIR = PROJECT_ROOT / "results"
 TEST_DATA_DIR = PROJECT_ROOT / "test_data"
+LOGS_DIR = PROJECT_ROOT / "logs"
+BASELINE_FILE = PROJECT_ROOT / "BASELINE.json"
+
+
+def log_api_call_to_file(
+    iteration_num: int,
+    parcours_id: str,
+    method: str,
+    url: str,
+    payload: dict,
+    status: Optional[int] = None,
+    response: Optional[dict] = None,
+    error: Optional[str] = None,
+):
+    """Écrit une entrée d'appel API dans logs/api_iteration_NNN.log (mode append)."""
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    log_file = LOGS_DIR / f"api_iteration_{iteration_num:03d}.log"
+
+    with open(log_file, "a", encoding="utf-8") as f:
+        f.write(f"\n{'=' * 70}\n")
+        f.write(f"[{datetime.now().isoformat()}] parcours={parcours_id}\n")
+        f.write(f"{'=' * 70}\n")
+        f.write(f">>> METHOD: {method}\n")
+        f.write(f">>> URL: {url}\n")
+        f.write(f">>> PAYLOAD: {json.dumps(payload, ensure_ascii=False, indent=2)}\n")
+        if status is not None:
+            f.write(f"<<< STATUS: {status}\n")
+        if response is not None:
+            f.write(f"<<< RESPONSE: {json.dumps(response, ensure_ascii=False, indent=2)}\n")
+        if error is not None:
+            f.write(f"<<< ERROR: {error}\n")
 
 
 @dataclass
@@ -95,13 +128,33 @@ def load_iteration_results(iteration_num: int) -> dict:
         return json.load(f)
 
 
-def fetch_product_details(product_ids: list, config: dict) -> dict:
+def fetch_product_details(
+    product_ids: list,
+    config: dict,
+    id_categorie: Optional[int] = None,
+    iteration_num: Optional[int] = None,
+    parcours_id: Optional[str] = None,
+) -> dict:
     """
-    Récupère les détails des produits via l'API product_details
+    Récupère les détails des produits via l'API product_details.
+
+    Structure du payload attendue par l'API (voir test_data/sample_payloads.json) :
+        {
+            "etape": "get_info_produit",
+            "scrapping": 1,
+            "action": "get",
+            "data": {
+                "id_categorie": "<id>",
+                "id_produits": ["id1", "id2", ...]
+            }
+        }
 
     Args:
         product_ids: Liste des IDs de produits
         config: Configuration contenant l'endpoint et les paramètres
+        id_categorie: ID de la catégorie du parcours (inséré dans data.id_categorie)
+        iteration_num: Numéro d'itération (pour le nom du fichier de log)
+        parcours_id: ID du parcours (pour l'entête de l'entrée de log)
 
     Returns:
         Dict indexé par product_id avec les détails du produit
@@ -113,14 +166,34 @@ def fetch_product_details(product_ids: list, config: dict) -> dict:
     headers = config.get("headers", {})
     timeout = config.get("timeout_seconds", 30)
 
-    # Construire le payload
-    payload = config.get("product_details_request", {"etape": "get_info_produit"}).copy()
-    payload["scrap[products]"] = product_ids
+    # Construire le payload: copie du template de config + injection de data
+    payload = copy.deepcopy(
+        config.get(
+            "product_details_request",
+            {"etape": "get_info_produit", "scrapping": 1, "action": "get", "data": {}},
+        )
+    )
+    payload.setdefault("data", {})
+    payload["data"]["id_categorie"] = str(id_categorie) if id_categorie is not None else ""
+    payload["data"]["id_produits"] = [str(pid) for pid in product_ids]
+
+    # On logge dès qu'on a iteration_num et parcours_id
+    log_details = iteration_num is not None and parcours_id is not None
 
     try:
         response = requests.post(api_url, json=payload, headers=headers, timeout=timeout)
         response.raise_for_status()
         products_list = response.json()
+        if log_details:
+            log_api_call_to_file(
+                iteration_num=iteration_num,
+                parcours_id=parcours_id,
+                method="POST",
+                url=api_url,
+                payload=payload,
+                status=response.status_code,
+                response=products_list,
+            )
 
         # Indexer par ID
         products_dict = {}
@@ -131,6 +204,15 @@ def fetch_product_details(product_ids: list, config: dict) -> dict:
 
         return products_dict
     except Exception as e:
+        if log_details:
+            log_api_call_to_file(
+                iteration_num=iteration_num,
+                parcours_id=parcours_id,
+                method="POST",
+                url=api_url,
+                payload=payload,
+                error=str(e),
+            )
         print(f"  ⚠ Erreur lors de la récupération des détails produits: {e}")
         return {}
 
@@ -318,7 +400,18 @@ def evaluate_iteration(iteration_num: int) -> Metrics:
 
         # Récupérer les détails des produits (pour prix, descriptifs, etc.)
         all_product_ids = api_results["produits_acceptes"] + [p["id_produit"] for p in api_results["produits_rejetes"]]
-        product_details = fetch_product_details(all_product_ids, config) if all_product_ids else {}
+        id_categorie = result.get("parcours", {}).get("id_categorie")
+        product_details = (
+            fetch_product_details(
+                all_product_ids,
+                config,
+                id_categorie=id_categorie,
+                iteration_num=iteration_num,
+                parcours_id=parcours_id,
+            )
+            if all_product_ids
+            else {}
+        )
 
         # Calculer les métriques du parcours
         parcours_metrics = calculate_parcours_metrics(api_results, evaluation, product_details)
@@ -357,6 +450,10 @@ def evaluate_iteration(iteration_num: int) -> Metrics:
     # Sauvegarder les métriques
     save_metrics(metrics)
 
+    # Pour l'itération 0, renseigner aussi BASELINE.json (immuable après)
+    if iteration_num == 0:
+        save_baseline(metrics, parcours_count=total_parcours)
+
     return metrics
 
 
@@ -369,6 +466,64 @@ def save_metrics(metrics: Metrics):
         json.dump(metrics.to_dict(), f, indent=2)
 
     print(f"Métriques sauvegardées: {metrics_file}")
+
+
+def save_baseline(metrics: Metrics, parcours_count: int):
+    """
+    (Re)écrit BASELINE.json à partir des métriques de l'itération 0.
+
+    Garde-fou d'immuabilité : la baseline n'est JAMAIS réécrite pendant
+    les itérations 1+ (la référence ne doit pas bouger pendant la boucle
+    d'optimisation). Mais à iter 0, chaque lancement recalcule pour
+    refléter l'état courant du pipeline.
+
+    Les annotations manuelles (`observations`, `results_par_parcours`)
+    sont préservées entre les runs d'iter 0.
+    """
+    # Garde-fou: immuable pour toute itération ≥ 1
+    if metrics.iteration != 0:
+        return
+
+    # Charger l'état précédent pour préserver observations / results_par_parcours
+    existing = {}
+    if BASELINE_FILE.exists():
+        with open(BASELINE_FILE, "r", encoding="utf-8") as f:
+            try:
+                existing = json.load(f)
+            except json.JSONDecodeError:
+                existing = {}
+
+    timestamp = datetime.now().isoformat()
+    metrics_dict = metrics.to_dict()
+
+    baseline_data = {
+        "_info": (
+            "Baseline de l'itération 0. Recalculée à chaque lancement d'iter 0. "
+            "Immuable pour toutes les itérations suivantes (garantie par save_baseline). "
+            "Le champ `observations` est préservé entre les runs."
+        ),
+        "_status": f"RECALCULATED — dernière mise à jour {timestamp}",
+        "generated_at": timestamp,
+        "parcours_count": parcours_count,
+        "metrics": {
+            "taux_conformite": metrics_dict["taux_conformite"],
+            "aberrations_prix": metrics_dict["aberrations_prix"],
+            "doublons": metrics_dict["doublons"],
+            "diversite_fournisseurs": metrics_dict["diversite_fournisseurs"],
+            # Note: nom canonique selon EVAL.md (la dataclass utilise "coherence_score")
+            "coherence_score_pertinence": metrics_dict["coherence_score"],
+            "presence_estimatif": metrics_dict["presence_estimatif"],
+            "score_global": metrics_dict["score_global"],
+        },
+        # Préservés entre runs pour ne pas écraser le travail manuel
+        "observations": existing.get("observations", []),
+        "results_par_parcours": existing.get("results_par_parcours", []),
+    }
+
+    with open(BASELINE_FILE, "w", encoding="utf-8") as f:
+        json.dump(baseline_data, f, indent=2, ensure_ascii=False)
+
+    print(f"✓ BASELINE.json (re)calculée: {BASELINE_FILE}")
 
 
 def load_baseline() -> Optional[Metrics]:
@@ -391,13 +546,19 @@ def main(iteration_num: int):
     print(f"MÉTRIQUES — Itération {iteration_num}")
     print(f"{'='*70}\n")
 
+    # Métriques déjà à l'échelle 0–100 (présentées avec %)
+    PERCENT_METRICS = {"taux_conformite", "presence_estimatif", "score_global"}
+    # Métriques à l'échelle 0–1 (à multiplier par 100 pour affichage en %)
+    RATIO_METRICS = {"coherence_score"}
+
     metrics_dict = metrics.to_dict()
     for key, value in metrics_dict.items():
-        if isinstance(value, float):
-            if key in ['taux_conformite', 'coherence_score', 'presence_estimatif', 'score_global']:
-                print(f"  {key}: {value:.2f}%")
-            else:
-                print(f"  {key}: {value:.3f}")
+        if key in PERCENT_METRICS:
+            print(f"  {key}: {value:.2f}%")
+        elif key in RATIO_METRICS:
+            print(f"  {key}: {value:.2%}")
+        elif isinstance(value, float):
+            print(f"  {key}: {value:.3f}")
         else:
             print(f"  {key}: {value}")
 

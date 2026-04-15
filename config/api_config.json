@@ -1,6 +1,6 @@
 {
-  "api_endpoint_matching": "https://api.hellopro.eu/graph-service/produits/matching-optim",
-  "api_endpoint_product_details": "https://api.hellopro.eu/api/hg/view/index.php",
+  "api_endpoint_matching": "https://api.hellopro.eu/graphoptim-service/produits/matching",
+  "api_endpoint_product_details": "https://api.hellopro.fr/api/hp/view/index.php",
   "timeout_seconds": 30,
   "max_retries": 3,
   "retry_delay_seconds": 2,
@@ -8,11 +8,14 @@
     "Content-Type": "application/json",
     "Accept": "application/json"
   },
-  "default_top_k": 12,
-  "default_rerank_top_k": 24,
+  "default_top_k": 26,
+  "default_rerank_top_k": 26,
   "rerank_enabled": true,
   "default_output_fields": ["url"],
   "product_details_request": {
-    "etape": "get_info_produit"
+    "etape": "get_info_produit",
+    "scrapping": 1,
+    "action": "get",
+    "data": {}
   }
 }

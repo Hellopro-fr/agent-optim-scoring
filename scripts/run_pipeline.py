@@ -27,7 +27,7 @@ REPORTS_DIR = PROJECT_ROOT / "reports"
 
 # Imports des autres scripts
 sys.path.insert(0, str(SCRIPTS_DIR))
-from evaluate import evaluate_iteration
+from evaluate import evaluate_iteration, log_api_call_to_file
 
 
 def load_config():
@@ -76,7 +76,7 @@ def build_api_payload(parcours, config):
     payload = {
         "id_categorie": parcours.get("id_categorie", 0),
         "champs_sortie": config.get("default_output_fields", ["url"]),
-        "top_k": config.get("default_top_k", 12),
+        "top_k": config.get("default_top_k", 26),
         "metadonnee_utilisateurs": parcours.get("metadonnee_utilisateurs", {
             "pays": "France",
             "id_pays": 1
@@ -85,7 +85,12 @@ def build_api_payload(parcours, config):
         "rerank": {
             "use_rerank": config.get("rerank_enabled", True),
             "parcours": _build_parcours_text(parcours),
-            "top_k": config.get("default_rerank_top_k", 24)
+            "top_k": config.get("default_rerank_top_k", 26),
+            "id_prompt": 118
+        },
+        "scoring": {
+            "c_unknown_score": 0,
+            "z_unmatched": 0
         }
     }
 
@@ -103,7 +108,7 @@ def _build_parcours_text(parcours):
     return " | ".join(parts)
 
 
-def call_api(payload, config, parcours_id):
+def call_api(payload, config, parcours_id, iteration_num=None):
     """Appelle l'API GraphRAG pour un parcours"""
     api_url = config["api_endpoint_matching"]
     headers = config.get("headers", {})
@@ -111,14 +116,27 @@ def call_api(payload, config, parcours_id):
     max_retries = config.get("max_retries", 3)
     retry_delay = config.get("retry_delay_seconds", 2)
 
+    # On logge dès qu'on a iteration_num (sinon pas de fichier cible)
+    log_details = iteration_num is not None
+
     last_error = None
     for attempt in range(max_retries):
         try:
-            print(f"  [API] Appel pour parcours {parcours_id} (tentative {attempt + 1}/{max_retries})...", end=" ", flush=True)
+            print(f"  [API] Appel pour parcours {parcours_id} (tentative {attempt + 1}/{max_retries})...", flush=True)
             response = requests.post(api_url, json=payload, headers=headers, timeout=timeout)
             response.raise_for_status()
             result = response.json()
-            print(f"OK ({len(result.get('top_produit', []))} top produits)")
+            if log_details:
+                log_api_call_to_file(
+                    iteration_num=iteration_num,
+                    parcours_id=parcours_id,
+                    method="POST",
+                    url=api_url,
+                    payload=payload,
+                    status=response.status_code,
+                    response=result,
+                )
+            print(f"  [API] OK ({len(result.get('top_produit', []))} top produits)")
             return result
         except requests.RequestException as e:
             last_error = e
@@ -128,6 +146,15 @@ def call_api(payload, config, parcours_id):
                 time.sleep(retry_delay)
             else:
                 print(f"Échec après {max_retries} tentatives")
+                if log_details:
+                    log_api_call_to_file(
+                        iteration_num=iteration_num,
+                        parcours_id=parcours_id,
+                        method="POST",
+                        url=api_url,
+                        payload=payload,
+                        error=str(e),
+                    )
 
     raise Exception(f"Impossible d'appeler l'API pour {parcours_id}: {last_error}")
 
@@ -161,7 +188,7 @@ def run_pipeline(iteration_num, compare_to=None):
 
         try:
             payload = build_api_payload(parcours, config)
-            api_response = call_api(payload, config, parcours_id)
+            api_response = call_api(payload, config, parcours_id, iteration_num=iteration_num)
 
             # Sauvegarder la réponse brute
             iteration_results["resultats"][parcours_id] = {
@@ -192,9 +219,18 @@ def run_pipeline(iteration_num, compare_to=None):
     print(f"{'='*70}")
     print(f"\nItération {iteration_num}:")
     if metrics:
-        for metric_name, metric_value in metrics.items():
-            if isinstance(metric_value, float):
+        # Métriques déjà à l'échelle 0–100 (présentées avec %)
+        PERCENT_METRICS = {"taux_conformite", "presence_estimatif", "score_global"}
+        # Métriques à l'échelle 0–1 (à multiplier par 100 pour affichage en %)
+        RATIO_METRICS = {"coherence_score"}
+
+        for metric_name, metric_value in metrics.to_dict().items():
+            if metric_name in PERCENT_METRICS:
+                print(f"  {metric_name}: {metric_value:.2f}%")
+            elif metric_name in RATIO_METRICS:
                 print(f"  {metric_name}: {metric_value:.2%}")
+            elif isinstance(metric_value, float):
+                print(f"  {metric_name}: {metric_value:.3f}")
             else:
                 print(f"  {metric_name}: {metric_value}")
     else:
