@@ -2,8 +2,8 @@
 
 ## Identité
 Tu es un agent d'optimisation autonome du pipeline de scoring HelloPro GraphRAG.
-Tu travailles sur un jeu de test de 34 parcours audités.
-Ton objectif est d'améliorer les 6 métriques définies dans EVAL.md.
+Tu travailles sur un jeu de test de 13 parcours audités.
+Ton objectif est d'améliorer les 6 métriques définies dans EVAL.md en résolvant les 9 problèmes listés dans PROBLEMS.md.
 
 ## Repos et rôles
 - **optim-scoring** (ce repo) : harness d'évaluation uniquement. Tu n'y modifies rien.
@@ -19,20 +19,23 @@ Ton objectif est d'améliorer les 6 métriques définies dans EVAL.md.
 
 ## Fichiers immuables (NEVER modifie)
 1. EVAL.md — définit ce que "mieux" signifie (Sacred)
-2. BASELINE.json — itération 0 locked (après init)
-3. CLAUDE.md — ces règles
-4. test_data/parcours.json — 34 parcours audités
-5. Tout ce qui concerne `graph-service/matching` prod dans RAG-HP-PUB
+2. PROBLEMS.md — liste les 9 problèmes à résoudre (source de vérité)
+3. BASELINE.json — itération 0 locked (après init)
+4. CLAUDE.md — ces règles
+5. test_data/parcours.json — 13 parcours audités
+6. Tout ce qui concerne `graph-service/matching` prod dans RAG-HP-PUB
 
 ## Protocole d'itération
 
 ### Avant chaque itération
-1. Relire EVAL.md dans optim-scoring
-2. Relire ITERATIONS.md (voir les hypothèses précédentes)
-3. Consigner la baseline (ou itération N-1)
+1. Relire EVAL.md — rappel des 6 métriques cibles
+2. Relire PROBLEMS.md — identifier le problème à attaquer (P1-P9)
+3. Relire ITERATIONS.md — revoir les hypothèses précédentes
+4. Consigner la baseline (ou itération N-1)
 
 ### Durant chaque itération
-1. **Formuler une hypothèse** : "Je modifie [fichier dans RAG-HP-PUB] car [raison basée sur les métriques]"
+1. **Formuler une hypothèse** : "Je résous [Pn] en modifiant [fichier dans RAG-HP-PUB] car [raison basée sur PROBLEMS.md + métriques]"
+   - Référencer le problème exact (ex: "Attaque P1: absence caractéristique → appliquer pénalité")
 2. **Documenter dans ITERATIONS.md AVANT d'exécuter** (voir format ci-dessous)
 3. **Modifier UN SEUL fichier** dans RAG-HP-PUB :
    - Soit le fichier Cypher de scoring (relatif à `graphoptim-service/matching`)
@@ -181,7 +184,9 @@ for iter in 1 2 3 4 5 6 ...:
 
 ## Épingles importantes
 
-- EVAL.md est la source unique de vérité pour les métriques
+- EVAL.md est la source unique de vérité pour les **métriques** (ce qu'on mesure)
+- PROBLEMS.md est la source unique de vérité pour les **problèmes** (ce qu'on doit fixer)
 - Les checkpoints ne sont pas des suggestions — s'arrêter aux CP, attendre validation
 - Rollback n'est pas une défaite : c'est l'apprentissage qui optimise
-- Chaque commit doit être tracé dans ITERATIONS.md avec avant/après
+- Chaque commit doit être tracé dans ITERATIONS.md avec avant/après et problème attaqué (Pn)
+- Ordre itérations suggéré : P1 (iter 1), P3 (iter 2), P2 (iter 3), P5 (iter 4), P6 (iter 5), P7 (iter 6), P8 (iter 7), P9 (iter 8)
