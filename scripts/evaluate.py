@@ -13,12 +13,14 @@ Usage:
 import copy
 import json
 import sys
+import os
 import argparse
 from datetime import datetime
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional
 import requests
+from dotenv import load_dotenv
 
 
 # Chemins du projet
@@ -128,6 +130,82 @@ def load_iteration_results(iteration_num: int) -> dict:
         return json.load(f)
 
 
+def fetch_characteristics_map(
+    id_categorie: int,
+    config: dict,
+) -> dict:
+    """
+    Récupère les définitions des caractéristiques d'une catégorie.
+
+    Appelle : POST https://api.hellopro.fr/v2/index.php
+    Token : Bearer ${NEXT_TOKEN_API_QUESTION}
+
+    Returns:
+        Dict indexé par id_caracteristique (int) :
+        {
+            id_caract: {
+                "id_caracteristique": int,
+                "nom": str,
+                "unite": str|None,
+                "type": str,  # "Textuelle" ou "Numérique"
+                "valeurs": {id_valeur (int): valeur_label (str), ...}
+            }
+        }
+    """
+    api_url = "https://api.hellopro.fr/v2/index.php"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {os.getenv('NEXT_TOKEN_API_QUESTION', '')}"
+    }
+    timeout = config.get("timeout_seconds", 30)
+
+    payload = {
+        "etape": "caracteristique",
+        "field": "final",
+        "action": "get",
+        "data": {
+            "id_categorie": str(id_categorie)
+        }
+    }
+
+    try:
+        response = requests.post(api_url, json=payload, headers=headers, timeout=timeout)
+        response.raise_for_status()
+        data = response.json()
+
+        # Réponse attendue : {"code": 0, "response": [caract_items]}
+        caract_list = data.get("response", [])
+        caract_map = {}
+
+        for caract in caract_list:
+            id_caract = int(caract.get("id_caracteristique") or caract.get("id", 0))
+            if not id_caract:
+                continue
+
+            # Construire la map des valeurs
+            valeurs_map = {}
+            valeurs = caract.get("valeurs", [])
+            for val_item in valeurs:
+                id_val = int(val_item.get("id_valeur") or val_item.get("id", 0))
+                val_label = val_item.get("valeur", "")
+                if id_val:
+                    valeurs_map[id_val] = val_label
+
+            caract_map[id_caract] = {
+                "id_caracteristique": id_caract,
+                "nom": caract.get("nom", ""),
+                "unite": caract.get("unite"),
+                "type": caract.get("type", ""),
+                "valeurs": valeurs_map
+            }
+
+        return caract_map
+
+    except Exception as e:
+        print(f"  ⚠ Erreur fetch_characteristics_map(cat={id_categorie}): {e}")
+        return {}
+
+
 def fetch_product_details(
     product_ids: list,
     config: dict,
@@ -163,7 +241,13 @@ def fetch_product_details(
         return {}
 
     api_url = config.get("api_endpoint_product_details")
-    headers = config.get("headers", {})
+    headers = config.get("headers", {}).copy()
+
+    # Ajouter le token d'autorisation s'il est disponible
+    token = os.getenv("TOKEN_INFO_PRODUIT")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
     timeout = config.get("timeout_seconds", 30)
 
     # Construire le payload: copie du template de config + injection de data
@@ -195,9 +279,13 @@ def fetch_product_details(
                 response=products_list,
             )
 
-        # Indexer par ID
+        # Indexer par ID (l'API retourne {"items": {"id_produit": {...}, ...}})
         products_dict = {}
-        if isinstance(products_list, list):
+        if isinstance(products_list, dict) and "items" in products_list:
+            # Format réel : {"items": {"id_produit": {produit, categorie, vendeur}}}
+            products_dict = products_list["items"]
+        elif isinstance(products_list, list):
+            # Fallback pour rétrocompatibilité (ancien format)
             for product in products_list:
                 if "id" in product:
                     products_dict[product["id"]] = product
@@ -242,7 +330,8 @@ def extract_api_results(api_response: dict) -> dict:
         "noms_acceptes": [...],      # Noms des produits dans top_produit (llm_response.nom)
         "produits_rejetes": [...],   # Produits dans ecarts
         "fournisseurs": set(),       # IDs uniques de fournisseurs
-        "scores": {}                 # id_produit -> score
+        "scores": {},                # id_produit -> score
+        "caracteristiques_par_produit": {}  # id_produit -> [MatchingCharacteristic, ...]
     }
     """
     results = {
@@ -250,7 +339,8 @@ def extract_api_results(api_response: dict) -> dict:
         "noms_acceptes": [],
         "produits_rejetes": [],
         "fournisseurs": set(),
-        "scores": {}
+        "scores": {},
+        "caracteristiques_par_produit": {}
     }
 
     # top_produit = tous les produits sélectionnés par l'API (pas de filtre decision)
@@ -268,6 +358,11 @@ def extract_api_results(api_response: dict) -> dict:
         if fournisseur:
             results["fournisseurs"].add(str(fournisseur))
 
+        # Stocker les données de matching des caractéristiques
+        caracts = product.get("caracteristique", [])
+        if caracts:
+            results["caracteristiques_par_produit"][prod_id] = caracts
+
     # ecarts = produits non retenus
     for product in api_response.get("ecarts", []):
         prod_id = product.get("id_produit")
@@ -281,15 +376,18 @@ def extract_api_results(api_response: dict) -> dict:
     return results
 
 
-def calculate_parcours_metrics(api_results: dict, evaluation: Optional[dict], product_details: dict = None) -> dict:
+def calculate_parcours_metrics(api_results: dict, evaluation: Optional[dict], product_details: dict = None, caract_map: dict = None) -> dict:
     """
     Calcule les métriques pour un parcours spécifique
 
     evaluation est optionnel car on peut avoir des parcours sans evaluation_humaine
     product_details : dict indexé par product_id avec détails (prix, nom, etc.)
+    caract_map : dict des définitions de caractéristiques {id_caract: {nom, type, valeurs, ...}}
     """
     if product_details is None:
         product_details = {}
+    if caract_map is None:
+        caract_map = {}
 
     metrics = {
         "conformes": 0,
@@ -297,8 +395,8 @@ def calculate_parcours_metrics(api_results: dict, evaluation: Optional[dict], pr
         "aberrations_prix": 0,
         "doublons": 0,
         "fournisseurs_count": len(api_results["fournisseurs"]),
-        "coherence": 0.8,  # Placeholder - requiert analyse détaillée des scores
-        "estimatif_present": True  # Placeholder - requiert vérification dans produit
+        "coherence": 0.5,  # Sera calculé réellement ci-dessous
+        "estimatif_present": False  # Sera calculé réellement ci-dessous
     }
 
     if not evaluation:
@@ -326,20 +424,37 @@ def calculate_parcours_metrics(api_results: dict, evaluation: Optional[dict], pr
         metrics["conformes"] = total - hors_sujet_count
         metrics["total_evalues"] = total if total > 0 else 1
 
+    # Calcul de coherence_score réel : moyenne des barèmes de caractéristiques
+    caract_data = api_results.get("caracteristiques_par_produit", {})
+    if caract_data:
+        all_baremes = [
+            c.get("bareme", 0)
+            for caracts in caract_data.values()
+            for c in caracts
+        ]
+        if all_baremes:
+            metrics["coherence"] = sum(all_baremes) / len(all_baremes)
+
     # Détection des aberrations prix via les détails produits
     if product_details:
         prix_values = []
+        estimatif_count = 0
         for prod_id in api_results["produits_acceptes"]:
             if prod_id in product_details:
                 prod = product_details[prod_id]
                 # Extraire prix si disponible (format: "99 EUR", "99.99 EUR", etc.)
-                prix_str = prod.get("prix", "")
+                prix_str = prod.get("produit", {}).get("prix_produit", "")
                 if prix_str:
+                    estimatif_count += 1
                     try:
                         prix_num = float(prix_str.replace(" EUR", "").replace(",", "."))
                         prix_values.append(prix_num)
                     except (ValueError, AttributeError):
                         pass
+
+        # Calculer estimatif_present (% produits avec prix)
+        if api_results["produits_acceptes"]:
+            metrics["estimatif_present"] = estimatif_count > 0
 
         # Détecter les aberrations (prix anormalement bas/haut)
         if prix_values:
@@ -347,7 +462,7 @@ def calculate_parcours_metrics(api_results: dict, evaluation: Optional[dict], pr
             for prod_id in api_results["produits_acceptes"]:
                 if prod_id in product_details:
                     prod = product_details[prod_id]
-                    prix_str = prod.get("prix", "")
+                    prix_str = prod.get("produit", {}).get("prix_produit", "")
                     try:
                         prix_num = float(prix_str.replace(" EUR", "").replace(",", "."))
                         # Aberration si facteur > 10 ou < 0.1
@@ -360,7 +475,7 @@ def calculate_parcours_metrics(api_results: dict, evaluation: Optional[dict], pr
         noms = []
         for prod_id in api_results["produits_acceptes"]:
             if prod_id in product_details:
-                nom = product_details[prod_id].get("nom", "").lower()
+                nom = product_details[prod_id].get("produit", {}).get("titre_produit", "").lower()
                 if nom:
                     noms.append(nom)
 
@@ -400,6 +515,7 @@ def evaluate_iteration(iteration_num: int) -> Metrics:
     fournisseurs_global = set()
     coherence_scores = []
     estimatif_present_count = 0
+    characteristics_cache = {}  # Cache {id_categorie: caract_map}
 
     # Évaluer chaque parcours
     for parcours_id, result in iteration_results.get("resultats", {}).items():
@@ -428,8 +544,19 @@ def evaluate_iteration(iteration_num: int) -> Metrics:
             else {}
         )
 
+        # Récupérer la map des caractéristiques (avec cache par catégorie)
+        caract_map = {}
+        if id_categorie:
+            if id_categorie not in characteristics_cache:
+                try:
+                    characteristics_cache[id_categorie] = fetch_characteristics_map(id_categorie, config)
+                except Exception as e:
+                    print(f"  ⚠ Erreur fetch_characteristics_map(cat={id_categorie}): {e}")
+                    characteristics_cache[id_categorie] = {}
+            caract_map = characteristics_cache[id_categorie]
+
         # Calculer les métriques du parcours
-        parcours_metrics = calculate_parcours_metrics(api_results, evaluation, product_details)
+        parcours_metrics = calculate_parcours_metrics(api_results, evaluation, product_details, caract_map)
 
         # Accumuler
         if parcours_metrics["total_evalues"] > 0:
@@ -596,6 +723,9 @@ def main(iteration_num: int):
 
 
 if __name__ == "__main__":
+    # Charger les variables d'environnement depuis .env
+    load_dotenv()
+
     parser = argparse.ArgumentParser(description="Évalue les résultats d'une itération")
     parser.add_argument("--iteration", type=int, required=True, help="Numéro d'itération")
     parser.add_argument("--compare", type=int, help="Comparer avec cette itération")

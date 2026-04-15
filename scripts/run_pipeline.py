@@ -12,10 +12,12 @@ Usage:
 
 import json
 import sys
+import os
 import argparse
 from datetime import datetime
 from pathlib import Path
 import requests
+from dotenv import load_dotenv
 
 # Chemins du projet
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -246,6 +248,9 @@ def run_pipeline(iteration_num, compare_to=None):
 
 
 if __name__ == "__main__":
+    # Charger les variables d'environnement depuis .env
+    load_dotenv()
+
     parser = argparse.ArgumentParser(description="Lance le pipeline GraphRAG")
     parser.add_argument("--iteration", type=int, required=True, help="Numéro d'itération")
     parser.add_argument("--compare", type=int, help="Comparer avec cette itération")
