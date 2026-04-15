@@ -1,26 +1,410 @@
 [
   {
-    "_info": "Template — à remplir avec les 34 parcours audités",
-    "parcours_id": "2001065_P3_tracteur_vigneron",
+    "parcours_id": "2001065_P1_tracteur_fenaison",
+    "id_categorie": 2001065,
     "categorie": "Tracteur agricole",
-    "sous_type": "Vigneron",
+    "sous_type": "Standard - Fenaison",
     "questions_reponses": [
-      {"question": "Usage principal ?", "reponse": "Vigneron"},
-      {"question": "Puissance souhaitée ?", "reponse": "<70ch"},
-      {"question": "État souhaité ?", "reponse": "Neuf"}
+      {"question": "Type de châssis ou gabarit", "reponse": "Tracteur standard"},
+      {"question": "Utilisation principale", "reponse": "Fenaison et entraînement d'outils"},
+      {"question": "Fourchette de puissance moteur", "reponse": "Moins de 100 chevaux"},
+      {"question": "Type de traction", "reponse": "Je ne sais pas"},
+      {"question": "Type de poste de conduite", "reponse": "Je ne sais pas"},
+      {"question": "Assistance technologique", "reponse": "Je ne sais pas"},
+      {"question": "Neuf ou occasion", "reponse": "Les deux me conviennent"},
+      {"question": "Délai d'acquisition", "reponse": "Je me renseigne pour plus tard"}
     ],
     "caracteristiques_deduites": {
-      "type": "vigneron",
-      "puissance_max": 70,
-      "etat": "neuf"
+      "type": "standard",
+      "usage": "fenaison",
+      "puissance_max": 100
+    },
+    "liste_caracteristique": [],
+    "metadonnee_utilisateurs": {
+      "pays": "France",
+      "id_pays": 1
     },
     "evaluation_humaine": {
-      "produits_conformes": ["Tracteur vigneron John Deere 5075GV"],
-      "produits_hors_sujet": ["Micro-tracteur Kubota B1181", "Micro-tracteur Iseki TM3217", "Micro-tracteur compact 26ch"],
-      "anomalies": ["scoring inversé", "micro-tracteurs sur-représentés", "fourchette facteur 20x"]
+      "produits_conformes": ["Tracteur Cross Lamborghini - 75 à 100 CV"],
+      "produits_hors_sujet": ["Tracteur LOVOL TB504 50cv", "Tracteur Kubota LX 351 HDW", "Tracteur compact DK 6020 Kioti"],
+      "anomalies": ["Prix aberrant LOVOL 160€ TTC", "Tracteurs compacts inadaptés", "Score 3/3 critères OK sur produit hors sujet"]
     }
   },
   {
-    "_info": "Ajouter les 33 autres parcours ci-dessous en suivant ce format"
+    "parcours_id": "2001065_P2_tracteur_espaces_verts",
+    "id_categorie": 2001065,
+    "categorie": "Tracteur agricole",
+    "sous_type": "Espaces verts - Entretien",
+    "questions_reponses": [
+      {"question": "Type de châssis ou gabarit", "reponse": "Tracteur standard"},
+      {"question": "Utilisation principale", "reponse": "Entretien d'espaces verts ou voirie"},
+      {"question": "Fourchette de puissance moteur", "reponse": "Moins de 100 chevaux"},
+      {"question": "Type de traction", "reponse": "Je ne sais pas"},
+      {"question": "Type de poste de conduite", "reponse": "Je ne sais pas"},
+      {"question": "Assistance technologique", "reponse": "Aucun besoin de technologie"},
+      {"question": "Neuf ou occasion", "reponse": "Les deux me conviennent"},
+      {"question": "Délai d'acquisition", "reponse": "Je me renseigne pour plus tard"}
+    ],
+    "caracteristiques_deduites": {
+      "type": "compact",
+      "usage": "espaces verts",
+      "puissance_max": 40
+    },
+    "liste_caracteristique": [],
+    "metadonnee_utilisateurs": {
+      "pays": "France",
+      "id_pays": 1
+    },
+    "evaluation_humaine": {
+      "produits_conformes": ["Kubota LX 351 HDW et 401 HDW - 35-40 ch", "Micro-tracteur Captain 25 CV"],
+      "produits_hors_sujet": ["Tracteur LS Tractor MT1.25 Hydrostatique - 24.7 CV", "BOBCAT CT2025 - 23 ch"],
+      "anomalies": ["Transmission hydrostatique au lieu de mécanique synchronisée", "Mélange micro-tracteurs et tracteurs standard", "Scoring inversé - produit adapté a moins de points"]
+    }
+  },
+  {
+    "parcours_id": "2001065_P3_tracteur_vigneron",
+    "id_categorie": 2001065,
+    "categorie": "Tracteur agricole",
+    "sous_type": "Vigneron/Fruitier - Rangs serrés",
+    "questions_reponses": [
+      {"question": "Type de châssis ou gabarit", "reponse": "Tracteur vigneron ou fruitier"},
+      {"question": "Largeur entre les rangs de vigne", "reponse": "Rangs serrés - moins de 1.50 m"},
+      {"question": "Profil topographique", "reponse": "Pentes fortes ou dévers importants"},
+      {"question": "Puissance moteur estimée", "reponse": "Moins de 70 chevaux"},
+      {"question": "Type de transmission", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Poste de conduite", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Circuit hydraulique", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Neuf ou occasion", "reponse": "Les deux me conviennent"},
+      {"question": "Délai d'acquisition", "reponse": "Dans les 3 prochains mois"}
+    ],
+    "caracteristiques_deduites": {
+      "type": "vigneron",
+      "terrain": "pentes fortes",
+      "puissance_max": 70
+    },
+    "liste_caracteristique": [],
+    "metadonnee_utilisateurs": {
+      "pays": "France",
+      "id_pays": 1
+    },
+    "evaluation_humaine": {
+      "produits_conformes": ["John Deere 5075GV Tracteur vigneron 75 ch"],
+      "produits_hors_sujet": ["FARMTRAC FT20 Microtracteur 18.5 cv", "Indofarm 1026 Micro tracteur 26 CV", "Solis 26 Micro tracteur 26 CV"],
+      "anomalies": ["Fourchette budgétaire beaucoup trop large (4500€ à 88500€)", "Sources non pertinentes (tracteurs standards > 100ch)", "Micro-tracteurs proposés pour besoin vigneron", "Scoring inversement corrélé à pertinence réelle"]
+    }
+  },
+  {
+    "parcours_id": "2005786_P1_distributeur_snacks",
+    "id_categorie": 2005786,
+    "categorie": "Distributeur automatique de snacks",
+    "sous_type": "Spirales - Extérieur",
+    "questions_reponses": [
+      {"question": "Système de distribution", "reponse": "À spirales"},
+      {"question": "Lieu d'installation", "reponse": "Extérieur sans protection - exposé aux intempéries"},
+      {"question": "Produits vendus", "reponse": "Snacks secs uniquement + Boissons fraîches"},
+      {"question": "Capacité de stockage", "reponse": "Capacité compacte jusqu'à 24 sélections"},
+      {"question": "Systèmes de paiement", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Ascenseur de réception", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Connexion internet", "reponse": "Je ne sais pas encore"},
+      {"question": "Mode d'acquisition", "reponse": "Je ne sais pas encore / je souhaite comparer"},
+      {"question": "Échéance du projet", "reponse": "Phase d'étude budgétaire ou de faisabilité"}
+    ],
+    "caracteristiques_deduites": {
+      "type": "spirales",
+      "environnement": "exterieur",
+      "capacite": "compacte",
+      "produits": "snacks_boissons"
+    },
+    "liste_caracteristique": [],
+    "metadonnee_utilisateurs": {
+      "pays": "France",
+      "id_pays": 1
+    },
+    "evaluation_humaine": {
+      "produits_conformes": ["Distributeur Sanden Vendo G-Snack SMX réfrigéré"],
+      "produits_hors_sujet": ["Distributeur Slim à Élévateur - LDA Le Distributeur Automatique"],
+      "anomalies": ["G-Snack classé Ascenseur/Élévateur au lieu de Spirales", "Capacité 70 sélections > 24 demandées", "Seul 1 produit sur 2 correspond au système à spirales demandé", "Sources incluent distributeurs à casiers au lieu de spirales"]
+    }
+  },
+  {
+    "parcours_id": "2007702_P1_pont_2col_4m",
+    "id_categorie": 2007702,
+    "categorie": "Pont élévateur",
+    "sous_type": "2 colonnes - Hauteur > 4m",
+    "questions_reponses": [
+      {"question": "Type de pont élévateur", "reponse": "Pont 2 Colonnes"},
+      {"question": "Plus gros véhicule à lever", "reponse": "Fourgons type Trafic, Vito, Transit Custom"},
+      {"question": "Liaison entre colonnes", "reponse": "Par une barre au sol - embase au sol"},
+      {"question": "Hauteur sous plafond", "reponse": "Plus de 4 mètres"},
+      {"question": "Épaisseur dalle béton", "reponse": "Je ne sais pas / je souhaite être conseillé"},
+      {"question": "Alimentation électrique", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Échéance du projet", "reponse": "Projet à court terme moins de 3 mois"}
+    ],
+    "caracteristiques_deduites": {
+      "type": "2_colonnes",
+      "liaison": "embase_sol",
+      "hauteur_min": 4000,
+      "capacite_min": 3500
+    },
+    "liste_caracteristique": [],
+    "metadonnee_utilisateurs": {
+      "pays": "France",
+      "id_pays": 1
+    },
+    "evaluation_humaine": {
+      "produits_conformes": ["Pont WEBER 4.5T 400V déverrouillage automatique"],
+      "produits_hors_sujet": ["Colonne de levage mobile Easy Lift 3000 (au lieu de pont ciseaux)"],
+      "anomalies": ["Colonne de levage proposée au lieu de pont 2 colonnes", "Mélange HT/TTC dans les prix", "Borne haute estimatif (8400€) surestimée vs sources réelles"]
+    }
+  },
+  {
+    "parcours_id": "2007702_P2_pont_2col_400v",
+    "id_categorie": 2007702,
+    "categorie": "Pont élévateur",
+    "sous_type": "2 colonnes - 400V triphasé",
+    "questions_reponses": [
+      {"question": "Type de pont élévateur", "reponse": "Pont 2 Colonnes"},
+      {"question": "Plus gros véhicule à lever", "reponse": "Voitures moyennes et SUV type 3008, Tucson, Passat"},
+      {"question": "Liaison entre colonnes", "reponse": "Par une barre au sol - embase au sol"},
+      {"question": "Hauteur sous plafond", "reponse": "Entre 3 mètres et 4 mètres"},
+      {"question": "Épaisseur dalle béton", "reponse": "Dalle moyenne, entre 15 et 20 cm"},
+      {"question": "Alimentation électrique", "reponse": "Courant triphasé 400V"},
+      {"question": "Échéance du projet", "reponse": "Projet à court terme moins de 3 mois"}
+    ],
+    "caracteristiques_deduites": {
+      "type": "2_colonnes",
+      "liaison": "embase_sol",
+      "alimentation": "400V_triphasé",
+      "capacite_min": 3500
+    },
+    "liste_caracteristique": [],
+    "metadonnee_utilisateurs": {
+      "pays": "France",
+      "id_pays": 1
+    },
+    "evaluation_humaine": {
+      "produits_conformes": ["Pont 2 colonnes PROFI Line Twin Busch 4.2T", "Pont WEBER 4.5T 400V déverrouillage automatique"],
+      "produits_hors_sujet": [],
+      "anomalies": ["Doublon dans sources (Twin Busch cité deux fois)", "Produit REIHMANN 3803€ dépasse fourchette estimative 3700€"]
+    }
+  },
+  {
+    "parcours_id": "2007702_P3_pont_ciseaux_mobile",
+    "id_categorie": 2007702,
+    "categorie": "Pont élévateur",
+    "sous_type": "Ciseaux - Mobile",
+    "questions_reponses": [
+      {"question": "Type de pont élévateur", "reponse": "Pont Ciseaux"},
+      {"question": "Type d'utilisation principale", "reponse": "Réparations moteur, embrayage, échappement - mécanique générale"},
+      {"question": "Type d'installation", "reponse": "Mobile avec kit de déplacement"},
+      {"question": "Hauteur de levage", "reponse": "Levage basse hauteur environ 1 mètre"}
+    ],
+    "caracteristiques_deduites": {
+      "type": "ciseaux",
+      "installation": "mobile",
+      "hauteur_levage": 1000,
+      "capacite": 3000
+    },
+    "liste_caracteristique": [],
+    "metadonnee_utilisateurs": {
+      "pays": "France",
+      "id_pays": 1
+    },
+    "evaluation_humaine": {
+      "produits_conformes": ["Pont élévateur ciseaux KROEMER X40 3.0t mobile"],
+      "produits_hors_sujet": [],
+      "anomalies": ["Produit 1 à 1300€ HT en dessous de fourchette estimative 1800€", "Mélange HT/TTC dans les prix produits"]
+    }
+  },
+  {
+    "parcours_id": "2009397_P1_lave_linge_18kg",
+    "id_categorie": 2009397,
+    "categorie": "Lave-linge professionnel",
+    "sous_type": "18-27 kg - Super essorage suspendu",
+    "questions_reponses": [
+      {"question": "Capacité de chargement", "reponse": "18 à 27 kg"},
+      {"question": "Utilisation de la machine", "reponse": "Pour la blanchisserie interne de mon établissement"},
+      {"question": "Type d'installation", "reponse": "Machine suspendue, super essorage"},
+      {"question": "Source d'énergie pour chauffage", "reponse": "Chauffage électrique"},
+      {"question": "Mise en service", "reponse": "Dans les 3 prochains mois"}
+    ],
+    "caracteristiques_deduites": {
+      "type": "suspendu",
+      "capacite": "18_27kg",
+      "essorage": "super",
+      "chauffage": "electrique"
+    },
+    "liste_caracteristique": [],
+    "metadonnee_utilisateurs": {
+      "pays": "France",
+      "id_pays": 1
+    },
+    "evaluation_humaine": {
+      "produits_conformes": ["Lave-linge professionnel 18 kg super essorage avec variateur de fréquence"],
+      "produits_hors_sujet": ["Machine à laver Primer LS-19 18kg - offre en Location", "Lave linge Girbau GS7018 18kg"],
+      "anomalies": ["Mélange HT/TTC dans les prix sourcés", "Produit 28kg inclus alors que max demandé 27kg", "Tous produits recommandés en Prix sur demande", "Caractéristiques non renseignées sur 2 produits (1/4 critères OK)"]
+    }
+  },
+  {
+    "parcours_id": "2012048_P1_distributeur_boissons",
+    "id_categorie": 2012048,
+    "categorie": "Distributeur automatique de boisson chaude",
+    "sous_type": "Sur pied - Moins de 50 boissons/jour",
+    "questions_reponses": [
+      {"question": "Format d'installation", "reponse": "Modèle sur pied"},
+      {"question": "Boissons servies par jour", "reponse": "Moins de 50 par jour - petit bureau, petite équipe"},
+      {"question": "Type de café", "reponse": "Café soluble - préparation rapide et économique"},
+      {"question": "Autres boissons", "reponse": "Chocolat chaud + Lactées en poudre + Thés + Soupes/potages"},
+      {"question": "Systèmes de paiement", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Configuration alimentation eau", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Distribution de contenants", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Échéance du projet", "reponse": "Projet à réaliser sous 3 mois"}
+    ],
+    "caracteristiques_deduites": {
+      "type": "sur_pied",
+      "volume": "moins_50",
+      "cafe": "soluble",
+      "boissons": ["chocolat", "lait_poudre", "the", "soupe"]
+    },
+    "liste_caracteristique": [],
+    "metadonnee_utilisateurs": {
+      "pays": "France",
+      "id_pays": 1
+    },
+    "evaluation_humaine": {
+      "produits_conformes": ["Azkoyen Zintro Instant - café soluble"],
+      "produits_hors_sujet": ["Machine à café comptoir NECTA KREA 100 boissons/jour"],
+      "anomalies": ["Estimatif inclut distributeur comptoir 863€ alors que demande est sur pied", "Concentration sources (3/5 du même site www.1cafecheznous.com)", "Tous produits recommandés en Prix sur demande", "Product 3 est modèle comptoir au lieu de sur pied comme demandé"]
+    }
+  },
+  {
+    "parcours_id": "2017713_P1_epareuse_herbe",
+    "id_categorie": 2017713,
+    "categorie": "Épareuses et broyeurs forestiers",
+    "sous_type": "Épareuse herbe - Moins de 50 ch",
+    "questions_reponses": [
+      {"question": "Type d'équipement de débroussaillage", "reponse": "Épareuse"},
+      {"question": "Types de végétation", "reponse": "Herbe et accotements"},
+      {"question": "Véhicule porteur", "reponse": "Tracteur agricole"},
+      {"question": "Portée horizontale maximale", "reponse": "Moins de 4 mètres"},
+      {"question": "Puissance du véhicule disponible", "reponse": "Moins de 50 ch"},
+      {"question": "Fréquence d'utilisation", "reponse": "Quelques fois par an - usage saisonnier"},
+      {"question": "Échéance du projet", "reponse": "Moins de 3 mois"}
+    ],
+    "caracteristiques_deduites": {
+      "type": "epareuse",
+      "vegetation": "herbe_accotements",
+      "puissance_max": 50,
+      "portee_max": 4000
+    },
+    "liste_caracteristique": [],
+    "metadonnee_utilisateurs": {
+      "pays": "France",
+      "id_pays": 1
+    },
+    "evaluation_humaine": {
+      "produits_conformes": ["Épareuse hydraulique DFAE/HORSI 16-35 cv", "Épareuse GEO AM100 AT OUTILS 25-60 ch"],
+      "produits_hors_sujet": ["Épareuse LIDERFARM mi-lourde surdimensionnée"],
+      "anomalies": ["Doublon dans sources (GEO AM100 compté deux fois)", "Tondobroyeur inclus dans estimatif épareuse (catégories différentes)", "Produit 1 sans prix et portée non renseignée", "Produit 3 en TTC alors que autres en HT"]
+    }
+  },
+  {
+    "parcours_id": "2017713_P2_epareuse_broussailles",
+    "id_categorie": 2017713,
+    "categorie": "Épareuses et broyeurs forestiers",
+    "sous_type": "Épareuse broussailles - 50-80 ch",
+    "questions_reponses": [
+      {"question": "Type d'équipement de débroussaillage", "reponse": "Épareuse"},
+      {"question": "Types de végétation", "reponse": "Broussailles et ronces"},
+      {"question": "Véhicule porteur", "reponse": "Tracteur agricole"},
+      {"question": "Portée horizontale maximale", "reponse": "Moins de 4 mètres"},
+      {"question": "Puissance du véhicule disponible", "reponse": "50 à 80 ch"},
+      {"question": "Fréquence d'utilisation", "reponse": "Je ne sais pas encore"},
+      {"question": "Échéance du projet", "reponse": "Simple étude budgétaire"}
+    ],
+    "caracteristiques_deduites": {
+      "type": "epareuse",
+      "vegetation": "broussailles_ronces",
+      "puissance": "50_80ch",
+      "portee_max": 4000
+    },
+    "liste_caracteristique": [],
+    "metadonnee_utilisateurs": {
+      "pays": "France",
+      "id_pays": 1
+    },
+    "evaluation_humaine": {
+      "produits_conformes": ["Épareuse Clipper 3.25-6.20m portée", "Épareuse GEO AM 60 AT OUTILS"],
+      "produits_hors_sujet": ["Gyrax GYRAMAX 830 - occasion 2021", "Bras Rinieri BRT - très peu renseigné"],
+      "anomalies": ["Réponses v1 exactes produisent 0 résultat", "Produit occasion mélangé avec neuf", "Broyeur d'accotement inclus dans sources épareuse", "Formulation de demande de coordonnées avant sélection freine conversion"]
+    }
+  },
+  {
+    "parcours_id": "1001328_P1_minipelle_passage100",
+    "id_categorie": 1001328,
+    "categorie": "Mini-pelles moins de 10 tonnes",
+    "sous_type": "1-2 tonnes - Passage < 100 cm",
+    "questions_reponses": [
+      {"question": "Catégorie de tonnage", "reponse": "De 1 à 2 tonnes"},
+      {"question": "Type de traction", "reponse": "Pas de préférence"},
+      {"question": "Type de travaux", "reponse": "Travaux de terrassement et tranchées"},
+      {"question": "Contrainte de largeur passage", "reponse": "Passage étroit sous 100 cm"},
+      {"question": "Motorisation requise", "reponse": "Diesel standard"},
+      {"question": "Compatibilité outils", "reponse": "Je ne sais pas encore"},
+      {"question": "Contrainte de poids transport", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Neuf, occasion ou location", "reponse": "Neuf"},
+      {"question": "Échéance du projet", "reponse": "Projet à court terme moins de 3 mois"}
+    ],
+    "caracteristiques_deduites": {
+      "type": "minipelle",
+      "tonnage": "1_2t",
+      "largeur_max": 1000,
+      "moteur": "diesel",
+      "etat": "neuf"
+    },
+    "liste_caracteristique": [],
+    "metadonnee_utilisateurs": {
+      "pays": "France",
+      "id_pays": 1
+    },
+    "evaluation_humaine": {
+      "produits_conformes": ["Mini-pelle Bobmaster Premium 1900 kg", "Mini-pelle Bobcat E19 1885 kg"],
+      "produits_hors_sujet": [],
+      "anomalies": ["Sources incluent machines hors tonnage (850 kg, 1t)", "Fourchette très large (6200€ à 19800€ - facteur 3.2)", "Tous produits recommandés en Prix sur demande", "Estimatif basse tirée vers le bas par machines hors catégorie"]
+    }
+  },
+  {
+    "parcours_id": "1001328_P2_minipelle_passage100plus",
+    "id_categorie": 1001328,
+    "categorie": "Mini-pelles moins de 10 tonnes",
+    "sous_type": "1-2 tonnes - Passage > 100 cm",
+    "questions_reponses": [
+      {"question": "Catégorie de tonnage", "reponse": "De 1 à 2 tonnes"},
+      {"question": "Type de traction", "reponse": "Pas de préférence"},
+      {"question": "Type de travaux", "reponse": "Travaux de terrassement et tranchées"},
+      {"question": "Contrainte de largeur passage", "reponse": "Accès chantier supérieur à 100 cm"},
+      {"question": "Motorisation requise", "reponse": "Diesel standard"},
+      {"question": "Compatibilité outils", "reponse": "Je ne sais pas encore"},
+      {"question": "Contrainte de poids transport", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Neuf, occasion ou location", "reponse": "Neuf"},
+      {"question": "Échéance du projet", "reponse": "Étude budgétaire ou information"}
+    ],
+    "caracteristiques_deduites": {
+      "type": "minipelle",
+      "tonnage": "1_2t",
+      "largeur_min": 1000,
+      "moteur": "diesel",
+      "etat": "neuf"
+    },
+    "liste_caracteristique": [],
+    "metadonnee_utilisateurs": {
+      "pays": "France",
+      "id_pays": 1
+    },
+    "evaluation_humaine": {
+      "produits_conformes": ["Mini-pelle Bobmaster Premium 1900 kg", "Mini-pelle SANY SY 18 C 1850 kg"],
+      "produits_hors_sujet": [],
+      "anomalies": ["Fourchette budgétaire très large (5900€ à 26400€)", "Sources incluent machines hors tonnage (850 kg)", "Tous produits recommandés en Prix sur demande", "Disparition question poste de conduite canopy/cabine en v2"]
+    }
   }
 ]
