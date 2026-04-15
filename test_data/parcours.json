@@ -5,24 +5,30 @@
     "categorie": "Tracteur agricole",
     "sous_type": "Standard - Fenaison",
     "questions_reponses": [
-      {"question": "Type de châssis ou gabarit", "reponse": "Tracteur standard"},
-      {"question": "Utilisation principale", "reponse": "Fenaison et entraînement d'outils"},
-      {"question": "Fourchette de puissance moteur", "reponse": "Moins de 100 chevaux"},
-      {"question": "Type de traction", "reponse": "Je ne sais pas"},
-      {"question": "Type de poste de conduite", "reponse": "Je ne sais pas"},
-      {"question": "Assistance technologique", "reponse": "Je ne sais pas"},
-      {"question": "Neuf ou occasion", "reponse": "Les deux me conviennent"},
-      {"question": "Délai d'acquisition", "reponse": "Je me renseigne pour plus tard"}
+      {"question": "Quel est le type de châssis ou le gabarit du tracteur ?", "reponse": "Tracteur standard"},
+      {"question": "Quelle sera l'utilisation principale de votre tracteur ?", "reponse": "Fenaison et entraînement d'outils (faucheuse, presse, andaineur…)"},
+      {"question": "Quelle fourchette de puissance moteur estimez-vous nécessaire ?", "reponse": "Moins de 100 chevaux"},
+      {"question": "Quel type de traction recherchez-vous ?", "reponse": "Je ne sais pas"},
+      {"question": "Quel type de poste de conduite souhaitez-vous ?", "reponse": "Je ne sais pas"},
+      {"question": "Quel niveau d'assistance technologique souhaitez-vous ?", "reponse": "Je ne sais pas encore"},
+      {"question": "Recherchez-vous un tracteur neuf ou d'occasion ?", "reponse": "Neuf"},
+      {"question": "Dans quel délai avez-vous besoin de votre tracteur ?", "reponse": "Je me renseigne pour plus tard"}
     ],
     "caracteristiques_deduites": {
       "type": "standard",
       "usage": "fenaison",
       "puissance_max": 100
     },
-    "liste_caracteristique": [],
+    "liste_caracteristique": [
+      {"id_caracteristique": 316, "type_caracteristique": "textuelle", "poids_question": 8, "poids_caracteristique": "critique", "valeurs_cibles": [1724, 1725], "valeurs_bloquantes": [1726, 1727]},
+      {"id_caracteristique": 299, "type_caracteristique": "numerique", "poids_question": 6, "poids_caracteristique": "critique", "valeurs_cibles": {"max": "100"}, "valeurs_bloquantes": {"min": "130"}, "unite": "ch"},
+      {"id_caracteristique": 805, "type_caracteristique": "textuelle", "poids_question": 2, "poids_caracteristique": "critique", "valeurs_cibles": [2912], "valeurs_bloquantes": [2913]},
+      {"id_caracteristique": 304, "type_caracteristique": "textuelle", "poids_question": 7, "poids_caracteristique": "secondaire", "valeurs_cibles": [1224, 1225, 1226, 1227], "valeurs_bloquantes": []}
+    ],
     "metadonnee_utilisateurs": {
       "pays": "France",
-      "id_pays": 1
+      "id_pays": 1,
+      "cp": "75001"
     },
     "evaluation_humaine": {
       "produits_conformes": ["Tracteur Cross Lamborghini - 75 à 100 CV"],
@@ -36,24 +42,31 @@
     "categorie": "Tracteur agricole",
     "sous_type": "Espaces verts - Entretien",
     "questions_reponses": [
-      {"question": "Type de châssis ou gabarit", "reponse": "Tracteur standard"},
-      {"question": "Utilisation principale", "reponse": "Entretien d'espaces verts ou voirie"},
-      {"question": "Fourchette de puissance moteur", "reponse": "Moins de 100 chevaux"},
-      {"question": "Type de traction", "reponse": "Je ne sais pas"},
-      {"question": "Type de poste de conduite", "reponse": "Je ne sais pas"},
-      {"question": "Assistance technologique", "reponse": "Aucun besoin de technologie"},
-      {"question": "Neuf ou occasion", "reponse": "Les deux me conviennent"},
-      {"question": "Délai d'acquisition", "reponse": "Je me renseigne pour plus tard"}
+      {"question": "Quel est le type de châssis ou le gabarit du tracteur ?", "reponse": "Tracteur standard"},
+      {"question": "Quelle sera l'utilisation principale de votre tracteur ?", "reponse": "Entretien d'espaces verts ou voirie (tonte, débroussaillage, balayage)"},
+      {"question": "Quelle fourchette de puissance moteur estimez-vous nécessaire ?", "reponse": "Moins de 100 chevaux"},
+      {"question": "Quel type de traction recherchez-vous ?", "reponse": "Je ne sais pas"},
+      {"question": "Quel type de poste de conduite souhaitez-vous ?", "reponse": "Je ne sais pas"},
+      {"question": "Quel niveau d'assistance technologique souhaitez-vous ?", "reponse": "Aucun besoin de technologie"},
+      {"question": "Recherchez-vous un tracteur neuf ou d'occasion ?", "reponse": "Neuf"},
+      {"question": "Dans quel délai avez-vous besoin de votre tracteur ?", "reponse": "Je me renseigne pour plus tard"}
     ],
     "caracteristiques_deduites": {
       "type": "compact",
       "usage": "espaces verts",
       "puissance_max": 40
     },
-    "liste_caracteristique": [],
+    "liste_caracteristique": [
+      {"id_caracteristique": 316, "type_caracteristique": "textuelle", "poids_question": 8, "poids_caracteristique": "critique", "valeurs_cibles": [1724, 1725], "valeurs_bloquantes": [1726, 1727]},
+      {"id_caracteristique": 759, "type_caracteristique": "textuelle", "poids_question": 7, "poids_caracteristique": "critique", "valeurs_cibles": [2486, 2487, 2488], "valeurs_bloquantes": [2485]},
+      {"id_caracteristique": 299, "type_caracteristique": "numerique", "poids_question": 6, "poids_caracteristique": "critique", "valeurs_cibles": {"max": "100"}, "valeurs_bloquantes": {"min": "130"}, "unite": "ch"},
+      {"id_caracteristique": 805, "type_caracteristique": "textuelle", "poids_question": 2, "poids_caracteristique": "critique", "valeurs_cibles": [2912], "valeurs_bloquantes": [2913]},
+      {"id_caracteristique": 769, "type_caracteristique": "textuelle", "poids_question": 7, "poids_caracteristique": "secondaire", "valeurs_cibles": [2534, 2535], "valeurs_bloquantes": []}
+    ],
     "metadonnee_utilisateurs": {
       "pays": "France",
-      "id_pays": 1
+      "id_pays": 1,
+      "cp": "75001"
     },
     "evaluation_humaine": {
       "produits_conformes": ["Kubota LX 351 HDW et 401 HDW - 35-40 ch", "Micro-tracteur Captain 25 CV"],
@@ -67,25 +80,34 @@
     "categorie": "Tracteur agricole",
     "sous_type": "Vigneron/Fruitier - Rangs serrés",
     "questions_reponses": [
-      {"question": "Type de châssis ou gabarit", "reponse": "Tracteur vigneron ou fruitier"},
-      {"question": "Largeur entre les rangs de vigne", "reponse": "Rangs serrés - moins de 1.50 m"},
-      {"question": "Profil topographique", "reponse": "Pentes fortes ou dévers importants"},
-      {"question": "Puissance moteur estimée", "reponse": "Moins de 70 chevaux"},
-      {"question": "Type de transmission", "reponse": "Je ne sais pas / souhaite être conseillé"},
-      {"question": "Poste de conduite", "reponse": "Je ne sais pas / souhaite être conseillé"},
-      {"question": "Circuit hydraulique", "reponse": "Je ne sais pas / souhaite être conseillé"},
-      {"question": "Neuf ou occasion", "reponse": "Les deux me conviennent"},
-      {"question": "Délai d'acquisition", "reponse": "Dans les 3 prochains mois"}
+      {"question": "Quel est le type de châssis ou le gabarit du tracteur ?", "reponse": "Tracteur vigneron ou fruitier"},
+      {"question": "Quelle est la largeur entre vos rangs de vigne ou d'arbres ?", "reponse": "Rangs serrés — moins de 1,50 m (vignoble traditionnel, coteaux)"},
+      {"question": "Quel est le profil topographique dominant de votre exploitation ?", "reponse": "Pentes fortes ou dévers importants"},
+      {"question": "Quelle puissance moteur estimez-vous nécessaire pour animer vos outils ?", "reponse": "Moins de 70 ch"},
+      {"question": "Quel type de transmission souhaitez-vous pour vos travaux ?", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Quel niveau de protection et de confort souhaitez-vous pour le poste de conduite ?", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Quel est votre besoin spécifique concernant le circuit hydraulique ?", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Recherchez-vous un tracteur neuf ou d'occasion ?", "reponse": "Neuf"},
+      {"question": "Dans quel délai avez-vous besoin de votre tracteur ?", "reponse": "Dans les 3 prochains mois"}
     ],
     "caracteristiques_deduites": {
       "type": "vigneron",
       "terrain": "pentes fortes",
       "puissance_max": 70
     },
-    "liste_caracteristique": [],
+    "liste_caracteristique": [
+      {"id_caracteristique": 316, "type_caracteristique": "textuelle", "poids_question": 9, "poids_caracteristique": "critique", "valeurs_cibles": [1726], "valeurs_bloquantes": [1724, 1725, 1727]},
+      {"id_caracteristique": 733, "type_caracteristique": "numerique", "poids_question": 8, "poids_caracteristique": "critique", "valeurs_cibles": {"max": "1200"}, "valeurs_bloquantes": {"min": "1400"}, "unite": "mm"},
+      {"id_caracteristique": 301, "type_caracteristique": "textuelle", "poids_question": 7, "poids_caracteristique": "critique", "valeurs_cibles": [1146, 1147, 1144], "valeurs_bloquantes": [1145]},
+      {"id_caracteristique": 311, "type_caracteristique": "textuelle", "poids_question": 7, "poids_caracteristique": "critique", "valeurs_cibles": [1488, 1489, 1491], "valeurs_bloquantes": [1492, 1490]},
+      {"id_caracteristique": 759, "type_caracteristique": "textuelle", "poids_question": 7, "poids_caracteristique": "critique", "valeurs_cibles": [2485, 2488], "valeurs_bloquantes": [2486, 2487]},
+      {"id_caracteristique": 299, "type_caracteristique": "numerique", "poids_question": 6, "poids_caracteristique": "critique", "valeurs_cibles": {"max": "70"}, "valeurs_bloquantes": {"min": "71"}, "unite": "ch"},
+      {"id_caracteristique": 805, "type_caracteristique": "textuelle", "poids_question": 2, "poids_caracteristique": "critique", "valeurs_cibles": [2912], "valeurs_bloquantes": [2913]}
+    ],
     "metadonnee_utilisateurs": {
       "pays": "France",
-      "id_pays": 1
+      "id_pays": 1,
+      "cp": "75001"
     },
     "evaluation_humaine": {
       "produits_conformes": ["John Deere 5075GV Tracteur vigneron 75 ch"],
@@ -99,15 +121,15 @@
     "categorie": "Distributeur automatique de snacks",
     "sous_type": "Spirales - Extérieur",
     "questions_reponses": [
-      {"question": "Système de distribution", "reponse": "À spirales"},
-      {"question": "Lieu d'installation", "reponse": "Extérieur sans protection - exposé aux intempéries"},
-      {"question": "Produits vendus", "reponse": "Snacks secs uniquement + Boissons fraîches"},
-      {"question": "Capacité de stockage", "reponse": "Capacité compacte jusqu'à 24 sélections"},
-      {"question": "Systèmes de paiement", "reponse": "Je ne sais pas / souhaite être conseillé"},
-      {"question": "Ascenseur de réception", "reponse": "Je ne sais pas / souhaite être conseillé"},
-      {"question": "Connexion internet", "reponse": "Je ne sais pas encore"},
-      {"question": "Mode d'acquisition", "reponse": "Je ne sais pas encore / je souhaite comparer"},
-      {"question": "Échéance du projet", "reponse": "Phase d'étude budgétaire ou de faisabilité"}
+      {"question": "Quel système de distribution souhaitez-vous ?", "reponse": "À spirales"},
+      {"question": "Où sera installé votre distributeur ?", "reponse": "En extérieur, sans protection (exposé aux intempéries)"},
+      {"question": "Quels produits seront vendus dans le distributeur ?", "reponse": "Snacks secs uniquement (barres, chips, confiseries) / Boissons fraîches uniquement (canettes, bouteilles)"},
+      {"question": "Quelle capacité de stockage est nécessaire en nombre de sélections ?", "reponse": "Capacité compacte jusqu'à 24 sélections"},
+      {"question": "Quels systèmes de paiement souhaitez-vous intégrer ?", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Un système d'ascenseur de réception des produits est-il requis ?", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Souhaitez-vous que le distributeur soit connecté à internet ?", "reponse": "Je ne sais pas encore"},
+      {"question": "Comment souhaitez-vous acquérir le distributeur ?", "reponse": "Je ne sais pas encore / je souhaite comparer"},
+      {"question": "Quelle est l'échéance de réalisation de votre projet ?", "reponse": "Phase d'étude budgétaire ou de faisabilité"}
     ],
     "caracteristiques_deduites": {
       "type": "spirales",
@@ -115,10 +137,19 @@
       "capacite": "compacte",
       "produits": "snacks_boissons"
     },
-    "liste_caracteristique": [],
+    "liste_caracteristique": [
+      {"id_caracteristique": 398, "type_caracteristique": "textuelle", "poids_question": 9, "poids_caracteristique": "critique", "valeurs_cibles": [1116, 1121], "valeurs_bloquantes": [1117, 1118, 1120]},
+      {"id_caracteristique": 403, "type_caracteristique": "textuelle", "poids_question": 8, "poids_caracteristique": "critique", "valeurs_cibles": [1239], "valeurs_bloquantes": [1238, 1240, 1241, 2484]},
+      {"id_caracteristique": 729, "type_caracteristique": "textuelle", "poids_question": 8, "poids_caracteristique": "secondaire", "valeurs_cibles": [2333, 2332], "valeurs_bloquantes": []},
+      {"id_caracteristique": 405, "type_caracteristique": "textuelle", "poids_question": 7, "poids_caracteristique": "critique", "valeurs_cibles": [1320, 2904, 1317, 1319], "valeurs_bloquantes": [1321, 2367]},
+      {"id_caracteristique": 713, "type_caracteristique": "textuelle", "poids_question": 7, "poids_caracteristique": "critique", "valeurs_cibles": [2253, 2255, 2254], "valeurs_bloquantes": [2258, 2351, 2353, 2368, 2257, 2352]},
+      {"id_caracteristique": 755, "type_caracteristique": "textuelle", "poids_question": 7, "poids_caracteristique": "secondaire", "valeurs_cibles": [2461, 2462, 2465], "valeurs_bloquantes": []},
+      {"id_caracteristique": 400, "type_caracteristique": "numerique", "poids_question": 6, "poids_caracteristique": "critique", "valeurs_cibles": {"max": "24"}, "valeurs_bloquantes": {"min": "25"}, "unite": "sélections"}
+    ],
     "metadonnee_utilisateurs": {
       "pays": "France",
-      "id_pays": 1
+      "id_pays": 1,
+      "cp": "75001"
     },
     "evaluation_humaine": {
       "produits_conformes": ["Distributeur Sanden Vendo G-Snack SMX réfrigéré"],
@@ -132,13 +163,13 @@
     "categorie": "Pont élévateur",
     "sous_type": "2 colonnes - Hauteur > 4m",
     "questions_reponses": [
-      {"question": "Type de pont élévateur", "reponse": "Pont 2 Colonnes"},
-      {"question": "Plus gros véhicule à lever", "reponse": "Fourgons type Trafic, Vito, Transit Custom"},
-      {"question": "Liaison entre colonnes", "reponse": "Par une barre au sol - embase au sol"},
-      {"question": "Hauteur sous plafond", "reponse": "Plus de 4 mètres"},
-      {"question": "Épaisseur dalle béton", "reponse": "Je ne sais pas / je souhaite être conseillé"},
-      {"question": "Alimentation électrique", "reponse": "Je ne sais pas / souhaite être conseillé"},
-      {"question": "Échéance du projet", "reponse": "Projet à court terme moins de 3 mois"}
+      {"question": "Quel type de pont élévateur recherchez-vous pour votre atelier ?", "reponse": "Pont 2 Colonnes"},
+      {"question": "Quel est le plus gros véhicule que vous aurez à lever ?", "reponse": "Fourgons type Trafic, Vito, Transit Custom (utilitaires légers)"},
+      {"question": "Comment souhaitez-vous que les deux colonnes soient reliées entre elles ?", "reponse": "Par une barre au sol entre les deux colonnes (embase au sol — plus stable, léger encombrement au sol)"},
+      {"question": "Quelle est la hauteur sous plafond disponible au point d'installation ?", "reponse": "Plus de 4 mètres"},
+      {"question": "Connaissez-vous l'épaisseur de la dalle béton à l'endroit où sera installé le pont ?", "reponse": "Je ne sais pas / je souhaite être conseillé"},
+      {"question": "Quel type d'alimentation électrique est disponible dans votre atelier ?", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Quelle est l'échéance prévue pour votre projet d'installation ?", "reponse": "Projet à court terme moins de 3 mois"}
     ],
     "caracteristiques_deduites": {
       "type": "2_colonnes",
@@ -146,10 +177,17 @@
       "hauteur_min": 4000,
       "capacite_min": 3500
     },
-    "liste_caracteristique": [],
+    "liste_caracteristique": [
+      {"id_caracteristique": 1, "type_caracteristique": "textuelle", "poids_question": 7, "poids_caracteristique": "critique", "valeurs_cibles": [1], "valeurs_bloquantes": [2, 3, 4, 5, 6, 8, 70, 71]},
+      {"id_caracteristique": 2, "type_caracteristique": "numerique", "poids_question": 6, "poids_caracteristique": "critique", "valeurs_cibles": {"min": "4000", "max": "5000"}, "valeurs_bloquantes": {"max": "3499"}, "unite": "kg"},
+      {"id_caracteristique": 13, "type_caracteristique": "textuelle", "poids_question": 6, "poids_caracteristique": "secondaire", "valeurs_cibles": [20, 22], "valeurs_bloquantes": []},
+      {"id_caracteristique": 14, "type_caracteristique": "textuelle", "poids_question": 5, "poids_caracteristique": "critique", "valeurs_cibles": [26], "valeurs_bloquantes": [27, 28, 29]},
+      {"id_caracteristique": 15, "type_caracteristique": "numerique", "poids_question": 4, "poids_caracteristique": "secondaire", "valeurs_cibles": {"min": 3500}, "valeurs_bloquantes": {}, "unite": "mm"}
+    ],
     "metadonnee_utilisateurs": {
       "pays": "France",
-      "id_pays": 1
+      "id_pays": 1,
+      "cp": "75001"
     },
     "evaluation_humaine": {
       "produits_conformes": ["Pont WEBER 4.5T 400V déverrouillage automatique"],
@@ -163,13 +201,13 @@
     "categorie": "Pont élévateur",
     "sous_type": "2 colonnes - 400V triphasé",
     "questions_reponses": [
-      {"question": "Type de pont élévateur", "reponse": "Pont 2 Colonnes"},
-      {"question": "Plus gros véhicule à lever", "reponse": "Voitures moyennes et SUV type 3008, Tucson, Passat"},
-      {"question": "Liaison entre colonnes", "reponse": "Par une barre au sol - embase au sol"},
-      {"question": "Hauteur sous plafond", "reponse": "Entre 3 mètres et 4 mètres"},
-      {"question": "Épaisseur dalle béton", "reponse": "Dalle moyenne, entre 15 et 20 cm"},
-      {"question": "Alimentation électrique", "reponse": "Courant triphasé 400V"},
-      {"question": "Échéance du projet", "reponse": "Projet à court terme moins de 3 mois"}
+      {"question": "Quel type de pont élévateur recherchez-vous pour votre atelier ?", "reponse": "Pont 2 Colonnes"},
+      {"question": "Quel est le plus gros véhicule que vous aurez à lever ?", "reponse": "Voitures moyennes et SUV type 3008, Tucson, Passat (berlines et SUV)"},
+      {"question": "Comment souhaitez-vous que les deux colonnes soient reliées entre elles ?", "reponse": "Par une barre au sol entre les deux colonnes (embase au sol — plus stable, léger encombrement au sol)"},
+      {"question": "Quelle est la hauteur sous plafond disponible au point d'installation ?", "reponse": "Entre 3 mètres et 4 mètres"},
+      {"question": "Connaissez-vous l'épaisseur de la dalle béton à l'endroit où sera installé le pont ?", "reponse": "Dalle moyenne, entre 15 et 20 cm (courant en atelier standard)"},
+      {"question": "Quel type d'alimentation électrique est disponible dans votre atelier ?", "reponse": "Courant triphasé 400V"},
+      {"question": "Quelle est l'échéance prévue pour votre projet d'installation ?", "reponse": "Projet à court terme moins de 3 mois"}
     ],
     "caracteristiques_deduites": {
       "type": "2_colonnes",
@@ -177,10 +215,19 @@
       "alimentation": "400V_triphasé",
       "capacite_min": 3500
     },
-    "liste_caracteristique": [],
+    "liste_caracteristique": [
+      {"id_caracteristique": 1, "type_caracteristique": "textuelle", "poids_question": 7, "poids_caracteristique": "critique", "valeurs_cibles": [1], "valeurs_bloquantes": [2, 3, 4, 5, 6, 8, 70, 71]},
+      {"id_caracteristique": 2, "type_caracteristique": "numerique", "poids_question": 6, "poids_caracteristique": "critique", "valeurs_cibles": {"min": "3500", "max": "4500"}, "valeurs_bloquantes": {"max": "2999"}, "unite": "kg"},
+      {"id_caracteristique": 14, "type_caracteristique": "textuelle", "poids_question": 5, "poids_caracteristique": "critique", "valeurs_cibles": [26], "valeurs_bloquantes": [27, 28, 29]},
+      {"id_caracteristique": 15, "type_caracteristique": "numerique", "poids_question": 4, "poids_caracteristique": "critique", "valeurs_cibles": {"max": 4000}, "valeurs_bloquantes": {"min": 4000}, "unite": "mm"},
+      {"id_caracteristique": 18, "type_caracteristique": "numerique", "poids_question": 3, "poids_caracteristique": "critique", "valeurs_cibles": {"max": "200"}, "valeurs_bloquantes": {"min": "201"}, "unite": "mm"},
+      {"id_caracteristique": 76, "type_caracteristique": "textuelle", "poids_question": 2, "poids_caracteristique": "critique", "valeurs_cibles": [140], "valeurs_bloquantes": [141]},
+      {"id_caracteristique": 5, "type_caracteristique": "numerique", "poids_question": 2, "poids_caracteristique": "secondaire", "valeurs_cibles": {"exact": "400"}, "valeurs_bloquantes": {}, "unite": "V"}
+    ],
     "metadonnee_utilisateurs": {
       "pays": "France",
-      "id_pays": 1
+      "id_pays": 1,
+      "cp": "75001"
     },
     "evaluation_humaine": {
       "produits_conformes": ["Pont 2 colonnes PROFI Line Twin Busch 4.2T", "Pont WEBER 4.5T 400V déverrouillage automatique"],
@@ -194,10 +241,14 @@
     "categorie": "Pont élévateur",
     "sous_type": "Ciseaux - Mobile",
     "questions_reponses": [
-      {"question": "Type de pont élévateur", "reponse": "Pont Ciseaux"},
-      {"question": "Type d'utilisation principale", "reponse": "Réparations moteur, embrayage, échappement - mécanique générale"},
-      {"question": "Type d'installation", "reponse": "Mobile avec kit de déplacement"},
-      {"question": "Hauteur de levage", "reponse": "Levage basse hauteur environ 1 mètre"}
+      {"question": "Quel type de pont élévateur recherchez-vous pour votre atelier ?", "reponse": "Pont Ciseaux"},
+      {"question": "Pour quel type de travaux utiliserez-vous principalement ce pont ?", "reponse": "Réparations moteur, embrayage, échappement (mécanique générale)"},
+      {"question": "Quel type d'installation prévoyez-vous pour cet équipement ?", "reponse": "Mobile avec kit de déplacement"},
+      {"question": "Quelle hauteur de levage maximale est nécessaire ?", "reponse": "Levage grande hauteur environ 1 mètre 80 ou plus"},
+      {"question": "Quelle est la capacité de levage requise pour vos véhicules les plus lourds ?", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "La machine doit-elle être compatible avec l'un de ces équipements ?", "reponse": "Je ne sais pas encore"},
+      {"question": "Quelle est l'alimentation électrique disponible à l'emplacement du pont ?", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Quelle est l'échéance prévue pour la réalisation de ce projet ?", "reponse": "Étude budgétaire ou information"}
     ],
     "caracteristiques_deduites": {
       "type": "ciseaux",
@@ -205,10 +256,16 @@
       "hauteur_levage": 1000,
       "capacite": 3000
     },
-    "liste_caracteristique": [],
+    "liste_caracteristique": [
+      {"id_caracteristique": 1, "type_caracteristique": "textuelle", "poids_question": 8, "poids_caracteristique": "critique", "valeurs_cibles": [3, 4], "valeurs_bloquantes": [1, 2, 5, 8, 70, 71]},
+      {"id_caracteristique": 78, "type_caracteristique": "textuelle", "poids_question": 7, "poids_caracteristique": "critique", "valeurs_cibles": [200, 202], "valeurs_bloquantes": [201]},
+      {"id_caracteristique": 8, "type_caracteristique": "textuelle", "poids_question": 6, "poids_caracteristique": "critique", "valeurs_cibles": [11], "valeurs_bloquantes": [9, 10]},
+      {"id_caracteristique": 3, "type_caracteristique": "numerique", "poids_question": 5, "poids_caracteristique": "critique", "valeurs_cibles": {"min": 1750}, "valeurs_bloquantes": {"max": 1749}, "unite": "mm"}
+    ],
     "metadonnee_utilisateurs": {
       "pays": "France",
-      "id_pays": 1
+      "id_pays": 1,
+      "cp": "75001"
     },
     "evaluation_humaine": {
       "produits_conformes": ["Pont élévateur ciseaux KROEMER X40 3.0t mobile"],
@@ -222,11 +279,11 @@
     "categorie": "Lave-linge professionnel",
     "sous_type": "18-27 kg - Super essorage suspendu",
     "questions_reponses": [
-      {"question": "Capacité de chargement", "reponse": "18 à 27 kg"},
-      {"question": "Utilisation de la machine", "reponse": "Pour la blanchisserie interne de mon établissement"},
-      {"question": "Type d'installation", "reponse": "Machine suspendue, super essorage"},
-      {"question": "Source d'énergie pour chauffage", "reponse": "Chauffage électrique"},
-      {"question": "Mise en service", "reponse": "Dans les 3 prochains mois"}
+      {"question": "Quelle est la capacité de chargement (linge sec) recherchée ?", "reponse": "18 à 27 kg"},
+      {"question": "Comment allez-vous utiliser cette machine ?", "reponse": "Pour la blanchisserie interne de mon établissement"},
+      {"question": "Quel type d'installation préférez-vous pour la machine ?", "reponse": "Machine suspendue, super essorage (le linge sort quasi sec, pas d'ancrage au sol nécessaire)"},
+      {"question": "Quelle est la source d'énergie disponible pour le chauffage de l'eau ?", "reponse": "Chauffage électrique"},
+      {"question": "Quand souhaitez-vous mettre la machine en service ?", "reponse": "Dans les 3 prochains mois"}
     ],
     "caracteristiques_deduites": {
       "type": "suspendu",
@@ -234,10 +291,16 @@
       "essorage": "super",
       "chauffage": "electrique"
     },
-    "liste_caracteristique": [],
+    "liste_caracteristique": [
+      {"id_caracteristique": 498, "type_caracteristique": "numerique", "poids_question": 5, "poids_caracteristique": "critique", "valeurs_cibles": {"min": "18", "max": "27"}, "valeurs_bloquantes": {"max": "17.9"}, "unite": "kg"},
+      {"id_caracteristique": 505, "type_caracteristique": "textuelle", "poids_question": 4, "poids_caracteristique": "critique", "valeurs_cibles": [1361], "valeurs_bloquantes": [1362, 1363, 1364]},
+      {"id_caracteristique": 503, "type_caracteristique": "textuelle", "poids_question": 3, "poids_caracteristique": "critique", "valeurs_cibles": [1255], "valeurs_bloquantes": [1256, 2510]},
+      {"id_caracteristique": 500, "type_caracteristique": "textuelle", "poids_question": 2, "poids_caracteristique": "critique", "valeurs_cibles": [1163, 1168], "valeurs_bloquantes": [1164, 1165, 1166, 2916]}
+    ],
     "metadonnee_utilisateurs": {
       "pays": "France",
-      "id_pays": 1
+      "id_pays": 1,
+      "cp": "75001"
     },
     "evaluation_humaine": {
       "produits_conformes": ["Lave-linge professionnel 18 kg super essorage avec variateur de fréquence"],
@@ -251,14 +314,14 @@
     "categorie": "Distributeur automatique de boisson chaude",
     "sous_type": "Sur pied - Moins de 50 boissons/jour",
     "questions_reponses": [
-      {"question": "Format d'installation", "reponse": "Modèle sur pied"},
-      {"question": "Boissons servies par jour", "reponse": "Moins de 50 par jour - petit bureau, petite équipe"},
-      {"question": "Type de café", "reponse": "Café soluble - préparation rapide et économique"},
-      {"question": "Autres boissons", "reponse": "Chocolat chaud + Lactées en poudre + Thés + Soupes/potages"},
-      {"question": "Systèmes de paiement", "reponse": "Je ne sais pas / souhaite être conseillé"},
-      {"question": "Configuration alimentation eau", "reponse": "Je ne sais pas / souhaite être conseillé"},
-      {"question": "Distribution de contenants", "reponse": "Je ne sais pas / souhaite être conseillé"},
-      {"question": "Échéance du projet", "reponse": "Projet à réaliser sous 3 mois"}
+      {"question": "Quel est le format d'installation du distributeur ?", "reponse": "Modèle sur pied"},
+      {"question": "Combien de boissons chaudes seront servies chaque jour environ ?", "reponse": "Moins de 50 par jour (petit bureau, petite équipe)"},
+      {"question": "Quel type de café souhaitez-vous que la machine prépare ?", "reponse": "Café soluble (préparation rapide et économique)"},
+      {"question": "En plus du café, quelles autres boissons souhaitez-vous proposer ?", "reponse": "Chocolat chaud et boissons chocolatées / Boissons lactées à base de lait en poudre (cappuccino, latte économique) / Soupes et potages"},
+      {"question": "Quels systèmes de paiement ou d'identification seront utilisés ?", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Quelle est la configuration de l'alimentation en eau sur le lieu d'installation ?", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Quelle solution de distribution de contenants souhaitez-vous ?", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Quelle est l'échéance prévisionnelle de votre projet d'équipement ?", "reponse": "Projet à réaliser sous 3 mois"}
     ],
     "caracteristiques_deduites": {
       "type": "sur_pied",
@@ -266,10 +329,18 @@
       "cafe": "soluble",
       "boissons": ["chocolat", "lait_poudre", "the", "soupe"]
     },
-    "liste_caracteristique": [],
+    "liste_caracteristique": [
+      {"id_caracteristique": 274, "type_caracteristique": "textuelle", "poids_question": 8, "poids_caracteristique": "critique", "valeurs_cibles": [1089], "valeurs_bloquantes": [1088, 1090]},
+      {"id_caracteristique": 276, "type_caracteristique": "numerique", "poids_question": 7, "poids_caracteristique": "critique", "valeurs_cibles": {"min": 0, "max": 100}, "valeurs_bloquantes": {}, "unite": "Tasses/jour"},
+      {"id_caracteristique": 275, "type_caracteristique": "textuelle", "poids_question": 6, "poids_caracteristique": "critique", "valeurs_cibles": [1092, 1097], "valeurs_bloquantes": [1091, 1093, 1094, 1095, 1096]},
+      {"id_caracteristique": 281, "type_caracteristique": "numerique", "poids_question": 6, "poids_caracteristique": "critique", "valeurs_cibles": {"min": "1"}, "valeurs_bloquantes": {"max": "0"}, "unite": "unités"},
+      {"id_caracteristique": 278, "type_caracteristique": "textuelle", "poids_question": 5, "poids_caracteristique": "critique", "valeurs_cibles": [1149, 1150], "valeurs_bloquantes": [1148, 1153]},
+      {"id_caracteristique": 801, "type_caracteristique": "textuelle", "poids_question": 5, "poids_caracteristique": "critique", "valeurs_cibles": [2895, 2893, 2897], "valeurs_bloquantes": [2892]}
+    ],
     "metadonnee_utilisateurs": {
       "pays": "France",
-      "id_pays": 1
+      "id_pays": 1,
+      "cp": "75001"
     },
     "evaluation_humaine": {
       "produits_conformes": ["Azkoyen Zintro Instant - café soluble"],
@@ -283,13 +354,13 @@
     "categorie": "Épareuses et broyeurs forestiers",
     "sous_type": "Épareuse herbe - Moins de 50 ch",
     "questions_reponses": [
-      {"question": "Type d'équipement de débroussaillage", "reponse": "Épareuse"},
-      {"question": "Types de végétation", "reponse": "Herbe et accotements"},
-      {"question": "Véhicule porteur", "reponse": "Tracteur agricole"},
-      {"question": "Portée horizontale maximale", "reponse": "Moins de 4 mètres"},
-      {"question": "Puissance du véhicule disponible", "reponse": "Moins de 50 ch"},
-      {"question": "Fréquence d'utilisation", "reponse": "Quelques fois par an - usage saisonnier"},
-      {"question": "Échéance du projet", "reponse": "Moins de 3 mois"}
+      {"question": "Quel type d'équipement de broyage ou de débroussaillage recherchez-vous ?", "reponse": "Épareuse (entretien des talus et accotements)"},
+      {"question": "Quels types de végétation devez-vous traiter principalement ?", "reponse": "Herbe et accotements"},
+      {"question": "Sur quel type de véhicule l'épareuse sera-t-elle montée ?", "reponse": "Tracteur agricole (avec prise de force et distributeur hydraulique)"},
+      {"question": "Quelle portée horizontale maximale est nécessaire ?", "reponse": "Moins de 4 mètres"},
+      {"question": "Quelle est la puissance du véhicule porteur disponible ?", "reponse": "Moins de 50 ch"},
+      {"question": "À quelle fréquence utiliserez-vous l'épareuse ?", "reponse": "Quelques fois par an (usage saisonnier, entretien ponctuel de vos propres parcelles)"},
+      {"question": "Quelle est l'échéance de votre projet d'achat ?", "reponse": "Moins de 3 mois"}
     ],
     "caracteristiques_deduites": {
       "type": "epareuse",
@@ -297,10 +368,18 @@
       "puissance_max": 50,
       "portee_max": 4000
     },
-    "liste_caracteristique": [],
+    "liste_caracteristique": [
+      {"id_caracteristique": 142, "type_caracteristique": "textuelle", "poids_question": 7, "poids_caracteristique": "critique", "valeurs_cibles": [617], "valeurs_bloquantes": [618, 619, 620, 621, 622, 623, 707, 708, 725]},
+      {"id_caracteristique": 806, "type_caracteristique": "textuelle", "poids_question": 7, "poids_caracteristique": "secondaire", "valeurs_cibles": [2919, 2920], "valeurs_bloquantes": []},
+      {"id_caracteristique": 149, "type_caracteristique": "textuelle", "poids_question": 6, "poids_caracteristique": "critique", "valeurs_cibles": [640, 643, 713, 714], "valeurs_bloquantes": [641, 642, 644, 712]},
+      {"id_caracteristique": 147, "type_caracteristique": "numerique", "poids_question": 4, "poids_caracteristique": "critique", "valeurs_cibles": {"max": 4}, "valeurs_bloquantes": {"min": 4.1}, "unite": "m"},
+      {"id_caracteristique": 144, "type_caracteristique": "numerique", "poids_question": 3, "poids_caracteristique": "critique", "valeurs_cibles": {"max": "50"}, "valeurs_bloquantes": {"min": "51"}, "unite": "ch"},
+      {"id_caracteristique": 163, "type_caracteristique": "textuelle", "poids_question": 2, "poids_caracteristique": "secondaire", "valeurs_cibles": [694, 692, 693], "valeurs_bloquantes": []}
+    ],
     "metadonnee_utilisateurs": {
       "pays": "France",
-      "id_pays": 1
+      "id_pays": 1,
+      "cp": "75001"
     },
     "evaluation_humaine": {
       "produits_conformes": ["Épareuse hydraulique DFAE/HORSI 16-35 cv", "Épareuse GEO AM100 AT OUTILS 25-60 ch"],
@@ -314,13 +393,13 @@
     "categorie": "Épareuses et broyeurs forestiers",
     "sous_type": "Épareuse broussailles - 50-80 ch",
     "questions_reponses": [
-      {"question": "Type d'équipement de débroussaillage", "reponse": "Épareuse"},
-      {"question": "Types de végétation", "reponse": "Broussailles et ronces"},
-      {"question": "Véhicule porteur", "reponse": "Tracteur agricole"},
-      {"question": "Portée horizontale maximale", "reponse": "Moins de 4 mètres"},
-      {"question": "Puissance du véhicule disponible", "reponse": "50 à 80 ch"},
-      {"question": "Fréquence d'utilisation", "reponse": "Je ne sais pas encore"},
-      {"question": "Échéance du projet", "reponse": "Simple étude budgétaire"}
+      {"question": "Quel type d'équipement de broyage ou de débroussaillage recherchez-vous ?", "reponse": "Épareuse (entretien des talus et accotements)"},
+      {"question": "Quels types de végétation devez-vous traiter principalement ?", "reponse": "Broussailles et ronces"},
+      {"question": "Sur quel type de véhicule l'épareuse sera-t-elle montée ?", "reponse": "Tracteur agricole (avec prise de force et distributeur hydraulique)"},
+      {"question": "Quelle portée horizontale maximale est nécessaire ?", "reponse": "Moins de 4 mètres"},
+      {"question": "Quelle est la puissance du véhicule porteur disponible ?", "reponse": "50 à 80 ch"},
+      {"question": "À quelle fréquence utiliserez-vous l'épareuse ?", "reponse": "Je ne sais pas encore"},
+      {"question": "Quelle est l'échéance de votre projet d'achat ?", "reponse": "Simple étude budgétaire"}
     ],
     "caracteristiques_deduites": {
       "type": "epareuse",
@@ -328,10 +407,19 @@
       "puissance": "50_80ch",
       "portee_max": 4000
     },
-    "liste_caracteristique": [],
+    "liste_caracteristique": [
+      {"id_caracteristique": 142, "type_caracteristique": "textuelle", "poids_question": 7, "poids_caracteristique": "critique", "valeurs_cibles": [617], "valeurs_bloquantes": [618, 619, 620, 621, 622, 623, 707, 708, 725]},
+      {"id_caracteristique": 806, "type_caracteristique": "textuelle", "poids_question": 7, "poids_caracteristique": "secondaire", "valeurs_cibles": [2919, 2920], "valeurs_bloquantes": []},
+      {"id_caracteristique": 148, "type_caracteristique": "numerique", "poids_question": 6, "poids_caracteristique": "critique", "valeurs_cibles": {"min": "50"}, "valeurs_bloquantes": {"max": "39"}, "unite": "mm"},
+      {"id_caracteristique": 149, "type_caracteristique": "textuelle", "poids_question": 6, "poids_caracteristique": "critique", "valeurs_cibles": [639, 726], "valeurs_bloquantes": [643, 712, 713, 714]},
+      {"id_caracteristique": 147, "type_caracteristique": "numerique", "poids_question": 4, "poids_caracteristique": "critique", "valeurs_cibles": {"max": 4}, "valeurs_bloquantes": {"min": 4.1}, "unite": "m"},
+      {"id_caracteristique": 144, "type_caracteristique": "numerique", "poids_question": 3, "poids_caracteristique": "critique", "valeurs_cibles": {"max": "80"}, "valeurs_bloquantes": {"min": "81"}, "unite": "ch"},
+      {"id_caracteristique": 197, "type_caracteristique": "numerique", "poids_question": 3, "poids_caracteristique": "critique", "valeurs_cibles": {"min": "80"}, "valeurs_bloquantes": {"max": "49"}, "unite": "ch"}
+    ],
     "metadonnee_utilisateurs": {
       "pays": "France",
-      "id_pays": 1
+      "id_pays": 1,
+      "cp": "75001"
     },
     "evaluation_humaine": {
       "produits_conformes": ["Épareuse Clipper 3.25-6.20m portée", "Épareuse GEO AM 60 AT OUTILS"],
@@ -345,15 +433,15 @@
     "categorie": "Mini-pelles moins de 10 tonnes",
     "sous_type": "1-2 tonnes - Passage < 100 cm",
     "questions_reponses": [
-      {"question": "Catégorie de tonnage", "reponse": "De 1 à 2 tonnes"},
-      {"question": "Type de traction", "reponse": "Pas de préférence"},
-      {"question": "Type de travaux", "reponse": "Travaux de terrassement et tranchées"},
-      {"question": "Contrainte de largeur passage", "reponse": "Passage étroit sous 100 cm"},
-      {"question": "Motorisation requise", "reponse": "Diesel standard"},
-      {"question": "Compatibilité outils", "reponse": "Je ne sais pas encore"},
-      {"question": "Contrainte de poids transport", "reponse": "Je ne sais pas / souhaite être conseillé"},
-      {"question": "Neuf, occasion ou location", "reponse": "Neuf"},
-      {"question": "Échéance du projet", "reponse": "Projet à court terme moins de 3 mois"}
+      {"question": "Quelle est la catégorie de tonnage de la mini-pelle ?", "reponse": "De 1 à 2 tonnes"},
+      {"question": "Quel type de traction recherchez-vous ?", "reponse": "Pas de préférence"},
+      {"question": "Pour quel type de travaux la mini-pelle sera-t-elle principalement utilisée ?", "reponse": "Travaux de terrassement et tranchées"},
+      {"question": "Quelle est la contrainte de largeur de passage la plus étroite sur vos chantiers ?", "reponse": "Passage étroit sous 100 cm"},
+      {"question": "Quelle motorisation est requise pour votre environnement de travail ?", "reponse": "Diesel standard"},
+      {"question": "Avec quels outils la mini-pelle doit-elle être compatible ?", "reponse": "Je ne sais pas encore"},
+      {"question": "Avez-vous une contrainte stricte concernant le poids de la machine pour le transport ?", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Recherchez-vous une mini-pelle neuve, d'occasion ou en location ?", "reponse": "Neuve"},
+      {"question": "Quelle est l'échéance prévue pour votre projet d'acquisition ?", "reponse": "Projet à court terme moins de 3 mois"}
     ],
     "caracteristiques_deduites": {
       "type": "minipelle",
@@ -362,10 +450,19 @@
       "moteur": "diesel",
       "etat": "neuf"
     },
-    "liste_caracteristique": [],
+    "liste_caracteristique": [
+      {"id_caracteristique": 648, "type_caracteristique": "numerique", "poids_question": 9, "poids_caracteristique": "critique", "valeurs_cibles": {"min": "1000", "max": "1999"}, "valeurs_bloquantes": {"min": "2000", "max": "999"}, "unite": "kg"},
+      {"id_caracteristique": 725, "type_caracteristique": "textuelle", "poids_question": 7, "poids_caracteristique": "secondaire", "valeurs_cibles": [2319, 2320], "valeurs_bloquantes": []},
+      {"id_caracteristique": 770, "type_caracteristique": "textuelle", "poids_question": 7, "poids_caracteristique": "secondaire", "valeurs_cibles": [2537, 2538], "valeurs_bloquantes": []},
+      {"id_caracteristique": 652, "type_caracteristique": "numerique", "poids_question": 6, "poids_caracteristique": "critique", "valeurs_cibles": {"max": 999}, "valeurs_bloquantes": {"min": 1000}, "unite": "mm"},
+      {"id_caracteristique": 670, "type_caracteristique": "textuelle", "poids_question": 6, "poids_caracteristique": "secondaire", "valeurs_cibles": [2086], "valeurs_bloquantes": []},
+      {"id_caracteristique": 667, "type_caracteristique": "textuelle", "poids_question": 5, "poids_caracteristique": "critique", "valeurs_cibles": [1972, 1974, 1975, 1976, 1977], "valeurs_bloquantes": [1973]},
+      {"id_caracteristique": 804, "type_caracteristique": "textuelle", "poids_question": 2, "poids_caracteristique": "critique", "valeurs_cibles": [2905], "valeurs_bloquantes": [2906, 2907]}
+    ],
     "metadonnee_utilisateurs": {
       "pays": "France",
-      "id_pays": 1
+      "id_pays": 1,
+      "cp": "75001"
     },
     "evaluation_humaine": {
       "produits_conformes": ["Mini-pelle Bobmaster Premium 1900 kg", "Mini-pelle Bobcat E19 1885 kg"],
@@ -379,15 +476,15 @@
     "categorie": "Mini-pelles moins de 10 tonnes",
     "sous_type": "1-2 tonnes - Passage > 100 cm",
     "questions_reponses": [
-      {"question": "Catégorie de tonnage", "reponse": "De 1 à 2 tonnes"},
-      {"question": "Type de traction", "reponse": "Pas de préférence"},
-      {"question": "Type de travaux", "reponse": "Travaux de terrassement et tranchées"},
-      {"question": "Contrainte de largeur passage", "reponse": "Accès chantier supérieur à 100 cm"},
-      {"question": "Motorisation requise", "reponse": "Diesel standard"},
-      {"question": "Compatibilité outils", "reponse": "Je ne sais pas encore"},
-      {"question": "Contrainte de poids transport", "reponse": "Je ne sais pas / souhaite être conseillé"},
-      {"question": "Neuf, occasion ou location", "reponse": "Neuf"},
-      {"question": "Échéance du projet", "reponse": "Étude budgétaire ou information"}
+      {"question": "Quelle est la catégorie de tonnage de la mini-pelle ?", "reponse": "De 1 à 2 tonnes"},
+      {"question": "Quel type de traction recherchez-vous ?", "reponse": "Pas de préférence"},
+      {"question": "Pour quel type de travaux la mini-pelle sera-t-elle principalement utilisée ?", "reponse": "Travaux de terrassement et tranchées"},
+      {"question": "Quelle est la contrainte de largeur de passage la plus étroite sur vos chantiers ?", "reponse": "Accès chantier supérieur à 100 cm"},
+      {"question": "Quelle motorisation est requise pour votre environnement de travail ?", "reponse": "Diesel standard"},
+      {"question": "Avec quels outils la mini-pelle doit-elle être compatible ?", "reponse": "Je ne sais pas encore"},
+      {"question": "Avez-vous une contrainte stricte concernant le poids de la machine pour le transport ?", "reponse": "Je ne sais pas / souhaite être conseillé"},
+      {"question": "Recherchez-vous une mini-pelle neuve, d'occasion ou en location ?", "reponse": "Neuve"},
+      {"question": "Quelle est l'échéance prévue pour votre projet d'acquisition ?", "reponse": "Étude budgétaire ou information"}
     ],
     "caracteristiques_deduites": {
       "type": "minipelle",
@@ -396,10 +493,18 @@
       "moteur": "diesel",
       "etat": "neuf"
     },
-    "liste_caracteristique": [],
+    "liste_caracteristique": [
+      {"id_caracteristique": 648, "type_caracteristique": "numerique", "poids_question": 9, "poids_caracteristique": "critique", "valeurs_cibles": {"min": "1000", "max": "1999"}, "valeurs_bloquantes": {"min": "2000", "max": "999"}, "unite": "kg"},
+      {"id_caracteristique": 725, "type_caracteristique": "textuelle", "poids_question": 7, "poids_caracteristique": "secondaire", "valeurs_cibles": [2319, 2320], "valeurs_bloquantes": []},
+      {"id_caracteristique": 770, "type_caracteristique": "textuelle", "poids_question": 7, "poids_caracteristique": "secondaire", "valeurs_cibles": [2537, 2538], "valeurs_bloquantes": []},
+      {"id_caracteristique": 652, "type_caracteristique": "numerique", "poids_question": 6, "poids_caracteristique": "secondaire", "valeurs_cibles": {"min": 1000}, "valeurs_bloquantes": {}, "unite": "mm"},
+      {"id_caracteristique": 667, "type_caracteristique": "textuelle", "poids_question": 5, "poids_caracteristique": "critique", "valeurs_cibles": [1972, 1974, 1975, 1976, 1977], "valeurs_bloquantes": [1973]},
+      {"id_caracteristique": 804, "type_caracteristique": "textuelle", "poids_question": 2, "poids_caracteristique": "critique", "valeurs_cibles": [2905], "valeurs_bloquantes": [2906, 2907]}
+    ],
     "metadonnee_utilisateurs": {
       "pays": "France",
-      "id_pays": 1
+      "id_pays": 1,
+      "cp": "75001"
     },
     "evaluation_humaine": {
       "produits_conformes": ["Mini-pelle Bobmaster Premium 1900 kg", "Mini-pelle SANY SY 18 C 1850 kg"],
