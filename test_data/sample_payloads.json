@@ -1,0 +1,166 @@
+{
+  "_info": "Payloads statiques pour tester les endpoints matching prod (graph-service) et matching optim (graphoptim-service). Basés sur le parcours 2001065_P3_tracteur_vigneron.",
+  "_generated": "2026-04-15",
+  "_source_csv": "Mapping des APIs HelloPro fourni par l'équipe technique",
+
+  "matching": {
+    "_description": "Endpoint de matching produits PROD via GraphRAG (NE PAS modifier en optimisation)",
+    "endpoint": "https://api.hellopro.eu/graph-service/produits/matching",
+    "method": "POST",
+    "headers": {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    "body": {
+      "id_categorie": 2001065,
+      "top_k": 12,
+      "champs_sortie": ["url", "nom", "prix", "id_fournisseur", "descriptif", "etat"],
+      "metadonnee_utilisateurs": {
+        "pays": "France",
+        "id_pays": 1
+      },
+      "liste_caracteristique": [
+        {
+          "id_caracteristique": "type",
+          "valeur": "vigneron",
+          "poids": "critique"
+        },
+        {
+          "id_caracteristique": "puissance_max",
+          "valeur": 70,
+          "unite": "ch",
+          "poids": "critique"
+        },
+        {
+          "id_caracteristique": "etat",
+          "valeur": "neuf",
+          "poids": "secondaire"
+        }
+      ],
+      "scoring": {
+        "poids_critique": 5,
+        "poids_secondaire": 1,
+        "match_exact": 1,
+        "caracteristique_absente": 0,
+        "valeur_differente": -0.3,
+        "bloquant_critique": -10,
+        "bloquant_secondaire": -2
+      },
+      "rerank": {
+        "use_rerank": true,
+        "parcours": "Q1: Usage principal ? | R1: Vigneron | Q2: Puissance souhaitée ? | R2: <70ch | Q3: État souhaité ? | R3: Neuf",
+        "top_k": 24
+      }
+    }
+  },
+
+  "matching_optim": {
+    "_description": "Endpoint d'optimisation (CIBLE de l'agent — modifications uniquement ici dans RAG-HP-PUB)",
+    "endpoint": "https://api.hellopro.eu/graphoptim-service/produits/matching",
+    "method": "POST",
+    "headers": {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    "body": {
+      "id_categorie": 2001065,
+      "top_k": 12,
+      "champs_sortie": ["url", "nom", "prix", "id_fournisseur", "descriptif", "etat"],
+      "metadonnee_utilisateurs": {
+        "pays": "France",
+        "id_pays": 1
+      },
+      "liste_caracteristique": [
+        {
+          "id_caracteristique": "type",
+          "valeur": "vigneron",
+          "poids": "critique"
+        },
+        {
+          "id_caracteristique": "puissance_max",
+          "valeur": 70,
+          "unite": "ch",
+          "poids": "critique"
+        },
+        {
+          "id_caracteristique": "etat",
+          "valeur": "neuf",
+          "poids": "secondaire"
+        }
+      ],
+      "scoring": {
+        "poids_critique": 5,
+        "poids_secondaire": 1,
+        "match_exact": 1,
+        "caracteristique_absente": 0,
+        "valeur_differente": -0.3,
+        "bloquant_critique": -10,
+        "bloquant_secondaire": -2
+      },
+      "rerank": {
+        "use_rerank": true,
+        "parcours": "Q1: Usage principal ? | R1: Vigneron | Q2: Puissance souhaitée ? | R2: <70ch | Q3: État souhaité ? | R3: Neuf",
+        "top_k": 24
+      }
+    }
+  },
+
+  "_endpoints_complementaires": {
+    "_info": "Endpoints utilisés en aval par evaluate.py — payloads statiques de référence",
+
+    "product_details": {
+      "_description": "Récupération des détails produits (prix, nom) pour calcul des aberrations et doublons",
+      "endpoint": "https://api.hellopro.fr/api/hp/view/index.php",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer TOKEN_INFO_PRODUIT"
+      },
+      "body": {
+        "etape": "get_info_produit",
+        "scrapping": 1,
+        "action": "get",
+        "data": {
+          "id_categorie": "2001065",
+          "id_produits": ["456", "789", "1011"]
+        }
+      }
+    },
+
+    "prix_questionnaire": {
+      "_description": "Estimation de prix pour la métrique 'présence estimatif'",
+      "endpoint": "https://api.hellopro.eu/prix_traitement-service/prix/questionnaire",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "id_categorie": "2001065",
+        "caracteristiques": {
+          "type": "vigneron",
+          "puissance_max": 70,
+          "etat": "neuf"
+        }
+      },
+      "_timeout": 90
+    },
+
+    "caracteristiques_finales": {
+      "_description": "Récupération du référentiel caractéristiques d'une catégorie",
+      "endpoint": "https://api.hellopro.fr/v2/index.php",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer NEXT_TOKEN_API_QUESTION"
+      },
+      "body": {
+        "etape": "caracteristique",
+        "field": "final",
+        "action": "get",
+        "data": {
+          "id_categorie": "2001065"
+        }
+      }
+    }
+  }
+}

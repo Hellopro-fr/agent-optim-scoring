@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -I -s https://api.hellopro.eu/graphoptim-service/produits/matching)",
+      "Bash(curl -s -w \"\\\\n--- HTTP Status: %{http_code} ---\\\\n\" https://api.hellopro.eu/graphoptim-service/produits/matching)",
+      "Bash(curl -X POST -s -w \"\\\\n--- HTTP Status: %{http_code} ---\\\\n\" https://api.hellopro.eu/graphoptim-service/produits/matching -H \"Content-Type: application/json\" -H \"Accept: application/json\" -d '{\"id_categorie\": 2001065}')",
+      "Bash(curl -I -s -o /dev/null -w \"Status graph-service/matching prod: %{http_code}\\\\n\" https://api.hellopro.eu/graph-service/produits/matching)",
+      "Bash(curl -X POST -s -w \"\\\\n--- POST graph-service/matching prod Status: %{http_code} ---\\\\n\" https://api.hellopro.eu/graph-service/produits/matching -H \"Content-Type: application/json\" -d '{\"id_categorie\": 2001065}')",
+      "Bash(python *)"
+    ]
+  }
+}
