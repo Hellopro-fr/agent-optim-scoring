@@ -20,12 +20,6 @@ Un produit est conforme si :
 - Ses caractéristiques techniques ne contredisent pas le besoin
 - Son état (neuf/occasion) correspond à la demande (ou neuf par défaut)
 
-## Définition de "aberration prix"
-Un prix est aberrant si :
-- Il est manifestement un prix de location (ex : 400€ pour un tracteur)
-- Il est un prix au lot non unitaire (ex : 74€ pour 60 palettes)
-- Il présente un facteur x10+ par rapport aux autres prix de la catégorie
-
 ## Définition de "doublon"
 Deux produits sont doublons si :
 - Même fournisseur ET descriptif technique quasi-identique
