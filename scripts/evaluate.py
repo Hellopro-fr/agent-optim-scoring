@@ -238,32 +238,37 @@ def extract_api_results(api_response: dict) -> dict:
 
     Retourne:
     {
-        "produits_acceptes": [...],  # De top_produit avec decision VALIDE
-        "produits_rejetes": [...],   # De ecarts avec raison_exclusion
+        "produits_acceptes": [...],  # IDs des produits dans top_produit
+        "noms_acceptes": [...],      # Noms des produits dans top_produit (llm_response.nom)
+        "produits_rejetes": [...],   # Produits dans ecarts
         "fournisseurs": set(),       # IDs uniques de fournisseurs
+        "scores": {}                 # id_produit -> score
     }
     """
     results = {
         "produits_acceptes": [],
+        "noms_acceptes": [],
         "produits_rejetes": [],
         "fournisseurs": set(),
-        "scores": {}  # id_produit -> score pour cohérence
+        "scores": {}
     }
 
-    # Extraire les produits acceptés (top_produit avec decision VALIDE)
+    # top_produit = tous les produits sélectionnés par l'API (pas de filtre decision)
     for product in api_response.get("top_produit", []):
+        prod_id = product.get("id_produit")
         llm_resp = product.get("llm_response", {})
-        if llm_resp.get("decision") == "VALIDE":
-            prod_id = product.get("id_produit")
-            results["produits_acceptes"].append(prod_id)
-            results["scores"][prod_id] = product.get("score", 0)
+        nom = llm_resp.get("nom", "")
 
-            # Récupérer le fournisseur
-            fournisseur = product.get("info_produit", {}).get("id_fournisseur")
-            if fournisseur:
-                results["fournisseurs"].add(fournisseur)
+        results["produits_acceptes"].append(prod_id)
+        if nom:
+            results["noms_acceptes"].append(nom)
+        results["scores"][prod_id] = product.get("score", 0)
 
-    # Extraire les produits rejetés (de ecarts)
+        fournisseur = product.get("info_produit", {}).get("id_fournisseur")
+        if fournisseur:
+            results["fournisseurs"].add(str(fournisseur))
+
+    # ecarts = produits non retenus
     for product in api_response.get("ecarts", []):
         prod_id = product.get("id_produit")
         llm_resp = product.get("llm_response", {})
@@ -300,16 +305,26 @@ def calculate_parcours_metrics(api_results: dict, evaluation: Optional[dict], pr
         # Pas d'évaluation humaine, retourner des valeurs par défaut
         return metrics
 
-    # Comparer avec l'évaluation humaine
-    conformes_attendus = set(evaluation.get("produits_conformes", []))
-    acceptes_api = set(api_results["produits_acceptes"])
+    # Comparer avec l'évaluation humaine via matching partiel sur les noms
+    noms_acceptes = api_results.get("noms_acceptes", [])
+    hors_sujet_ref = [n.lower() for n in evaluation.get("produits_hors_sujet", [])]
 
-    # Conformité: intersection / union
-    if conformes_attendus:
-        intersection = len(acceptes_api & conformes_attendus)
-        union = len(acceptes_api | conformes_attendus)
-        metrics["conformes"] = intersection
-        metrics["total_evalues"] = union if union > 0 else 1
+    def _nom_matches(nom_api: str, ref_list: list) -> bool:
+        """True si au moins un mot-clé significatif (>4 chars) du nom de référence apparaît dans nom_api."""
+        nom_lower = nom_api.lower()
+        stopwords = {"pour", "avec", "dans", "votre", "notre", "cette", "type", "sans", "plus"}
+        for ref in ref_list:
+            keywords = [w for w in ref.split() if len(w) > 4 and w not in stopwords]
+            if keywords and any(kw in nom_lower for kw in keywords):
+                return True
+        return False
+
+    if noms_acceptes:
+        hors_sujet_count = sum(1 for n in noms_acceptes if _nom_matches(n, hors_sujet_ref))
+        total = len(noms_acceptes)
+        # Produits non identifiés comme hors sujet → comptés conformes
+        metrics["conformes"] = total - hors_sujet_count
+        metrics["total_evalues"] = total if total > 0 else 1
 
     # Détection des aberrations prix via les détails produits
     if product_details:
@@ -432,7 +447,7 @@ def evaluate_iteration(iteration_num: int) -> Metrics:
             estimatif_present_count += 1
 
     # Calculer les moyennes
-    taux_conformite = (total_conformite / total_parcours * 100) if total_parcours > 0 else 0.0
+    taux_conformite = (total_conformite / total_parcours) if total_parcours > 0 else 0.0
     coherence_moyenne = (sum(coherence_scores) / len(coherence_scores)) if coherence_scores else 0.5
     presence_estimatif = (estimatif_present_count / total_parcours * 100) if total_parcours > 0 else 0.0
 
@@ -523,7 +538,7 @@ def save_baseline(metrics: Metrics, parcours_count: int):
     with open(BASELINE_FILE, "w", encoding="utf-8") as f:
         json.dump(baseline_data, f, indent=2, ensure_ascii=False)
 
-    print(f"✓ BASELINE.json (re)calculée: {BASELINE_FILE}")
+    print(f"[OK] BASELINE.json (re)calculée: {BASELINE_FILE}")
 
 
 def load_baseline() -> Optional[Metrics]:
@@ -571,9 +586,9 @@ def main(iteration_num: int):
             print(f"  Score global: {baseline.score_global():.2f}% → {metrics.score_global():.2f}%")
 
             if metrics.score_global() >= baseline.score_global():
-                print(f"\n✓ AMÉLIORATION")
+                print(f"\n[AMÉLIORATION]")
             else:
-                print(f"\n✗ RÉGRESSION")
+                print(f"\n[RÉGRESSION]")
 
     print(f"\n{'='*70}\n")
 

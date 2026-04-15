@@ -207,7 +207,7 @@ def run_pipeline(iteration_num, compare_to=None):
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     with open(results_file, "w") as f:
         json.dump(iteration_results, f, indent=2, ensure_ascii=False)
-    print(f"\n✓ Résultats bruts sauvegardés: {results_file}")
+    print(f"\n[OK] Résultats bruts sauvegardés: {results_file}")
 
     # Évaluer les résultats
     print(f"\nÉvaluation des résultats...")
