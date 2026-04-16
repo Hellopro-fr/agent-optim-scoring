@@ -1,7 +1,7 @@
 {
   "_info": "Baseline de l'itération 0. Recalculée à chaque lancement d'iter 0. Immuable pour toutes les itérations suivantes (garantie par save_baseline). Le champ `observations` est préservé entre les runs.",
-  "_status": "RECALCULATED — dernière mise à jour 2026-04-16T13:41:06.620910",
-  "generated_at": "2026-04-16T13:41:06.620910",
+  "_status": "RECALCULATED — dernière mise à jour 2026-04-16T14:08:07.837397",
+  "generated_at": "2026-04-16T14:08:07.837397",
   "parcours_count": 13,
   "metrics": {
     "taux_conformite": 55.128205128205124,

@@ -1,114 +1,103 @@
 {% extends "base.html" %}
 
-{% block title %}Itérations — HelloPro Scoring{% endblock %}
+{% block title %}Iterations — HelloPro Scoring{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="mb-4">📋 Historique des itérations</h1>
+<div class="page-header">
+    <h1>Iterations</h1>
+    <p>Historique complet des iterations d'optimisation</p>
+</div>
 
-        {% if iterations %}
-        <div class="card">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead style="background-color: #f8f9fa;">
-                        <tr>
-                            <th style="width: 70px;">Itération</th>
-                            <th style="width: 200px;">Date</th>
-                            <th>Conformité</th>
-                            <th>Aberrations</th>
-                            <th>Doublons</th>
-                            <th>Diversité</th>
-                            <th>Cohérence</th>
-                            <th>Présence estim.</th>
-                            <th style="width: 120px;">Score global</th>
-                            <th style="width: 100px;">Décision</th>
-                            <th style="width: 80px;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for iteration in iterations %}
-                        <tr>
-                            <td><strong>#{{ iteration.number }}</strong></td>
-                            <td>{{ iteration.timestamp or "—" }}</td>
-                            <td>
-                                {% if iteration.metrics %}
-                                    {{ format_metric('taux_conformite', iteration.metrics.get('taux_conformite')) }}
-                                    {{ get_status('taux_conformite', iteration.metrics.get('taux_conformite')) }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if iteration.metrics %}
-                                    {{ format_metric('aberrations_prix', iteration.metrics.get('aberrations_prix')) }}
-                                    {{ get_status('aberrations_prix', iteration.metrics.get('aberrations_prix')) }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if iteration.metrics %}
-                                    {{ format_metric('doublons', iteration.metrics.get('doublons')) }}
-                                    {{ get_status('doublons', iteration.metrics.get('doublons')) }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if iteration.metrics %}
-                                    {{ format_metric('diversite_fournisseurs', iteration.metrics.get('diversite_fournisseurs')) }}
-                                    {{ get_status('diversite_fournisseurs', iteration.metrics.get('diversite_fournisseurs')) }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if iteration.metrics %}
-                                    {{ format_metric('coherence_score', iteration.metrics.get('coherence_score')) }}
-                                    {{ get_status('coherence_score', iteration.metrics.get('coherence_score')) }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if iteration.metrics %}
-                                    {{ format_metric('presence_estimatif', iteration.metrics.get('presence_estimatif')) }}
-                                    {{ get_status('presence_estimatif', iteration.metrics.get('presence_estimatif')) }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </td>
-                            <td>
-                                <strong>
-                                {% if iteration.metrics %}
-                                    {{ format_metric('score_global', iteration.metrics.get('score_global')) }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                                </strong>
-                            </td>
-                            <td>
-                                <span class="status-badge status-{{ iteration.decision.lower() }}">
-                                    {{ iteration.decision }}
-                                </span>
-                            </td>
-                            <td>
-                                <a href="/iterations/{{ iteration.number }}" class="btn btn-sm btn-outline-primary">
-                                    Détail
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        {% else %}
-        <div class="alert alert-info">
-            <strong>ℹ️ Aucune itération trouvée</strong> — Exécutez l'itération 0 (baseline) pour commencer.
-        </div>
-        {% endif %}
+{% if iterations %}
+<div class="card">
+    <table class="table-modern">
+        <thead>
+            <tr>
+                <th style="width: 60px;">Iter</th>
+                <th style="width: 160px;">Date</th>
+                <th>Conformite</th>
+                <th>Aberrations</th>
+                <th>Doublons</th>
+                <th>Diversite</th>
+                <th>Coherence</th>
+                <th>Estimatif</th>
+                <th style="width: 110px;">Score global</th>
+                <th style="width: 100px;">Decision</th>
+                <th style="width: 70px;"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for iteration in iterations %}
+            <tr>
+                <td><strong>#{{ iteration.number }}</strong></td>
+                <td style="color: var(--text-tertiary); font-size: 0.8rem;">{{ iteration.timestamp or "—" }}</td>
+                <td>
+                    {% if iteration.metrics %}
+                        {{ format_metric('taux_conformite', iteration.metrics.get('taux_conformite')) }}
+                        <span style="font-size: 0.7rem;">{{ get_status('taux_conformite', iteration.metrics.get('taux_conformite')) | safe }}</span>
+                    {% else %}—{% endif %}
+                </td>
+                <td>
+                    {% if iteration.metrics %}
+                        {{ format_metric('aberrations_prix', iteration.metrics.get('aberrations_prix')) }}
+                        <span style="font-size: 0.7rem;">{{ get_status('aberrations_prix', iteration.metrics.get('aberrations_prix')) | safe }}</span>
+                    {% else %}—{% endif %}
+                </td>
+                <td>
+                    {% if iteration.metrics %}
+                        {{ format_metric('doublons', iteration.metrics.get('doublons')) }}
+                        <span style="font-size: 0.7rem;">{{ get_status('doublons', iteration.metrics.get('doublons')) | safe }}</span>
+                    {% else %}—{% endif %}
+                </td>
+                <td>
+                    {% if iteration.metrics %}
+                        {{ format_metric('diversite_fournisseurs', iteration.metrics.get('diversite_fournisseurs')) }}
+                        <span style="font-size: 0.7rem;">{{ get_status('diversite_fournisseurs', iteration.metrics.get('diversite_fournisseurs')) | safe }}</span>
+                    {% else %}—{% endif %}
+                </td>
+                <td>
+                    {% if iteration.metrics %}
+                        {{ format_metric('coherence_score', iteration.metrics.get('coherence_score')) }}
+                        <span style="font-size: 0.7rem;">{{ get_status('coherence_score', iteration.metrics.get('coherence_score')) | safe }}</span>
+                    {% else %}—{% endif %}
+                </td>
+                <td>
+                    {% if iteration.metrics %}
+                        {{ format_metric('presence_estimatif', iteration.metrics.get('presence_estimatif')) }}
+                        <span style="font-size: 0.7rem;">{{ get_status('presence_estimatif', iteration.metrics.get('presence_estimatif')) | safe }}</span>
+                    {% else %}—{% endif %}
+                </td>
+                <td>
+                    <strong>
+                    {% if iteration.metrics %}
+                        {{ format_metric('score_global', iteration.metrics.get('score_global')) }}
+                    {% else %}—{% endif %}
+                    </strong>
+                </td>
+                <td>
+                    {% if iteration.decision == 'GARDÉ' %}
+                        <span class="badge-status badge-success">Garde</span>
+                    {% elif iteration.decision == 'ROLLBACK' %}
+                        <span class="badge-status badge-danger">Rollback</span>
+                    {% else %}
+                        <span class="badge-status badge-neutral">En attente</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="/iterations/{{ iteration.number }}" class="btn-ghost" style="padding: 0.3rem 0.6rem; font-size: 0.72rem; text-decoration: none;">Detail</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <h3>Aucune iteration trouvee</h3>
+        <p>Lancez l'iteration 0 (baseline) depuis le tableau de bord pour commencer.</p>
     </div>
 </div>
+{% endif %}
 {% endblock %}

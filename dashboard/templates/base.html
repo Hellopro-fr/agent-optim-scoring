@@ -3,187 +3,370 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}HelloPro Scoring — Tableau de bord optimisation{% endblock %}</title>
+    <title>{% block title %}HelloPro Scoring{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* ── Design tokens ── */
+        :root {
+            --bg: #f5f5f7;
+            --surface: #ffffff;
+            --surface-hover: #fafafa;
+            --border: #e8e8ed;
+            --border-light: #f0f0f5;
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --text-tertiary: #aeaeb2;
+            --accent: #0071e3;
+            --accent-light: #e8f2fd;
+            --green: #30d158;
+            --green-bg: #e8faf0;
+            --green-text: #1a7f37;
+            --red: #ff453a;
+            --red-bg: #ffeeed;
+            --red-text: #c4312b;
+            --amber: #ff9f0a;
+            --amber-bg: #fff8e6;
+            --amber-text: #96600a;
+            --radius-sm: 8px;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow: 0 2px 8px rgba(0,0,0,0.06);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+            --transition: 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        /* ── Reset & base ── */
+        *, *::before, *::after { box-sizing: border-box; }
         body {
-            background-color: #f8f9fa;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            margin: 0;
         }
-        .navbar {
-            background-color: #2c3e50;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+        /* ── Sidebar nav ── */
+        .sidebar {
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            width: 240px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 1.75rem 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
         }
-        .navbar-brand {
-            font-weight: 600;
-            color: #fff !important;
+        .sidebar-brand {
+            padding: 0 1.5rem 1.5rem;
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 0.75rem;
         }
-        .nav-link {
-            color: rgba(255,255,255,0.8) !important;
-            transition: color 0.2s;
+        .sidebar-brand h1 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+            letter-spacing: -0.02em;
         }
-        .nav-link:hover {
-            color: #fff !important;
-        }
-        .nav-link.active {
-            color: #0d6efd !important;
+        .sidebar-brand span {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
             font-weight: 500;
         }
-        .card {
-            border: none;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            margin-bottom: 1rem;
+        .sidebar-nav { flex: 1; padding: 0 0.75rem; }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.6rem 0.75rem;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all var(--transition);
+            margin-bottom: 2px;
         }
-        .card-header {
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
+        .sidebar-link:hover {
+            background: var(--bg);
+            color: var(--text-primary);
+        }
+        .sidebar-link.active {
+            background: var(--accent-light);
+            color: var(--accent);
             font-weight: 600;
-            color: #2c3e50;
         }
-        .metric-card {
-            text-align: center;
-            padding: 1.5rem;
-            border-left: 4px solid #e9ecef;
+        .sidebar-link svg {
+            width: 18px; height: 18px;
+            flex-shrink: 0;
+            opacity: 0.7;
         }
-        .metric-card .metric-value {
-            font-size: 2rem;
+        .sidebar-link.active svg { opacity: 1; }
+
+        /* ── Main content ── */
+        .main-content {
+            margin-left: 240px;
+            padding: 2rem 2.5rem 3rem;
+            min-height: 100vh;
+        }
+
+        /* ── Page header ── */
+        .page-header { margin-bottom: 2rem; }
+        .page-header h1 {
+            font-size: 1.75rem;
             font-weight: 700;
-            color: #2c3e50;
-            margin: 0.5rem 0;
+            letter-spacing: -0.03em;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        .page-header p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin: 0.35rem 0 0;
+        }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 1rem;
+            overflow: hidden;
+            transition: box-shadow var(--transition);
+        }
+        .card:hover { box-shadow: var(--shadow); }
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--border-light);
+            padding: 1rem 1.25rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .card-body { padding: 1.25rem; }
+
+        /* ── Metric cards ── */
+        .metric-card {
+            text-align: left;
+            padding: 1.25rem;
         }
         .metric-card .metric-label {
-            font-size: 0.875rem;
-            color: #6c757d;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+        .metric-card .metric-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.03em;
+            line-height: 1;
+            margin-bottom: 0.5rem;
         }
         .metric-card .metric-target {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* ── Badges ── */
+        .badge-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.3rem 0.7rem;
+            border-radius: 20px;
             font-size: 0.75rem;
-            color: #999;
-            margin-top: 0.25rem;
-        }
-        .btn-iterate {
             font-weight: 600;
-            padding: 0.75rem 1.5rem;
-            margin: 0.5rem;
+            letter-spacing: 0.01em;
         }
-        .console-modal {
-            max-height: 70vh;
-            overflow-y: auto;
+        .badge-success { background: var(--green-bg); color: var(--green-text); }
+        .badge-danger { background: var(--red-bg); color: var(--red-text); }
+        .badge-warning { background: var(--amber-bg); color: var(--amber-text); }
+        .badge-neutral { background: var(--bg); color: var(--text-tertiary); }
+
+        /* ── Buttons ── */
+        .btn-primary {
+            background: var(--accent);
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.875rem;
+            padding: 0.6rem 1.25rem;
+            transition: all var(--transition);
         }
+        .btn-primary:hover {
+            background: #005ec4;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,113,227,0.3);
+        }
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.875rem;
+            padding: 0.55rem 1rem;
+            transition: all var(--transition);
+        }
+        .btn-ghost:hover {
+            background: var(--bg);
+            color: var(--text-primary);
+            border-color: var(--text-tertiary);
+        }
+
+        /* ── Tables ── */
+        .table-modern { width: 100%; border-collapse: collapse; }
+        .table-modern thead th {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-tertiary);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+        }
+        .table-modern tbody td {
+            padding: 0.85rem 1rem;
+            font-size: 0.875rem;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+        .table-modern tbody tr {
+            transition: background var(--transition);
+        }
+        .table-modern tbody tr:hover { background: var(--surface-hover); }
+        .table-modern tbody tr:last-child td { border-bottom: none; }
+
+        /* ── Console / Modal ── */
         .console-output {
-            background-color: #1e1e1e;
+            background: #0f0f0f;
             color: #d4d4d4;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            font-size: 0.9rem;
-            padding: 1.25rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            padding: 1.5rem;
             border-radius: 0;
             max-height: 70vh;
             overflow-y: auto;
-            line-height: 1.6;
+            line-height: 1.7;
             scroll-behavior: smooth;
         }
-        .console-line {
-            margin: 0;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        /* Markdown dans la console */
+        .console-line { margin: 0; white-space: pre-wrap; word-wrap: break-word; }
+
+        /* Markdown in console */
         .console-output .md-block { margin: 0.25rem 0; }
         .console-output .md-block h1,
         .console-output .md-block h2,
-        .console-output .md-block h3 { color: #7ec8e3; margin: 0.75rem 0 0.25rem; font-size: 1.1rem; }
-        .console-output .md-block h1 { font-size: 1.25rem; }
+        .console-output .md-block h3 { color: #7ec8e3; margin: 0.75rem 0 0.25rem; }
+        .console-output .md-block h1 { font-size: 1.2rem; }
+        .console-output .md-block h2 { font-size: 1.05rem; }
+        .console-output .md-block h3 { font-size: 0.95rem; }
         .console-output .md-block strong { color: #f0f0f0; }
         .console-output .md-block em { color: #b0b0b0; }
         .console-output .md-block code {
-            background: #2d2d2d; color: #ce9178; padding: 0.15rem 0.4rem;
-            border-radius: 3px; font-family: "Courier New", monospace; font-size: 0.85em;
+            background: #1e1e2e; color: #cba6f7; padding: 0.15rem 0.4rem;
+            border-radius: 4px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82em;
         }
         .console-output .md-block pre {
-            background: #0d0d0d; padding: 0.75rem; border-radius: 4px;
-            overflow-x: auto; margin: 0.5rem 0;
+            background: #080810; padding: 1rem; border-radius: var(--radius-sm);
+            overflow-x: auto; margin: 0.5rem 0; border: 1px solid #1e1e2e;
         }
-        .console-output .md-block pre code {
-            background: none; padding: 0; color: #d4d4d4;
-        }
-        .console-output .md-block table {
-            border-collapse: collapse; width: 100%; margin: 0.5rem 0;
-        }
+        .console-output .md-block pre code { background: none; padding: 0; color: #d4d4d4; }
+        .console-output .md-block table { border-collapse: collapse; width: 100%; margin: 0.5rem 0; }
         .console-output .md-block th,
-        .console-output .md-block td {
-            border: 1px solid #444; padding: 0.35rem 0.6rem; text-align: left;
-        }
-        .console-output .md-block th { background: #2a2a2a; color: #7ec8e3; }
+        .console-output .md-block td { border: 1px solid #2a2a3e; padding: 0.4rem 0.7rem; }
+        .console-output .md-block th { background: #1a1a2e; color: #7ec8e3; }
         .console-output .md-block ul,
         .console-output .md-block ol { padding-left: 1.5rem; margin: 0.25rem 0; }
-        .console-output .md-block a { color: #6cb4ee; }
+        .console-output .md-block a { color: #89b4fa; }
         .console-output .md-block blockquote {
-            border-left: 3px solid #555; padding-left: 0.75rem; color: #aaa; margin: 0.5rem 0;
+            border-left: 3px solid #45475a; padding-left: 0.75rem; color: #a6adc8; margin: 0.5rem 0;
         }
-        .console-output .md-block hr { border-color: #444; margin: 0.75rem 0; }
-        .checkpoint-warning {
-            background-color: #fff3cd;
-            border-left: 4px solid #ffc107;
-            padding: 1rem;
-            border-radius: 4px;
-            margin-bottom: 1rem;
+        .console-output .md-block hr { border-color: #313244; margin: 0.75rem 0; }
+
+        /* ── Alert banner ── */
+        .alert-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
         }
-        .checkpoint-warning .alert-icon {
-            color: #ff9800;
-            font-size: 1.5rem;
-            margin-right: 1rem;
+        .alert-banner.warning {
+            background: var(--amber-bg);
+            border: 1px solid #ffe5b0;
+            color: var(--amber-text);
         }
-        table.table-hover tbody tr:hover {
-            background-color: #f8f9fa;
+        .alert-banner.info {
+            background: var(--accent-light);
+            border: 1px solid #c6ddf7;
+            color: #1a5ba8;
         }
-        .status-badge {
+
+        /* ── Empty state ── */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-tertiary);
+        }
+        .empty-state svg { margin-bottom: 1rem; opacity: 0.4; }
+        .empty-state h3 {
+            font-size: 1rem;
             font-weight: 600;
-            padding: 0.35rem 0.65rem;
-            border-radius: 0.25rem;
-            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.35rem;
         }
-        .status-gardé {
-            background-color: #d4edda;
-            color: #155724;
+        .empty-state p { font-size: 0.875rem; }
+
+        /* ── Responsive ── */
+        @media (max-width: 991px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; padding: 1.5rem 1rem; }
         }
-        .status-rollback {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        .status-en-attente {
-            background-color: #e7e7e7;
-            color: #666;
-        }
+
+        {% block extra_css %}{% endblock %}
     </style>
-    {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">📊 HelloPro Scoring</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">Tableau de bord</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if 'iterations' in request.path and 'detail' not in request.path %}active{% endif %}" href="/iterations">Itérations</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if 'problems' in request.path %}active{% endif %}" href="/problems">Problèmes</a>
-                    </li>
-                </ul>
-            </div>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <h1>HelloPro</h1>
+            <span>Scoring Optimization</span>
         </div>
-    </nav>
+        <nav class="sidebar-nav">
+            <a class="sidebar-link {% if request.path == '/' %}active{% endif %}" href="/">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                Tableau de bord
+            </a>
+            <a class="sidebar-link {% if 'iterations' in request.path %}active{% endif %}" href="/iterations">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Iterations
+            </a>
+            <a class="sidebar-link {% if 'problems' in request.path %}active{% endif %}" href="/problems">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Problemes
+            </a>
+        </nav>
+    </aside>
 
-    <div class="container-fluid mt-4">
+    <!-- Main -->
+    <main class="main-content">
         {% block content %}{% endblock %}
-    </div>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>

@@ -1,6 +1,6 @@
 {
   "iteration": 0,
-  "timestamp": "2026-04-16T13:52:32.193887",
+  "timestamp": "2026-04-16T14:06:39.989116",
   "api_endpoint_matching": "https://api.hellopro.eu/graphoptim-service/produits/matching",
   "api_endpoint_product_details": "https://api.hellopro.fr/api/hp/view/index.php",
   "parcours_count": 13,
@@ -1896,7 +1896,7 @@
             }
           }
         ],
-        "temps_de_traitement": 8.27572094462812
+        "temps_de_traitement": 7.246670279186219
       }
     },
     "2001065_P2_tracteur_espaces_verts": {
@@ -2829,7 +2829,7 @@
             }
           }
         ],
-        "temps_de_traitement": 3.2870235559530556
+        "temps_de_traitement": 2.9207976921461523
       }
     },
     "2001065_P3_tracteur_vigneron": {
@@ -3462,7 +3462,7 @@
             }
           }
         ],
-        "temps_de_traitement": 2.668723918031901
+        "temps_de_traitement": 2.7615792909637094
       }
     },
     "2005786_P1_distributeur_snacks": {
@@ -4013,7 +4013,7 @@
             }
           }
         ],
-        "temps_de_traitement": 2.0882676229812205
+        "temps_de_traitement": 1.7650418658740819
       }
     },
     "2007702_P1_pont_2col_4m": {
@@ -5130,524 +5130,6 @@
           },
           {
             "rang": 10,
-            "id_produit": "243214",
-            "score": 0.5625584415584416,
-            "caracteristique": [
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 1,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  1
-                ],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 7
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 2,
-                "type_caracteristique": 1,
-                "valeur": "4000.0",
-                "unite": "kg",
-                "id_valeur": [],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 6
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 13,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  22
-                ],
-                "poids": 1,
-                "bareme": 1.0,
-                "poids_question": 6
-              },
-              {
-                "statut_matching": 4,
-                "id_caracteristique": 14,
-                "type_caracteristique": 2,
-                "id_valeur": [],
-                "poids": 5,
-                "bareme": -0.5,
-                "poids_question": 5
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 15,
-                "type_caracteristique": 1,
-                "valeur": "2845.0",
-                "unite": "mm",
-                "id_valeur": [],
-                "poids": 1,
-                "bareme": 0.812857142857143,
-                "poids_question": 4
-              }
-            ],
-            "coeff_geo": 0.8,
-            "coeff_type_frns": 1.0,
-            "coeff_etat_score": 0.9,
-            "coeff_caracteristique": 0.6250649350649351,
-            "info_produit": {
-              "id_fournisseur": "4031",
-              "url": "https://mat-auto.fr/ponts-2-colonnes/6-pont-2-colonnes-semi-automatique-4-t-kn3240c.html",
-              "id_produit": "243214"
-            },
-            "llm_response": {
-              "rang": 14,
-              "id_produit": "243214",
-              "nom": "Pont 2 colonnes 4 T semi automatique EVIRAN KN3240C - pont élévateur hydraulique pour véhicules"
-            }
-          },
-          {
-            "rang": 11,
-            "id_produit": "243219",
-            "score": 0.5613896103896104,
-            "caracteristique": [
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 1,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  1
-                ],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 7
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 2,
-                "type_caracteristique": 1,
-                "valeur": "4000.0",
-                "unite": "kg",
-                "id_valeur": [],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 6
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 13,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  20
-                ],
-                "poids": 1,
-                "bareme": 1.0,
-                "poids_question": 6
-              },
-              {
-                "statut_matching": 4,
-                "id_caracteristique": 14,
-                "type_caracteristique": 2,
-                "id_valeur": [],
-                "poids": 5,
-                "bareme": -0.5,
-                "poids_question": 5
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 15,
-                "type_caracteristique": 1,
-                "valeur": "2820.0",
-                "unite": "mm",
-                "id_valeur": [],
-                "poids": 1,
-                "bareme": 0.8057142857142857,
-                "poids_question": 4
-              }
-            ],
-            "coeff_geo": 0.8,
-            "coeff_type_frns": 1.0,
-            "coeff_etat_score": 0.9,
-            "coeff_caracteristique": 0.6237662337662337,
-            "info_produit": {
-              "id_fournisseur": "4031",
-              "url": "https://mat-auto.fr/ponts-2-colonnes/39-pont-elevateur-2-colonnes-.html",
-              "id_produit": "243219"
-            },
-            "llm_response": {
-              "rang": 15,
-              "id_produit": "243219",
-              "nom": "Pont élévateur 2 colonnes 4T - RP-6254B2 - capacité jusqu'à 4000 kg, hauteur de levage maxi 1900 mm"
-            }
-          },
-          {
-            "rang": 12,
-            "id_produit": "454481",
-            "score": 0.6545454545454545,
-            "caracteristique": [
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 1,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  1
-                ],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 7
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 2,
-                "type_caracteristique": 1,
-                "valeur": "4000.0",
-                "unite": "kg",
-                "id_valeur": [],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 6
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 13,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  22
-                ],
-                "poids": 1,
-                "bareme": 1.0,
-                "poids_question": 6
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 14,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  26
-                ],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 5
-              },
-              {
-                "statut_matching": 4,
-                "id_caracteristique": 15,
-                "type_caracteristique": 2,
-                "id_valeur": [],
-                "poids": 1,
-                "bareme": -0.5,
-                "poids_question": 4
-              }
-            ],
-            "coeff_geo": 0.8,
-            "coeff_type_frns": 1.0,
-            "coeff_etat_score": 0.9,
-            "coeff_caracteristique": 0.7272727272727273,
-            "info_produit": {
-              "id_fournisseur": "6238",
-              "url": "https://www.vnequipement.com/pont-2-colonnes/pont-elevateur-2-colonnes-4-tonnes-380v-garantie-2-ans-2463.html",
-              "id_produit": "454481"
-            },
-            "llm_response": {
-              "rang": 16,
-              "id_produit": "454481",
-              "nom": "Pont élévateur 2 colonnes électro-hydraulique 4 tonnes 380V - Garantie 2 ans"
-            }
-          },
-          {
-            "rang": 13,
-            "id_produit": "115190",
-            "score": 0.9061038961038961,
-            "caracteristique": [
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 1,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  1
-                ],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 7
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 2,
-                "type_caracteristique": 1,
-                "valeur": "4000.0",
-                "unite": "kg",
-                "id_valeur": [],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 6
-              },
-              {
-                "statut_matching": 2,
-                "id_caracteristique": 13,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  21
-                ],
-                "poids": 1,
-                "bareme": -0.3,
-                "poids_question": 6
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 14,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  26
-                ],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 5
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 15,
-                "type_caracteristique": 1,
-                "valeur": "2830.0",
-                "unite": "mm",
-                "id_valeur": [],
-                "poids": 1,
-                "bareme": 0.8085714285714286,
-                "poids_question": 4
-              }
-            ],
-            "coeff_geo": 0.8,
-            "coeff_type_frns": 1.0,
-            "coeff_etat_score": 1.0,
-            "coeff_caracteristique": 0.9061038961038961,
-            "info_produit": {
-              "id_fournisseur": "3260",
-              "url": "https://www.equipements-garages.com/pont-elevateur/20-lift-it-2040-bp.html",
-              "id_produit": "115190"
-            },
-            "llm_response": {
-              "rang": 17,
-              "id_produit": "115190",
-              "nom": "Pont Élévateur 2 Colonnes 4T Automatique - C2.4 QP4T - Capacité 4000 kg - Sécurité SafetyOn"
-            }
-          },
-          {
-            "rang": 14,
-            "id_produit": "115197",
-            "score": 0.5931818181818181,
-            "caracteristique": [
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 1,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  1
-                ],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 7
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 2,
-                "type_caracteristique": 1,
-                "valeur": "4000.0",
-                "unite": "kg",
-                "id_valeur": [],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 6
-              },
-              {
-                "statut_matching": 4,
-                "id_caracteristique": 13,
-                "type_caracteristique": 2,
-                "id_valeur": [],
-                "poids": 1,
-                "bareme": -0.5,
-                "poids_question": 6
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 14,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  26
-                ],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 5
-              },
-              {
-                "statut_matching": 4,
-                "id_caracteristique": 15,
-                "type_caracteristique": 2,
-                "id_valeur": [],
-                "poids": 1,
-                "bareme": -0.5,
-                "poids_question": 4
-              }
-            ],
-            "coeff_geo": 0.8,
-            "coeff_type_frns": 1.0,
-            "coeff_etat_score": 0.9,
-            "coeff_caracteristique": 0.6590909090909091,
-            "info_produit": {
-              "id_fournisseur": "3260",
-              "url": "https://www.equipements-garages.com/accueil/190-pont-elevateur-2-colonnes-3t5.html",
-              "id_produit": "115197"
-            },
-            "llm_response": {
-              "rang": 18,
-              "id_produit": "115197",
-              "nom": "Pont élévateur 2 colonnes 4T semi-auto - SEG 2 COLONNES 4T - C4.0 QP4SM"
-            }
-          },
-          {
-            "rang": 15,
-            "id_produit": "94078",
-            "score": 0.6013636363636363,
-            "caracteristique": [
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 1,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  1
-                ],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 7
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 2,
-                "type_caracteristique": 1,
-                "valeur": "4000.0",
-                "unite": "kg",
-                "id_valeur": [],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 6
-              },
-              {
-                "statut_matching": 2,
-                "id_caracteristique": 13,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  23
-                ],
-                "poids": 1,
-                "bareme": -0.3,
-                "poids_question": 6
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 14,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  26
-                ],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 5
-              },
-              {
-                "statut_matching": 4,
-                "id_caracteristique": 15,
-                "type_caracteristique": 2,
-                "id_valeur": [],
-                "poids": 1,
-                "bareme": -0.5,
-                "poids_question": 4
-              }
-            ],
-            "coeff_geo": 0.8,
-            "coeff_type_frns": 1.0,
-            "coeff_etat_score": 0.9,
-            "coeff_caracteristique": 0.6681818181818181,
-            "info_produit": {
-              "id_fournisseur": "3594",
-              "url": "https://www.cascos.es/fr/ponts/4-tn-c4-avec-base-13194/73",
-              "id_produit": "94078"
-            },
-            "llm_response": {
-              "rang": 19,
-              "id_produit": "94078",
-              "nom": "Ponts élévateurs à deux colonnes 4 Tn. C4 avec base (4 bras triples) - 400/230V - 3PH. triphasée - 3,7 kW - 130 mm hauteur minimale - 1 965 mm hauteur maximale - 45\""
-            }
-          },
-          {
-            "rang": 16,
-            "id_produit": "253346",
-            "score": 0.5243551797040169,
-            "caracteristique": [
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 1,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  1
-                ],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 7
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 2,
-                "type_caracteristique": 1,
-                "valeur": "4000.0",
-                "unite": "kg",
-                "id_valeur": [],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 6
-              },
-              {
-                "statut_matching": 2,
-                "id_caracteristique": 13,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  19
-                ],
-                "poids": 1,
-                "bareme": -0.3,
-                "poids_question": 6
-              },
-              {
-                "statut_matching": 4,
-                "id_caracteristique": 14,
-                "type_caracteristique": 2,
-                "id_valeur": [],
-                "poids": 5,
-                "bareme": -0.5,
-                "poids_question": 5
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 15,
-                "type_caracteristique": 1,
-                "valeur": "3870.0",
-                "unite": "mm",
-                "id_valeur": [],
-                "poids": 1,
-                "bareme": 0.9043927648578811,
-                "poids_question": 4
-              }
-            ],
-            "coeff_geo": 0.8,
-            "coeff_type_frns": 1.0,
-            "coeff_etat_score": 0.9,
-            "coeff_caracteristique": 0.5826168663377965,
-            "info_produit": {
-              "id_fournisseur": "4454",
-              "url": "https://jcd-levage.fr/ponts-2-colonnes/141-pont-2-colonnes-electro-hydraulique-teco-h4002n.html",
-              "id_produit": "253346"
-            },
-            "llm_response": {
-              "rang": 20,
-              "id_produit": "253346",
-              "nom": "Pont 2 colonnes électro-hydraulique TECO H4002N - série H4002 - actionnement master/slave - capacité 4T"
-            }
-          },
-          {
-            "rang": 17,
             "id_produit": "115202",
             "score": 0.9079740259740259,
             "caracteristique": [
@@ -5717,13 +5199,459 @@
               "id_produit": "115202"
             },
             "llm_response": {
-              "rang": 21,
+              "rang": 14,
               "id_produit": "115202",
               "nom": "Pont Élévateur 2 colonnes 4T avec Châssis - Alimentation 230v ou 380v"
             }
           },
           {
-            "rang": 18,
+            "rang": 11,
+            "id_produit": "115190",
+            "score": 0.9061038961038961,
+            "caracteristique": [
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 1,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  1
+                ],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 7
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 2,
+                "type_caracteristique": 1,
+                "valeur": "4000.0",
+                "unite": "kg",
+                "id_valeur": [],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 6
+              },
+              {
+                "statut_matching": 2,
+                "id_caracteristique": 13,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  21
+                ],
+                "poids": 1,
+                "bareme": -0.3,
+                "poids_question": 6
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 14,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  26
+                ],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 5
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 15,
+                "type_caracteristique": 1,
+                "valeur": "2830.0",
+                "unite": "mm",
+                "id_valeur": [],
+                "poids": 1,
+                "bareme": 0.8085714285714286,
+                "poids_question": 4
+              }
+            ],
+            "coeff_geo": 0.8,
+            "coeff_type_frns": 1.0,
+            "coeff_etat_score": 1.0,
+            "coeff_caracteristique": 0.9061038961038961,
+            "info_produit": {
+              "id_fournisseur": "3260",
+              "url": "https://www.equipements-garages.com/pont-elevateur/20-lift-it-2040-bp.html",
+              "id_produit": "115190"
+            },
+            "llm_response": {
+              "rang": 15,
+              "id_produit": "115190",
+              "nom": "Pont Élévateur 2 Colonnes 4T Automatique - C2.4 QP4T - Capacité 4000 kg - Sécurité SafetyOn"
+            }
+          },
+          {
+            "rang": 12,
+            "id_produit": "243214",
+            "score": 0.5625584415584416,
+            "caracteristique": [
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 1,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  1
+                ],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 7
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 2,
+                "type_caracteristique": 1,
+                "valeur": "4000.0",
+                "unite": "kg",
+                "id_valeur": [],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 6
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 13,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  22
+                ],
+                "poids": 1,
+                "bareme": 1.0,
+                "poids_question": 6
+              },
+              {
+                "statut_matching": 4,
+                "id_caracteristique": 14,
+                "type_caracteristique": 2,
+                "id_valeur": [],
+                "poids": 5,
+                "bareme": -0.5,
+                "poids_question": 5
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 15,
+                "type_caracteristique": 1,
+                "valeur": "2845.0",
+                "unite": "mm",
+                "id_valeur": [],
+                "poids": 1,
+                "bareme": 0.812857142857143,
+                "poids_question": 4
+              }
+            ],
+            "coeff_geo": 0.8,
+            "coeff_type_frns": 1.0,
+            "coeff_etat_score": 0.9,
+            "coeff_caracteristique": 0.6250649350649351,
+            "info_produit": {
+              "id_fournisseur": "4031",
+              "url": "https://mat-auto.fr/ponts-2-colonnes/6-pont-2-colonnes-semi-automatique-4-t-kn3240c.html",
+              "id_produit": "243214"
+            },
+            "llm_response": {
+              "rang": 16,
+              "id_produit": "243214",
+              "nom": "Pont 2 colonnes 4 T semi automatique EVIRAN KN3240C - pont élévateur hydraulique pour véhicules"
+            }
+          },
+          {
+            "rang": 13,
+            "id_produit": "243219",
+            "score": 0.5613896103896104,
+            "caracteristique": [
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 1,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  1
+                ],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 7
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 2,
+                "type_caracteristique": 1,
+                "valeur": "4000.0",
+                "unite": "kg",
+                "id_valeur": [],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 6
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 13,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  20
+                ],
+                "poids": 1,
+                "bareme": 1.0,
+                "poids_question": 6
+              },
+              {
+                "statut_matching": 4,
+                "id_caracteristique": 14,
+                "type_caracteristique": 2,
+                "id_valeur": [],
+                "poids": 5,
+                "bareme": -0.5,
+                "poids_question": 5
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 15,
+                "type_caracteristique": 1,
+                "valeur": "2820.0",
+                "unite": "mm",
+                "id_valeur": [],
+                "poids": 1,
+                "bareme": 0.8057142857142857,
+                "poids_question": 4
+              }
+            ],
+            "coeff_geo": 0.8,
+            "coeff_type_frns": 1.0,
+            "coeff_etat_score": 0.9,
+            "coeff_caracteristique": 0.6237662337662337,
+            "info_produit": {
+              "id_fournisseur": "4031",
+              "url": "https://mat-auto.fr/ponts-2-colonnes/39-pont-elevateur-2-colonnes-.html",
+              "id_produit": "243219"
+            },
+            "llm_response": {
+              "rang": 17,
+              "id_produit": "243219",
+              "nom": "Pont élévateur 2 colonnes 4T - RP-6254B2 - capacité jusqu'à 4000 kg, hauteur de levage maxi 1900 mm"
+            }
+          },
+          {
+            "rang": 14,
+            "id_produit": "454481",
+            "score": 0.6545454545454545,
+            "caracteristique": [
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 1,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  1
+                ],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 7
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 2,
+                "type_caracteristique": 1,
+                "valeur": "4000.0",
+                "unite": "kg",
+                "id_valeur": [],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 6
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 13,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  22
+                ],
+                "poids": 1,
+                "bareme": 1.0,
+                "poids_question": 6
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 14,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  26
+                ],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 5
+              },
+              {
+                "statut_matching": 4,
+                "id_caracteristique": 15,
+                "type_caracteristique": 2,
+                "id_valeur": [],
+                "poids": 1,
+                "bareme": -0.5,
+                "poids_question": 4
+              }
+            ],
+            "coeff_geo": 0.8,
+            "coeff_type_frns": 1.0,
+            "coeff_etat_score": 0.9,
+            "coeff_caracteristique": 0.7272727272727273,
+            "info_produit": {
+              "id_fournisseur": "6238",
+              "url": "https://www.vnequipement.com/pont-2-colonnes/pont-elevateur-2-colonnes-4-tonnes-380v-garantie-2-ans-2463.html",
+              "id_produit": "454481"
+            },
+            "llm_response": {
+              "rang": 18,
+              "id_produit": "454481",
+              "nom": "Pont élévateur 2 colonnes électro-hydraulique 4 tonnes 380V - Garantie 2 ans"
+            }
+          },
+          {
+            "rang": 15,
+            "id_produit": "253346",
+            "score": 0.5243551797040169,
+            "caracteristique": [
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 1,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  1
+                ],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 7
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 2,
+                "type_caracteristique": 1,
+                "valeur": "4000.0",
+                "unite": "kg",
+                "id_valeur": [],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 6
+              },
+              {
+                "statut_matching": 2,
+                "id_caracteristique": 13,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  19
+                ],
+                "poids": 1,
+                "bareme": -0.3,
+                "poids_question": 6
+              },
+              {
+                "statut_matching": 4,
+                "id_caracteristique": 14,
+                "type_caracteristique": 2,
+                "id_valeur": [],
+                "poids": 5,
+                "bareme": -0.5,
+                "poids_question": 5
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 15,
+                "type_caracteristique": 1,
+                "valeur": "3870.0",
+                "unite": "mm",
+                "id_valeur": [],
+                "poids": 1,
+                "bareme": 0.9043927648578811,
+                "poids_question": 4
+              }
+            ],
+            "coeff_geo": 0.8,
+            "coeff_type_frns": 1.0,
+            "coeff_etat_score": 0.9,
+            "coeff_caracteristique": 0.5826168663377965,
+            "info_produit": {
+              "id_fournisseur": "4454",
+              "url": "https://jcd-levage.fr/ponts-2-colonnes/141-pont-2-colonnes-electro-hydraulique-teco-h4002n.html",
+              "id_produit": "253346"
+            },
+            "llm_response": {
+              "rang": 19,
+              "id_produit": "253346",
+              "nom": "Pont 2 colonnes électro-hydraulique TECO H4002N - série H4002 - actionnement master/slave - capacité 4T"
+            }
+          },
+          {
+            "rang": 16,
+            "id_produit": "94078",
+            "score": 0.6013636363636363,
+            "caracteristique": [
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 1,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  1
+                ],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 7
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 2,
+                "type_caracteristique": 1,
+                "valeur": "4000.0",
+                "unite": "kg",
+                "id_valeur": [],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 6
+              },
+              {
+                "statut_matching": 2,
+                "id_caracteristique": 13,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  23
+                ],
+                "poids": 1,
+                "bareme": -0.3,
+                "poids_question": 6
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 14,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  26
+                ],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 5
+              },
+              {
+                "statut_matching": 4,
+                "id_caracteristique": 15,
+                "type_caracteristique": 2,
+                "id_valeur": [],
+                "poids": 1,
+                "bareme": -0.5,
+                "poids_question": 4
+              }
+            ],
+            "coeff_geo": 0.8,
+            "coeff_type_frns": 1.0,
+            "coeff_etat_score": 0.9,
+            "coeff_caracteristique": 0.6681818181818181,
+            "info_produit": {
+              "id_fournisseur": "3594",
+              "url": "https://www.cascos.es/fr/ponts/4-tn-c4-avec-base-13194/73",
+              "id_produit": "94078"
+            },
+            "llm_response": {
+              "rang": 20,
+              "id_produit": "94078",
+              "nom": "Ponts élévateurs à deux colonnes 4 Tn. C4 avec base (4 bras triples) - 400/230V - 3PH. triphasée - 3,7 kW - 130 mm hauteur minimale - 1 965 mm hauteur maximale - 45\""
+            }
+          },
+          {
+            "rang": 17,
             "id_produit": "313818",
             "score": 0.6123506493506493,
             "caracteristique": [
@@ -5793,89 +5721,13 @@
               "id_produit": "313818"
             },
             "llm_response": {
-              "rang": 22,
+              "rang": 21,
               "id_produit": "313818",
               "nom": "Pont 2 colonnes 3,5T - TLT-235 SBA - hauteur 2860 mm - capacité 3,5 tonnes"
             }
           },
           {
-            "rang": 19,
-            "id_produit": "253206",
-            "score": 0.66787012987013,
-            "caracteristique": [
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 1,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  1
-                ],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 7
-              },
-              {
-                "statut_matching": 2,
-                "id_caracteristique": 2,
-                "type_caracteristique": 1,
-                "valeur": "3500.0",
-                "unite": "kg",
-                "id_valeur": [],
-                "poids": 5,
-                "bareme": 0.0,
-                "poids_question": 6
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 13,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  20
-                ],
-                "poids": 1,
-                "bareme": 1.0,
-                "poids_question": 6
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 14,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  26
-                ],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 5
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 15,
-                "type_caracteristique": 1,
-                "valeur": "2910.0",
-                "unite": "mm",
-                "id_valeur": [],
-                "poids": 1,
-                "bareme": 0.8314285714285715,
-                "poids_question": 4
-              }
-            ],
-            "coeff_geo": 0.8,
-            "coeff_type_frns": 1.0,
-            "coeff_etat_score": 0.9,
-            "coeff_caracteristique": 0.7420779220779221,
-            "info_produit": {
-              "id_fournisseur": "4454",
-              "url": "https://jcd-levage.fr/ponts-2-colonnes/159-pont-2-colonnes-35t-teco-hc3502b.html",
-              "id_produit": "253206"
-            },
-            "llm_response": {
-              "rang": 23,
-              "id_produit": "253206",
-              "nom": "Pont 2 colonnes 3,5T TECO HC3502B - électrohydraulique, hauteur mini 95 mm, largeur de passage 2665 mm"
-            }
-          },
-          {
-            "rang": 20,
+            "rang": 18,
             "id_produit": "235007",
             "score": 0.6652051948051948,
             "caracteristique": [
@@ -5945,13 +5797,13 @@
               "id_produit": "235007"
             },
             "llm_response": {
-              "rang": 24,
+              "rang": 22,
               "id_produit": "235007",
               "nom": "Pont élévateur à deux vérins ZS DUETT 3.5 GS - capacité 3500 kg, hauteur maximale 1972 mm"
             }
           },
           {
-            "rang": 21,
+            "rang": 19,
             "id_produit": "234996",
             "score": 0.6591191982056619,
             "caracteristique": [
@@ -6021,9 +5873,157 @@
               "id_produit": "234996"
             },
             "llm_response": {
-              "rang": 25,
+              "rang": 23,
               "id_produit": "234996",
               "nom": "Pont élévateur à deux colonnes MA STAR 3.5 S - capacité 3500 kg, variante STOCK"
+            }
+          },
+          {
+            "rang": 20,
+            "id_produit": "253206",
+            "score": 0.66787012987013,
+            "caracteristique": [
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 1,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  1
+                ],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 7
+              },
+              {
+                "statut_matching": 2,
+                "id_caracteristique": 2,
+                "type_caracteristique": 1,
+                "valeur": "3500.0",
+                "unite": "kg",
+                "id_valeur": [],
+                "poids": 5,
+                "bareme": 0.0,
+                "poids_question": 6
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 13,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  20
+                ],
+                "poids": 1,
+                "bareme": 1.0,
+                "poids_question": 6
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 14,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  26
+                ],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 5
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 15,
+                "type_caracteristique": 1,
+                "valeur": "2910.0",
+                "unite": "mm",
+                "id_valeur": [],
+                "poids": 1,
+                "bareme": 0.8314285714285715,
+                "poids_question": 4
+              }
+            ],
+            "coeff_geo": 0.8,
+            "coeff_type_frns": 1.0,
+            "coeff_etat_score": 0.9,
+            "coeff_caracteristique": 0.7420779220779221,
+            "info_produit": {
+              "id_fournisseur": "4454",
+              "url": "https://jcd-levage.fr/ponts-2-colonnes/159-pont-2-colonnes-35t-teco-hc3502b.html",
+              "id_produit": "253206"
+            },
+            "llm_response": {
+              "rang": 24,
+              "id_produit": "253206",
+              "nom": "Pont 2 colonnes 3,5T TECO HC3502B - électrohydraulique, hauteur mini 95 mm, largeur de passage 2665 mm"
+            }
+          },
+          {
+            "rang": 21,
+            "id_produit": "115197",
+            "score": 0.5931818181818181,
+            "caracteristique": [
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 1,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  1
+                ],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 7
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 2,
+                "type_caracteristique": 1,
+                "valeur": "4000.0",
+                "unite": "kg",
+                "id_valeur": [],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 6
+              },
+              {
+                "statut_matching": 4,
+                "id_caracteristique": 13,
+                "type_caracteristique": 2,
+                "id_valeur": [],
+                "poids": 1,
+                "bareme": -0.5,
+                "poids_question": 6
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 14,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  26
+                ],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 5
+              },
+              {
+                "statut_matching": 4,
+                "id_caracteristique": 15,
+                "type_caracteristique": 2,
+                "id_valeur": [],
+                "poids": 1,
+                "bareme": -0.5,
+                "poids_question": 4
+              }
+            ],
+            "coeff_geo": 0.8,
+            "coeff_type_frns": 1.0,
+            "coeff_etat_score": 0.9,
+            "coeff_caracteristique": 0.6590909090909091,
+            "info_produit": {
+              "id_fournisseur": "3260",
+              "url": "https://www.equipements-garages.com/accueil/190-pont-elevateur-2-colonnes-3t5.html",
+              "id_produit": "115197"
+            },
+            "llm_response": {
+              "rang": 25,
+              "id_produit": "115197",
+              "nom": "Pont élévateur 2 colonnes 4T semi-auto - SEG 2 COLONNES 4T - C4.0 QP4SM"
             }
           },
           {
@@ -6100,78 +6100,6 @@
           },
           {
             "rang": 23,
-            "id_produit": "331770",
-            "score": 0.5931818181818181,
-            "caracteristique": [
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 1,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  1
-                ],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 7
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 2,
-                "type_caracteristique": 1,
-                "valeur": "4000.0",
-                "unite": "kg",
-                "id_valeur": [],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 6
-              },
-              {
-                "statut_matching": 4,
-                "id_caracteristique": 13,
-                "type_caracteristique": 2,
-                "id_valeur": [],
-                "poids": 1,
-                "bareme": -0.5,
-                "poids_question": 6
-              },
-              {
-                "statut_matching": 1,
-                "id_caracteristique": 14,
-                "type_caracteristique": 2,
-                "id_valeur": [
-                  26
-                ],
-                "poids": 5,
-                "bareme": 1.0,
-                "poids_question": 5
-              },
-              {
-                "statut_matching": 4,
-                "id_caracteristique": 15,
-                "type_caracteristique": 2,
-                "id_valeur": [],
-                "poids": 1,
-                "bareme": -0.5,
-                "poids_question": 4
-              }
-            ],
-            "coeff_geo": 0.8,
-            "coeff_type_frns": 1.0,
-            "coeff_etat_score": 0.9,
-            "coeff_caracteristique": 0.6590909090909091,
-            "info_produit": {
-              "id_fournisseur": "5647",
-              "url": "https://fr.nortec-pro.com/podnosniki/item/176-podnosnik-2-kolumnowy-pd4000he",
-              "id_produit": "331770"
-            },
-            "llm_response": {
-              "rang": 27,
-              "id_produit": "331770",
-              "nom": "Pont élévateur 2 colonnes PD4000HE - cric électro-hydraulique avec base et synchronisation mécanique"
-            }
-          },
-          {
-            "rang": 24,
             "id_produit": "119464",
             "score": 0.9648831168831169,
             "caracteristique": [
@@ -6389,9 +6317,78 @@
               "id_produit": "77504",
               "nom": "Pont élévateur à 2 colonnes mobile FHB3000-03-SS-2300 - capacité 3000 kg, passage 2300 mm, entraînement électro-hydraulique"
             }
+          },
+          {
+            "rang": 3,
+            "id_produit": "331770",
+            "score": 0.5931818181818181,
+            "caracteristique": [
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 1,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  1
+                ],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 7
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 2,
+                "type_caracteristique": 1,
+                "valeur": "4000.0",
+                "unite": "kg",
+                "id_valeur": [],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 6
+              },
+              {
+                "statut_matching": 4,
+                "id_caracteristique": 13,
+                "type_caracteristique": 2,
+                "id_valeur": [],
+                "poids": 1,
+                "bareme": -0.5,
+                "poids_question": 6
+              },
+              {
+                "statut_matching": 1,
+                "id_caracteristique": 14,
+                "type_caracteristique": 2,
+                "id_valeur": [
+                  26
+                ],
+                "poids": 5,
+                "bareme": 1.0,
+                "poids_question": 5
+              },
+              {
+                "statut_matching": 4,
+                "id_caracteristique": 15,
+                "type_caracteristique": 2,
+                "id_valeur": [],
+                "poids": 1,
+                "bareme": -0.5,
+                "poids_question": 4
+              }
+            ],
+            "coeff_geo": 0.8,
+            "coeff_type_frns": 1.0,
+            "coeff_etat_score": 0.9,
+            "coeff_caracteristique": 0.6590909090909091,
+            "info_produit": {
+              "id_produit": "331770"
+            },
+            "llm_response": {
+              "id_produit": "331770",
+              "nom": "Pont élévateur 2 colonnes PD4000HE - cric électro-hydraulique avec base et synchronisation mécanique"
+            }
           }
         ],
-        "temps_de_traitement": 8.185690309852362
+        "temps_de_traitement": 6.811158512253314
       }
     },
     "2007702_P2_pont_2col_400v": {
@@ -9417,7 +9414,7 @@
             }
           }
         ],
-        "temps_de_traitement": 7.562134807929397
+        "temps_de_traitement": 6.870064653921872
       }
     },
     "2007702_P3_pont_ciseaux_mobile": {
@@ -10469,7 +10466,7 @@
             }
           }
         ],
-        "temps_de_traitement": 4.7433195491321385
+        "temps_de_traitement": 4.360611371230334
       }
     },
     "2009397_P1_lave_linge_18kg": {
@@ -10901,7 +10898,7 @@
             }
           }
         ],
-        "temps_de_traitement": 2.3227002848871052
+        "temps_de_traitement": 2.2252622130326927
       }
     },
     "2012048_P1_distributeur_boissons": {
@@ -11740,7 +11737,7 @@
             }
           }
         ],
-        "temps_de_traitement": 3.6914562699384987
+        "temps_de_traitement": 2.8444371190853417
       }
     },
     "2017713_P1_epareuse_herbe": {
@@ -14032,7 +14029,7 @@
             }
           }
         ],
-        "temps_de_traitement": 7.323894277215004
+        "temps_de_traitement": 8.264533267822117
       }
     },
     "2017713_P2_epareuse_broussailles": {
@@ -15428,7 +15425,7 @@
             }
           }
         ],
-        "temps_de_traitement": 5.040255520027131
+        "temps_de_traitement": 5.029762603342533
       }
     },
     "1001328_P1_minipelle_passage100": {
@@ -18375,7 +18372,7 @@
             }
           }
         ],
-        "temps_de_traitement": 7.854909637011588
+        "temps_de_traitement": 7.064058132003993
       }
     },
     "1001328_P2_minipelle_passage100plus": {
@@ -20991,7 +20988,7 @@
             }
           }
         ],
-        "temps_de_traitement": 7.367268593981862
+        "temps_de_traitement": 6.836961986962706
       }
     }
   }

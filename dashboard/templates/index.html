@@ -1,225 +1,198 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="mb-4">🎯 Tableau de bord optimisation HelloPro</h1>
+<div class="page-header">
+    <h1>Tableau de bord</h1>
+    <p>Suivi de l'optimisation du scoring HelloPro GraphRAG</p>
+</div>
 
-        {% if in_cp1 %}
-        <div class="checkpoint-warning">
-            <div style="display: flex; align-items: flex-start;">
-                <div class="alert-icon">⚠️</div>
-                <div>
-                    <strong>CP1 — Validation baseline requise</strong>
-                    <p style="margin-top: 0.5rem; margin-bottom: 0;">
-                        L'itération 0 (baseline) n'a pas encore été exécutée ou validée.
-                        Lancez l'itération 0 ci-dessous pour établir la référence avant de commencer les optimisations.
-                    </p>
-                </div>
-            </div>
-        </div>
-        {% endif %}
+{% if in_cp1 %}
+<div class="alert-banner warning">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <div>
+        <strong>CP1 — Validation baseline requise</strong>
+        <p style="margin: 0.25rem 0 0; opacity: 0.85;">Lancez l'iteration 0 ci-dessous pour etablir la reference avant de commencer les optimisations.</p>
+    </div>
+</div>
+{% endif %}
 
-        {% if metrics %}
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <p class="text-muted" style="font-size: 0.9rem;">
-                    <strong>Dernière exécution :</strong> Itération {{ metrics.iteration }}
-                    {% if metrics.get('timestamp') %}
-                        • {{ metrics.timestamp }}
-                    {% endif %}
-                </p>
-            </div>
+{% if metrics %}
+<!-- KPIs -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card metric-card">
+            <div class="metric-label">Score global</div>
+            <div class="metric-value">{{ format_metric('score_global', metrics.get('score_global')) }}</div>
+            <div class="metric-target">{{ get_status('score_global', metrics.get('score_global')) | safe }} Cible : ≥80%</div>
         </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card metric-card">
+            <div class="metric-label">Conformite</div>
+            <div class="metric-value">{{ format_metric('taux_conformite', metrics.get('taux_conformite')) }}</div>
+            <div class="metric-target">{{ get_status('taux_conformite', metrics.get('taux_conformite')) | safe }} Cible : ≥80%</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card metric-card">
+            <div class="metric-label">Aberrations prix</div>
+            <div class="metric-value">{{ format_metric('aberrations_prix', metrics.get('aberrations_prix')) }}</div>
+            <div class="metric-target">{{ get_status('aberrations_prix', metrics.get('aberrations_prix')) | safe }} Cible : 0</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card metric-card">
+            <div class="metric-label">Doublons</div>
+            <div class="metric-value">{{ format_metric('doublons', metrics.get('doublons')) }}</div>
+            <div class="metric-target">{{ get_status('doublons', metrics.get('doublons')) | safe }} Cible : 0</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-4">
+        <div class="card metric-card">
+            <div class="metric-label">Diversite fournisseurs</div>
+            <div class="metric-value">{{ format_metric('diversite_fournisseurs', metrics.get('diversite_fournisseurs')) }}</div>
+            <div class="metric-target">{{ get_status('diversite_fournisseurs', metrics.get('diversite_fournisseurs')) | safe }} Cible : ≥3</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-4">
+        <div class="card metric-card">
+            <div class="metric-label">Coherence score</div>
+            <div class="metric-value">{{ format_metric('coherence_score', metrics.get('coherence_score')) }}</div>
+            <div class="metric-target">{{ get_status('coherence_score', metrics.get('coherence_score')) | safe }} Cible : ≥0.5</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-4">
+        <div class="card metric-card">
+            <div class="metric-label">Presence estimatif</div>
+            <div class="metric-value">{{ format_metric('presence_estimatif', metrics.get('presence_estimatif')) }}</div>
+            <div class="metric-target">{{ get_status('presence_estimatif', metrics.get('presence_estimatif')) | safe }} Cible : ≥90%</div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path d="M9 12l2 2 4-4"/></svg>
+        <h3>Aucune metrique disponible</h3>
+        <p>Lancez l'iteration 0 (baseline) pour commencer.</p>
+    </div>
+</div>
+{% endif %}
 
-        <!-- KPIs Row 1 -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card metric-card">
-                    <div class="metric-label">Score global</div>
-                    <div class="metric-value">{{ format_metric('score_global', metrics.get('score_global')) }}</div>
-                    <div class="metric-target">{{ get_status('score_global', metrics.get('score_global')) }} Cible: ≥80%</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card metric-card">
-                    <div class="metric-label">Conformité</div>
-                    <div class="metric-value">{{ format_metric('taux_conformite', metrics.get('taux_conformite')) }}</div>
-                    <div class="metric-target">{{ get_status('taux_conformite', metrics.get('taux_conformite')) }} Cible: ≥80%</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card metric-card">
-                    <div class="metric-label">Aberrations</div>
-                    <div class="metric-value">{{ format_metric('aberrations_prix', metrics.get('aberrations_prix')) }}</div>
-                    <div class="metric-target">{{ get_status('aberrations_prix', metrics.get('aberrations_prix')) }} Cible: 0</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card metric-card">
-                    <div class="metric-label">Doublons</div>
-                    <div class="metric-value">{{ format_metric('doublons', metrics.get('doublons')) }}</div>
-                    <div class="metric-target">{{ get_status('doublons', metrics.get('doublons')) }} Cible: 0</div>
-                </div>
+<!-- Launch iterations -->
+<div class="card" style="border: none; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white;">
+    <div class="card-body" style="padding: 1.5rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+            <div>
+                <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: white;">Lancer une iteration</h3>
+                <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: rgba(255,255,255,0.5);">Chaque bouton demarre une session interactive avec l'agent HelloPro</p>
             </div>
         </div>
-
-        <!-- KPIs Row 2 -->
-        <div class="row mb-4">
-            <div class="col-md-4">
-                <div class="card metric-card">
-                    <div class="metric-label">Diversité fournisseurs</div>
-                    <div class="metric-value">{{ format_metric('diversite_fournisseurs', metrics.get('diversite_fournisseurs')) }}</div>
-                    <div class="metric-target">{{ get_status('diversite_fournisseurs', metrics.get('diversite_fournisseurs')) }} Cible: ≥3</div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card metric-card">
-                    <div class="metric-label">Cohérence score</div>
-                    <div class="metric-value">{{ format_metric('coherence_score', metrics.get('coherence_score')) }}</div>
-                    <div class="metric-target">{{ get_status('coherence_score', metrics.get('coherence_score')) }} Cible: ≥0.5</div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card metric-card">
-                    <div class="metric-label">Présence estimatif</div>
-                    <div class="metric-value">{{ format_metric('presence_estimatif', metrics.get('presence_estimatif')) }}</div>
-                    <div class="metric-target">{{ get_status('presence_estimatif', metrics.get('presence_estimatif')) }} Cible: ≥90%</div>
-                </div>
-            </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+            <button class="btn btn-iterate" data-iteration="0" data-bs-toggle="modal" data-bs-target="#consoleModal"
+                    style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 600; transition: all 0.2s;">
+                Iter 0 — Baseline
+            </button>
+            {% for i in range(1, 9) %}
+            {% set problems = ['P1','P3','P2','P5','P6','P7','P8','P9'] %}
+            <button class="btn btn-iterate" data-iteration="{{ i }}" data-bs-toggle="modal" data-bs-target="#consoleModal"
+                    style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 500; transition: all 0.2s;">
+                Iter {{ i }} — {{ problems[i-1] }}
+            </button>
+            {% endfor %}
         </div>
-        {% else %}
-        <div class="alert alert-info">
-            <strong>ℹ️ Aucune métrique disponible</strong> — Exécutez l'itération 0 (baseline) pour commencer.
-        </div>
-        {% endif %}
-
-        <!-- Boutons de lancement itérations -->
-        <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
-            <div class="card-body">
-                <h5 class="card-title mb-3" style="color: white;">🚀 Lancer une itération</h5>
-                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                    <button class="btn btn-light btn-iterate" data-iteration="0" data-bs-toggle="modal" data-bs-target="#consoleModal">
-                        ▶️ Itération 0 — Baseline
-                    </button>
-                    <button class="btn btn-light btn-iterate" data-iteration="1" data-bs-toggle="modal" data-bs-target="#consoleModal">
-                        ▶️ Itération 1 — P1
-                    </button>
-                    <button class="btn btn-light btn-iterate" data-iteration="2" data-bs-toggle="modal" data-bs-target="#consoleModal">
-                        ▶️ Itération 2 — P3
-                    </button>
-                    <button class="btn btn-light btn-iterate" data-iteration="3" data-bs-toggle="modal" data-bs-target="#consoleModal">
-                        ▶️ Itération 3 — P2
-                    </button>
-                    <button class="btn btn-light btn-iterate" data-iteration="4" data-bs-toggle="modal" data-bs-target="#consoleModal">
-                        ▶️ Itération 4 — P5
-                    </button>
-                    <button class="btn btn-light btn-iterate" data-iteration="5" data-bs-toggle="modal" data-bs-target="#consoleModal">
-                        ▶️ Itération 5 — P6
-                    </button>
-                    <button class="btn btn-light btn-iterate" data-iteration="6" data-bs-toggle="modal" data-bs-target="#consoleModal">
-                        ▶️ Itération 6 — P7
-                    </button>
-                    <button class="btn btn-light btn-iterate" data-iteration="7" data-bs-toggle="modal" data-bs-target="#consoleModal">
-                        ▶️ Itération 7 — P8
-                    </button>
-                    <button class="btn btn-light btn-iterate" data-iteration="8" data-bs-toggle="modal" data-bs-target="#consoleModal">
-                        ▶️ Itération 8 — P9
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        {% if iterations %}
-        <div class="card mt-4">
-            <div class="card-header">
-                📋 Historique récent
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead style="background-color: #f8f9fa;">
-                        <tr>
-                            <th style="width: 60px;">Iter</th>
-                            <th>Date</th>
-                            <th style="width: 100px;">Score</th>
-                            <th style="width: 100px;">Décision</th>
-                            <th style="width: 80px;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for iteration in iterations[-5:] | reverse %}
-                        <tr>
-                            <td><strong>#{{ iteration.number }}</strong></td>
-                            <td>{{ iteration.timestamp or "—" }}</td>
-                            <td>
-                                {% if iteration.metrics %}
-                                    {{ format_metric('score_global', iteration.metrics.get('score_global')) }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </td>
-                            <td>
-                                <span class="status-badge status-{{ iteration.decision.lower() }}">
-                                    {{ iteration.decision }}
-                                </span>
-                            </td>
-                            <td>
-                                <a href="/iterations/{{ iteration.number }}" class="btn btn-sm btn-outline-primary">
-                                    Détail
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        {% endif %}
     </div>
 </div>
 
-<!-- Modal de console interactive -->
-<div class="modal fade" id="consoleModal" tabindex="-1" role="dialog"
-     aria-labelledby="consoleModalLabel" aria-hidden="true"
+{% if iterations %}
+<!-- Recent history -->
+<div class="card mt-4">
+    <div class="card-header">Historique recent</div>
+    <table class="table-modern">
+        <thead>
+            <tr>
+                <th style="width: 70px;">Iter</th>
+                <th>Date</th>
+                <th style="width: 120px;">Score global</th>
+                <th style="width: 110px;">Decision</th>
+                <th style="width: 80px;"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for iteration in iterations[-5:] | reverse %}
+            <tr>
+                <td><strong>#{{ iteration.number }}</strong></td>
+                <td style="color: var(--text-secondary);">{{ iteration.timestamp or "—" }}</td>
+                <td>
+                    {% if iteration.metrics %}
+                        <strong>{{ format_metric('score_global', iteration.metrics.get('score_global')) }}</strong>
+                    {% else %}—{% endif %}
+                </td>
+                <td>
+                    {% if iteration.decision == 'GARDÉ' %}
+                        <span class="badge-status badge-success">Garde</span>
+                    {% elif iteration.decision == 'ROLLBACK' %}
+                        <span class="badge-status badge-danger">Rollback</span>
+                    {% else %}
+                        <span class="badge-status badge-neutral">En attente</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="/iterations/{{ iteration.number }}" class="btn-ghost" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; text-decoration: none;">Detail</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- Console Modal -->
+<div class="modal fade" id="consoleModal" tabindex="-1"
      data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-xl" role="document">
-        <div class="modal-content">
-            <div class="modal-header" style="background-color: #2c3e50; color: white;">
-                <h5 class="modal-title" id="consoleModalLabel">
-                    Claude — Itération <span id="iterationNum">—</span>
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog" style="max-width: 900px;" role="document">
+        <div class="modal-content" style="border: none; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-lg);">
+            <div class="modal-header" style="background: #0f0f0f; border: none; padding: 1rem 1.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="display: flex; gap: 6px;">
+                        <span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57;"></span>
+                        <span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e;"></span>
+                        <span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840;"></span>
+                    </div>
+                    <span style="color: rgba(255,255,255,0.4); font-size: 0.8rem; margin-left: 0.5rem; font-family: 'SF Mono', monospace;">
+                        agent-hellopro — iteration <span id="iterationNum">—</span>
+                    </span>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="opacity: 0.4;"></button>
             </div>
-            <div class="modal-body console-modal" style="padding: 0;">
-                <div class="console-output" id="consoleOutput"
-                     style="min-height: 400px; max-height: 70vh;">
-                    <p style="color: #aaa;">En attente...</p>
+            <div style="padding: 0;">
+                <div class="console-output" id="consoleOutput" style="min-height: 400px; max-height: 70vh;">
+                    <p style="color: #6e6e73;">En attente...</p>
                 </div>
             </div>
-            <div class="modal-footer" style="flex-direction: column; align-items: stretch; gap: 0.5rem; padding: 0.75rem;">
-                <!-- Loader pendant que Claude travaille -->
+            <div class="modal-footer" style="background: #0f0f0f; border-top: 1px solid #1e1e2e; flex-direction: column; align-items: stretch; gap: 0.5rem; padding: 0.75rem 1rem;">
+                <!-- Loader -->
                 <div id="loaderArea" style="display: none; width: 100%;">
-                    <div style="display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0;">
-                        <div class="spinner-border spinner-border-sm text-info" role="status"></div>
-                        <span style="color: #aaa; font-size: 0.85rem;">L'agent HP est en train d'analyser...</span>
+                    <div style="display: flex; align-items: center; gap: 0.6rem; padding: 0.3rem 0;">
+                        <div class="spinner-border spinner-border-sm" role="status" style="color: var(--accent); width: 1rem; height: 1rem; border-width: 2px;"></div>
+                        <span id="loaderText" style="color: rgba(255,255,255,0.4); font-size: 0.8rem;">L'agent HelloPro reflechit...</span>
                     </div>
                 </div>
-                <!-- Zone de saisie (masquée tant que Claude n'attend pas) -->
+                <!-- Input -->
                 <div id="inputArea" style="display: none; width: 100%;">
                     <div style="display: flex; gap: 0.5rem;">
-                        <input type="text" id="userInput" class="form-control"
-                               placeholder="Votre réponse à Claude..."
-                               style="font-family: 'Courier New', monospace; font-size: 0.9rem;">
-                        <button id="sendBtn" class="btn btn-primary" style="white-space: nowrap;">
+                        <input type="text" id="userInput"
+                               placeholder="Votre reponse a l'agent..."
+                               style="flex: 1; background: #1a1a2e; border: 1px solid #2a2a3e; border-radius: 8px; padding: 0.6rem 0.9rem; color: #d4d4d4; font-size: 0.875rem; outline: none; font-family: inherit;">
+                        <button id="sendBtn" class="btn btn-primary" style="border-radius: 8px; padding: 0.6rem 1.25rem;">
                             Envoyer
                         </button>
                     </div>
-                    <small style="color: #999; margin-top: 0.25rem; display: block;">
-                        Entrée pour envoyer — Claude attend votre réponse
-                    </small>
+                    <small style="color: rgba(255,255,255,0.25); margin-top: 0.35rem; display: block; font-size: 0.72rem;">Entree pour envoyer</small>
                 </div>
-                <div style="display: flex; justify-content: flex-end; width: 100%;">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" id="closeConsoleBtn" data-bs-dismiss="modal">
+                <div style="display: flex; justify-content: flex-end;">
+                    <button type="button" id="closeConsoleBtn" data-bs-dismiss="modal"
+                            style="background: transparent; border: 1px solid #2a2a3e; border-radius: 6px; color: rgba(255,255,255,0.35); font-size: 0.75rem; padding: 0.35rem 0.75rem; cursor: pointer; transition: all 0.2s;">
                         Fermer
                     </button>
                 </div>
@@ -234,16 +207,46 @@
 <script>
 let currentEventSource = null;
 let currentIteration = null;
+let loaderInterval = null;
+
+const loaderPhrases = [
+    "L'agent HelloPro reflechit...",
+    "L'agent HelloPro analyse les donnees...",
+    "L'agent HelloPro execute le pipeline...",
+    "L'agent HelloPro evalue les metriques...",
+    "L'agent HelloPro compare avec la baseline...",
+    "L'agent HelloPro optimise le scoring...",
+    "L'agent HelloPro inspecte les resultats...",
+    "L'agent HelloPro verifie la conformite...",
+];
+let loaderIndex = 0;
+
+function startLoaderRotation() {
+    stopLoaderRotation();
+    loaderIndex = 0;
+    const el = document.getElementById('loaderText');
+    if (el) el.textContent = loaderPhrases[0];
+    loaderInterval = setInterval(function() {
+        loaderIndex = (loaderIndex + 1) % loaderPhrases.length;
+        const el = document.getElementById('loaderText');
+        if (el) el.textContent = loaderPhrases[loaderIndex];
+    }, 4000);
+}
+
+function stopLoaderRotation() {
+    if (loaderInterval) {
+        clearInterval(loaderInterval);
+        loaderInterval = null;
+    }
+}
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Boutons "Lancer itération"
     document.querySelectorAll('.btn-iterate').forEach(btn => {
         btn.addEventListener('click', function() {
             startIteration(this.dataset.iteration);
         });
     });
 
-    // Fermer : couper le SSE et rafraîchir les KPIs
     document.getElementById('closeConsoleBtn').addEventListener('click', function() {
         if (currentEventSource) {
             currentEventSource.close();
@@ -252,7 +255,6 @@ document.addEventListener('DOMContentLoaded', function() {
         location.reload();
     });
 
-    // Envoyer un message
     document.getElementById('sendBtn').addEventListener('click', sendMessage);
     document.getElementById('userInput').addEventListener('keydown', function(e) {
         if (e.key === 'Enter') sendMessage();
@@ -263,13 +265,14 @@ document.addEventListener('DOMContentLoaded', function() {
 function startIteration(iterationNum) {
     const consoleOutput = document.getElementById('consoleOutput');
     const inputArea = document.getElementById('inputArea');
+    const loaderArea = document.getElementById('loaderArea');
 
-    consoleOutput.innerHTML = '<p style="color: #aaa;">Lancement de l\'itération ' + iterationNum + '...</p>';
+    consoleOutput.innerHTML = '<p style="color: #6e6e73;">Lancement de l\'iteration ' + iterationNum + '...</p>';
     document.getElementById('iterationNum').textContent = iterationNum;
     inputArea.style.display = 'none';
+    loaderArea.style.display = 'block'; startLoaderRotation();
     currentIteration = iterationNum;
 
-    // Couper un éventuel stream précédent
     if (currentEventSource) {
         currentEventSource.close();
         currentEventSource = null;
@@ -279,13 +282,15 @@ function startIteration(iterationNum) {
         .then(r => r.json())
         .then(data => {
             if (data.error) {
-                consoleOutput.innerHTML = '<p style="color: #ff6666;">Erreur: ' + data.error + '</p>';
+                loaderArea.style.display = 'none'; stopLoaderRotation();
+                consoleOutput.innerHTML = '<p style="color: var(--red);">Erreur: ' + data.error + '</p>';
             } else {
                 connectStream(iterationNum);
             }
         })
         .catch(err => {
-            consoleOutput.innerHTML = '<p style="color: #ff6666;">Erreur réseau: ' + err.message + '</p>';
+            loaderArea.style.display = 'none'; stopLoaderRotation();
+            consoleOutput.innerHTML = '<p style="color: var(--red);">Erreur reseau: ' + err.message + '</p>';
         });
 }
 
@@ -298,12 +303,12 @@ function connectStream(iterationNum) {
     const sendBtn = document.getElementById('sendBtn');
 
     consoleOutput.innerHTML = '';
-    loaderArea.style.display = 'block';
+    loaderArea.style.display = 'block'; startLoaderRotation();
     inputArea.style.display = 'none';
     let isDone = false;
-    let mdBuffer = '';       // Accumule le markdown du tour courant
-    let mdBlock = null;      // Element DOM du bloc markdown en cours
-    let renderTimer = null;  // Debounce du rendu
+    let mdBuffer = '';
+    let mdBlock = null;
+    let renderTimer = null;
 
     function flushMarkdown() {
         if (!mdBuffer) return;
@@ -332,33 +337,29 @@ function connectStream(iterationNum) {
                 return;
 
             } else if (data.line) {
-                // Ligne de texte de Claude → accumuler dans le buffer markdown
                 mdBuffer += data.line + '\n';
                 scheduleRender();
 
             } else if (data.user) {
-                // Flush le markdown Claude avant le message utilisateur
                 flushMarkdown();
                 mdBuffer = '';
                 mdBlock = null;
 
                 const div = document.createElement('div');
-                div.style.cssText = 'color:#66ccff; font-weight:bold; margin:1rem 0 0.5rem; padding-top:0.5rem; border-top:1px solid #444;';
+                div.style.cssText = 'color:#89b4fa; font-weight:600; margin:1.25rem 0 0.5rem; padding-top:0.75rem; border-top:1px solid #1e1e2e; font-size:0.85rem;';
                 div.textContent = '\u25b6 Vous : ' + data.user;
                 consoleOutput.appendChild(div);
                 consoleOutput.scrollTop = consoleOutput.scrollHeight;
 
             } else if (data.waiting_input) {
-                // Flush final du markdown
                 flushMarkdown();
                 mdBuffer = '';
                 mdBlock = null;
-
-                loaderArea.style.display = 'none';
+                loaderArea.style.display = 'none'; stopLoaderRotation();
 
                 const p = document.createElement('p');
-                p.style.cssText = 'color:#ffc107; margin-top:0.5rem;';
-                p.textContent = '\u23f3 Claude attend votre réponse...';
+                p.style.cssText = 'color:#f9e2af; margin-top:0.75rem; font-size:0.8rem;';
+                p.textContent = '\u23f3 L\'agent HelloPro attend votre reponse...';
                 consoleOutput.appendChild(p);
                 consoleOutput.scrollTop = consoleOutput.scrollHeight;
 
@@ -370,11 +371,11 @@ function connectStream(iterationNum) {
 
             } else if (data.done) {
                 flushMarkdown();
-                loaderArea.style.display = 'none';
+                loaderArea.style.display = 'none'; stopLoaderRotation();
                 isDone = true;
                 const p = document.createElement('p');
-                p.style.cssText = 'color:#66ff66; font-weight:bold; margin-top:1rem;';
-                p.textContent = 'Session terminée.';
+                p.style.cssText = 'color:#a6e3a1; font-weight:600; margin-top:1rem; font-size:0.85rem;';
+                p.textContent = 'Session terminee.';
                 consoleOutput.appendChild(p);
                 inputArea.style.display = 'none';
                 es.close();
@@ -382,8 +383,9 @@ function connectStream(iterationNum) {
 
             } else if (data.error) {
                 flushMarkdown();
+                loaderArea.style.display = 'none'; stopLoaderRotation();
                 const p = document.createElement('p');
-                p.style.color = '#ff6666';
+                p.style.cssText = 'color:#f38ba8; font-size:0.85rem;';
                 p.textContent = 'ERREUR: ' + data.error;
                 consoleOutput.appendChild(p);
             }
@@ -395,10 +397,10 @@ function connectStream(iterationNum) {
     es.onerror = function() {
         es.close();
         currentEventSource = null;
-        loaderArea.style.display = 'none';
+        loaderArea.style.display = 'none'; stopLoaderRotation();
         if (!isDone) {
             const p = document.createElement('p');
-            p.style.color = '#ff6666';
+            p.style.cssText = 'color:#f38ba8; font-size:0.85rem;';
             p.textContent = 'Connexion perdue.';
             consoleOutput.appendChild(p);
         }
@@ -410,15 +412,15 @@ function sendMessage() {
     const userInput = document.getElementById('userInput');
     const sendBtn = document.getElementById('sendBtn');
     const inputArea = document.getElementById('inputArea');
+    const loaderArea = document.getElementById('loaderArea');
     const message = userInput.value.trim();
 
     if (!message || currentIteration === null) return;
 
-    // Désactiver l'input, afficher le loader
     userInput.disabled = true;
     sendBtn.disabled = true;
     inputArea.style.display = 'none';
-    document.getElementById('loaderArea').style.display = 'block';
+    loaderArea.style.display = 'block'; startLoaderRotation();
 
     fetch('/iterate/' + currentIteration + '/send', {
         method: 'POST',
@@ -430,13 +432,13 @@ function sendMessage() {
         if (data.error) {
             const consoleOutput = document.getElementById('consoleOutput');
             const p = document.createElement('p');
-            p.style.color = '#ff6666';
+            p.style.cssText = 'color:#f38ba8; font-size:0.85rem;';
             p.textContent = 'Erreur envoi: ' + data.error;
             consoleOutput.appendChild(p);
-            // Réactiver l'input
             inputArea.style.display = 'block';
             userInput.disabled = false;
             sendBtn.disabled = false;
+            loaderArea.style.display = 'none'; stopLoaderRotation();
         }
         userInput.value = '';
     })
@@ -445,6 +447,7 @@ function sendMessage() {
         inputArea.style.display = 'block';
         userInput.disabled = false;
         sendBtn.disabled = false;
+        loaderArea.style.display = 'none'; stopLoaderRotation();
     });
 }
 </script>

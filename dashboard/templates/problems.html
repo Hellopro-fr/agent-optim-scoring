@@ -1,86 +1,83 @@
 {% extends "base.html" %}
 
-{% block title %}Problèmes P1-P9 — HelloPro Scoring{% endblock %}
+{% block title %}Problemes P1-P9 — HelloPro Scoring{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="mb-4">🔧 Statut des 9 problèmes</h1>
+<div class="page-header">
+    <h1>Problemes</h1>
+    <p>Suivi des 9 problemes identifies (P1–P9)</p>
+</div>
 
-        {% if problems %}
-        <div class="row">
-            {% for problem in problems %}
-            <div class="col-md-6 mb-3">
-                <div class="card" style="border-left: 4px solid {% if problem.status == 'EN COURS' %}#ffc107{% elif problem.status == 'GARDÉ' %}#28a745{% elif problem.status == 'SKIPPED' %}#6c757d{% else %}#e9ecef{% endif %};">
-                    <div class="card-body">
-                        <div style="display: flex; justify-content: space-between; align-items: start;">
-                            <div>
-                                <h6 style="margin-bottom: 0; font-weight: 600; color: #2c3e50;">
-                                    P{{ problem.number }} — {{ problem.name }}
-                                </h6>
-                                <div style="margin-top: 0.5rem;">
-                                    {% if problem.status == 'EN COURS' %}
-                                        <span style="display: inline-block; background-color: #ffc107; color: #333; padding: 0.25rem 0.75rem; border-radius: 3px; font-size: 0.8rem; font-weight: 600;">
-                                            🟡 EN COURS
-                                        </span>
-                                        {% if problem.iteration %}
-                                            <small style="color: #666; margin-left: 0.5rem;">Itération {{ problem.iteration }}</small>
-                                        {% endif %}
-                                    {% elif problem.status == 'GARDÉ' %}
-                                        <span style="display: inline-block; background-color: #28a745; color: white; padding: 0.25rem 0.75rem; border-radius: 3px; font-size: 0.8rem; font-weight: 600;">
-                                            🟢 GARDÉ
-                                        </span>
-                                        {% if problem.iteration %}
-                                            <small style="color: #666; margin-left: 0.5rem;">Itération {{ problem.iteration }}</small>
-                                        {% endif %}
-                                    {% elif problem.status == 'SKIPPED' %}
-                                        <span style="display: inline-block; background-color: #6c757d; color: white; padding: 0.25rem 0.75rem; border-radius: 3px; font-size: 0.8rem; font-weight: 600;">
-                                            ⛔ IGNORÉ
-                                        </span>
-                                    {% else %}
-                                        <span style="display: inline-block; background-color: #e9ecef; color: #333; padding: 0.25rem 0.75rem; border-radius: 3px; font-size: 0.8rem; font-weight: 600;">
-                                            ⚪ BACKLOG
-                                        </span>
-                                        {% if problem.iteration %}
-                                            <small style="color: #666; margin-left: 0.5rem;">Itération {{ problem.iteration }}</small>
-                                        {% endif %}
-                                    {% endif %}
-                                </div>
-                            </div>
+{% if problems %}
+<div class="row g-3">
+    {% for problem in problems %}
+    <div class="col-12 col-md-6">
+        <div class="card" style="border-left: 3px solid {% if problem.status == 'EN COURS' %}var(--amber){% elif problem.status == 'GARDÉ' %}var(--green){% elif problem.status == 'SKIPPED' %}var(--text-tertiary){% else %}var(--border){% endif %};">
+            <div class="card-body" style="padding: 1rem 1.25rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <span style="font-size: 0.7rem; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">P{{ problem.number }}</span>
+                        <h3 style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin: 0.25rem 0 0.5rem;">{{ problem.name }}</h3>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            {% if problem.status == 'EN COURS' %}
+                                <span class="badge-status badge-warning">En cours</span>
+                            {% elif problem.status == 'GARDÉ' %}
+                                <span class="badge-status badge-success">Resolu</span>
+                            {% elif problem.status == 'SKIPPED' %}
+                                <span class="badge-status badge-neutral">Ignore</span>
+                            {% else %}
+                                <span class="badge-status badge-neutral">Backlog</span>
+                            {% endif %}
+                            {% if problem.iteration %}
+                                <span style="font-size: 0.72rem; color: var(--text-tertiary);">Iteration {{ problem.iteration }}</span>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Attack order -->
+<div class="card mt-4">
+    <div class="card-header">Ordre d'attaque suggere</div>
+    <div class="card-body">
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+            {% set attack_order = [
+                ('P1', 'Penalite absence caract.'),
+                ('P3', 'LLM + descriptif'),
+                ('P2', 'Hors categorie'),
+                ('P5', 'Zero resultats'),
+                ('P6', 'Neuf/occasion'),
+                ('P7', 'Multi-caract.'),
+                ('P8', 'Reranking'),
+                ('P9', 'Cache dedup')
+            ] %}
+            {% for code, label in attack_order %}
+            <div style="display: flex; align-items: center; gap: 0.35rem; background: var(--bg); border: 1px solid var(--border-light); border-radius: 20px; padding: 0.35rem 0.75rem;">
+                <strong style="font-size: 0.75rem; color: var(--accent);">{{ code }}</strong>
+                <span style="font-size: 0.75rem; color: var(--text-secondary);">{{ label }}</span>
+            </div>
+            {% if not loop.last %}
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            {% endif %}
             {% endfor %}
         </div>
-
-        <!-- Ordre d'attaque suggéré -->
-        <div class="card mt-4">
-            <div class="card-header">
-                📅 Ordre d'attaque suggéré
-            </div>
-            <div class="card-body">
-                <ol style="margin-bottom: 0;">
-                    <li><strong>P1</strong> — Absence caractéristique → pénalité manquante</li>
-                    <li><strong>P3</strong> — LLM juge sur titre seul, ignore descriptif</li>
-                    <li><strong>P2</strong> — Produits hors catégorie remontent trop haut</li>
-                    <li><strong>P5</strong> — Zéro résultat certains parcours</li>
-                    <li><strong>P6</strong> — Mélange produits neuf/occasion</li>
-                    <li><strong>P7</strong> — Erreur calcul scoring multi-caractéristiques</li>
-                    <li><strong>P8</strong> — Manque reranking après matching</li>
-                    <li><strong>P9</strong> — Caching produits dénormalisés</li>
-                </ol>
-                <p style="color: #666; margin-top: 1rem; font-size: 0.9rem;">
-                    <strong>Note :</strong> P4 (86% prix sur demande) est un diagnostic, non corrigible.
-                </p>
-            </div>
-        </div>
-
-        {% else %}
-        <div class="alert alert-info">
-            <strong>ℹ️ Aucun problème chargé</strong>
-        </div>
-        {% endif %}
+        <p style="color: var(--text-tertiary); margin-top: 1rem; font-size: 0.8rem;">
+            P4 (86% prix sur demande) est un diagnostic, non corrigible par code.
+        </p>
     </div>
 </div>
+
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <h3>Aucun probleme charge</h3>
+        <p>Verifiez que PROBLEMS.md existe dans le projet.</p>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
