@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python *)"
+      "Bash(python *)",
+      "Read(../RAG-HP-PUB/apps-microservices/graph-rag-api-recherche-optim-service/**)",
+      "Edit(../RAG-HP-PUB/apps-microservices/graph-rag-api-recherche-optim-service/**)"
     ],
     "deny": [
       "Edit(../RAG-HP-PUB/apps-microservices/DeepSeek-OCR/**)",
