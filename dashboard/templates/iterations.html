@@ -8,96 +8,36 @@
     <p>Historique complet des iterations d'optimisation</p>
 </div>
 
-{% if iterations %}
-<div class="card">
-    <table class="table-modern">
-        <thead>
-            <tr>
-                <th style="width: 60px;">Iter</th>
-                <th style="width: 160px;">Date</th>
-                <th>Conformite</th>
-                <th>Aberrations</th>
-                <th>Doublons</th>
-                <th>Diversite</th>
-                <th>Coherence</th>
-                <th>Estimatif</th>
-                <th style="width: 110px;">Score global</th>
-                <th style="width: 100px;">Decision</th>
-                <th style="width: 70px;"></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for iteration in iterations %}
-            <tr>
-                <td><strong>#{{ iteration.number }}</strong></td>
-                <td style="color: var(--text-tertiary); font-size: 0.8rem;">{{ iteration.timestamp or "—" }}</td>
-                <td>
-                    {% if iteration.metrics %}
-                        {{ format_metric('taux_conformite', iteration.metrics.get('taux_conformite')) }}
-                        <span style="font-size: 0.7rem;">{{ get_status('taux_conformite', iteration.metrics.get('taux_conformite')) | safe }}</span>
-                    {% else %}—{% endif %}
-                </td>
-                <td>
-                    {% if iteration.metrics %}
-                        {{ format_metric('aberrations_prix', iteration.metrics.get('aberrations_prix')) }}
-                        <span style="font-size: 0.7rem;">{{ get_status('aberrations_prix', iteration.metrics.get('aberrations_prix')) | safe }}</span>
-                    {% else %}—{% endif %}
-                </td>
-                <td>
-                    {% if iteration.metrics %}
-                        {{ format_metric('doublons', iteration.metrics.get('doublons')) }}
-                        <span style="font-size: 0.7rem;">{{ get_status('doublons', iteration.metrics.get('doublons')) | safe }}</span>
-                    {% else %}—{% endif %}
-                </td>
-                <td>
-                    {% if iteration.metrics %}
-                        {{ format_metric('diversite_fournisseurs', iteration.metrics.get('diversite_fournisseurs')) }}
-                        <span style="font-size: 0.7rem;">{{ get_status('diversite_fournisseurs', iteration.metrics.get('diversite_fournisseurs')) | safe }}</span>
-                    {% else %}—{% endif %}
-                </td>
-                <td>
-                    {% if iteration.metrics %}
-                        {{ format_metric('coherence_score', iteration.metrics.get('coherence_score')) }}
-                        <span style="font-size: 0.7rem;">{{ get_status('coherence_score', iteration.metrics.get('coherence_score')) | safe }}</span>
-                    {% else %}—{% endif %}
-                </td>
-                <td>
-                    {% if iteration.metrics %}
-                        {{ format_metric('presence_estimatif', iteration.metrics.get('presence_estimatif')) }}
-                        <span style="font-size: 0.7rem;">{{ get_status('presence_estimatif', iteration.metrics.get('presence_estimatif')) | safe }}</span>
-                    {% else %}—{% endif %}
-                </td>
-                <td>
-                    <strong>
-                    {% if iteration.metrics %}
-                        {{ format_metric('score_global', iteration.metrics.get('score_global')) }}
-                    {% else %}—{% endif %}
-                    </strong>
-                </td>
-                <td>
-                    {% if iteration.decision == 'GARDÉ' %}
-                        <span class="badge-status badge-success">Garde</span>
-                    {% elif iteration.decision == 'ROLLBACK' %}
-                        <span class="badge-status badge-danger">Rollback</span>
-                    {% else %}
-                        <span class="badge-status badge-neutral">En attente</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <a href="/iterations/{{ iteration.number }}" class="btn-ghost" style="padding: 0.3rem 0.6rem; font-size: 0.72rem; text-decoration: none;">Detail</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+{% if iterations_raw %}
+<div class="card mt-4">
+    <div class="card-header">Journal complet</div>
+    <div class="card-body" id="iterationsContent" style="line-height: 1.7; font-size: 0.9rem;"></div>
 </div>
-{% else %}
-<div class="card">
-    <div class="empty-state">
-        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        <h3>Aucune iteration trouvee</h3>
-        <p>Lancez l'iteration 0 (baseline) depuis le tableau de bord pour commencer.</p>
-    </div>
-</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if iterations_raw %}
+<style>
+    #iterationsContent h1 { font-size: 1.3rem; font-weight: 700; margin: 1.5rem 0 0.5rem; color: var(--text-primary); }
+    #iterationsContent h2 { font-size: 1.1rem; font-weight: 700; margin: 2rem 0 0.75rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light); color: var(--text-primary); }
+    #iterationsContent h3 { font-size: 0.95rem; font-weight: 600; margin: 1rem 0 0.5rem; color: var(--text-secondary); }
+    #iterationsContent strong { color: var(--text-primary); }
+    #iterationsContent code { background: var(--bg); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.82em; color: #c4432b; }
+    #iterationsContent pre { background: #1a1a2e; color: #d4d4d4; padding: 1rem; border-radius: var(--radius-sm); overflow-x: auto; margin: 0.75rem 0; }
+    #iterationsContent pre code { background: none; color: #d4d4d4; padding: 0; }
+    #iterationsContent table { border-collapse: collapse; width: 100%; margin: 0.75rem 0; font-size: 0.85rem; }
+    #iterationsContent th, #iterationsContent td { border: 1px solid var(--border); padding: 0.5rem 0.75rem; text-align: left; }
+    #iterationsContent th { background: var(--bg); font-weight: 600; color: var(--text-secondary); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
+    #iterationsContent blockquote { border-left: 3px solid var(--amber); padding: 0.5rem 0.75rem; margin: 0.75rem 0; background: var(--amber-bg); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; color: var(--amber-text); font-size: 0.85rem; }
+    #iterationsContent ul, #iterationsContent ol { padding-left: 1.5rem; }
+    #iterationsContent li { margin: 0.2rem 0; }
+    #iterationsContent hr { border: none; border-top: 1px solid var(--border-light); margin: 1.5rem 0; }
+    #iterationsContent a { color: var(--accent); }
+    #iterationsContent p { margin: 0.4rem 0; }
+</style>
+<script>
+    document.getElementById('iterationsContent').innerHTML = marked.parse({{ iterations_raw | tojson }});
+</script>
 {% endif %}
 {% endblock %}

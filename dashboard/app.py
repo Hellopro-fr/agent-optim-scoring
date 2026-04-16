@@ -161,11 +161,11 @@ def parse_iterations_md():
     with open(iterations_file, "r", encoding="utf-8") as f:
         content = f.read()
 
-    # Regex pour trouver les sections "## Itération N"
-    pattern = r"## Itération (\d+) — \[(.*?)\]"
-    for match in re.finditer(pattern, content):
+    # Regex pour trouver les sections "## Itération N — date" (avec ou sans crochets)
+    pattern = r"## Itération (\d+) — \[?(.*?)\]?$"
+    for match in re.finditer(pattern, content, re.MULTILINE):
         iter_num = int(match.group(1))
-        timestamp = match.group(2)
+        timestamp = match.group(2).strip()
 
         # Charger les métriques
         metrics = load_metrics(iter_num)
@@ -281,8 +281,15 @@ def iterations():
     """Page — historique des itérations"""
     iterations_list = parse_iterations_md()
 
+    iterations_file = PROJECT_ROOT / "ITERATIONS.md"
+    iterations_raw = ""
+    if iterations_file.exists():
+        with open(iterations_file, "r", encoding="utf-8") as f:
+            iterations_raw = f.read()
+
     return render_template("iterations.html",
                           iterations=iterations_list,
+                          iterations_raw=iterations_raw,
                           format_metric=format_metric_value,
                           get_status=get_metric_status)
 
