@@ -1,10 +1,10 @@
 {
   "iteration": 0,
-  "taux_conformite": 0.0,
+  "taux_conformite": 55.128205128205124,
   "aberrations_prix": 8,
   "doublons": 2,
-  "diversite_fournisseurs": 0,
-  "coherence_score": 0.8,
-  "presence_estimatif": 100.0,
-  "score_global": 25.71428571428572
+  "diversite_fournisseurs": 33,
+  "coherence_score": 0.48573641183889293,
+  "presence_estimatif": 46.15384615384615,
+  "score_global": 43.5691282277351
 }

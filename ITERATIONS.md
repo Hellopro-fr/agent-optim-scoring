@@ -45,28 +45,36 @@ La baseline révèle des déficits majeurs dans 5 métriques critiques :
 
 ---
 
-## Itération 1 — 2026-04-16 10:15
+## Itération 1 — 2026-04-16 16:00 (reprise — approche corrigée)
 
 **Hypothèse** : 
-Je résous **P1** (absence caractéristique traitée comme neutre) en modifiant `cypher_step2_scoring.cypher` pour appliquer une pénalité **au lieu d'un score neutre (0)** quand une caractéristique requise est absente du produit. Cela doit améliorer le taux de conformité en repoussant les fiches incomplètes.
+Je résous **P1** (absence caractéristique traitée comme neutre — pénalité manquante) en modifiant le paramètre `c_unknown_score` de **0** à **-0.25** dans `models.py` du service optim. Quand une caractéristique requise est absente du produit, le score passe de neutre (0) à pénalisant (-0.25), ce qui repousse les fiches incomplètes dans le classement et améliore la conformité.
+
+> ⚠️ Correction vs entrée initiale : le fichier cible est `graph-rag-api-recherche-optim-service/app/domain/models.py` (service optim servant `graphoptim-service/matching`), pas le Cypher du service Rust.
 
 **Fichier modifié** : 
-`RAG-HP-PUB/apps-microservices/graph-rag-api-recherche-rust-service/src/services/cypher_step2_scoring.cypher`
+`RAG-HP-PUB/apps-microservices/graph-rag-api-recherche-optim-service/app/domain/models.py`
 
 **Avant modification** :
-```cypher
-// Connected Check
-WHEN size(item.matches) > 0 THEN $different_val
-// Default
-ELSE $c_unknown_score
+```python
+# Ligne 290-292 (définition champ)
+c_unknown_score: float = Field(
+    0, description="Score pour les caractéristiques inconnues"
+)
+
+# Ligne 343 (preset par défaut)
+c_unknown_score=0,
 ```
 
 **Après modification** :
-```cypher
-// Connected Check
-WHEN size(item.matches) > 0 THEN $different_val
-// Missing characteristic penalty
-ELSE CASE WHEN size(item.conf.blocking_list) > 0 THEN $blocked_val ELSE -0.25 END
+```python
+# Ligne 290-292 (définition champ)
+c_unknown_score: float = Field(
+    -0.25, description="Score pour les caractéristiques inconnues — pénalité absence"
+)
+
+# Ligne 343 (preset par défaut)
+c_unknown_score=-0.25,
 ```
 
 **Résultats** : (à remplir après exécution du pipeline)
@@ -76,8 +84,8 @@ ELSE CASE WHEN size(item.conf.blocking_list) > 0 THEN $blocked_val ELSE -0.25 EN
 | Taux conformité | 55.13% | — | — |
 | Aberrations prix | 8 | — | — |
 | Doublons | 2 | — | — |
-| Diversité fournisseurs | 33 | — | — |
-| Cohérence score | 48.82% | — | — |
+| Diversité fournisseurs | 32 | — | — |
+| Cohérence score | 48.58% | — | — |
 | Présence estimatif | 46.15% | — | — |
 | **Score global** | **43.57%** | — | — |
 
@@ -86,7 +94,7 @@ ELSE CASE WHEN size(item.conf.blocking_list) > 0 THEN $blocked_val ELSE -0.25 EN
 **Raison** : (à remplir après décision)
 
 **Actions** :
-- [ ] Modifier cypher_step2_scoring.cypher
+- [ ] Modifier models.py (c_unknown_score 0 → -0.25)
 - [ ] Redémarrer l'API
 - [ ] Exécuter pipeline : `python scripts/run_pipeline.py --iteration 1`
 - [ ] Comparer avec baseline et décider (GARDÉ / ROLLBACK)

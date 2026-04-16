@@ -1,15 +1,17 @@
 {
-  "_info": "Ce fichier sera rempli après l'exécution de l'itération 0 (baseline). Il devient IMMUTABLE après.",
-  "_status": "EN ATTENTE — exécuter run_pipeline.py sans modification pour générer la baseline",
-  "generated_at": null,
+  "_info": "Baseline de l'itération 0. Recalculée à chaque lancement d'iter 0. Immuable pour toutes les itérations suivantes (garantie par save_baseline). Le champ `observations` est préservé entre les runs.",
+  "_status": "RECALCULATED — dernière mise à jour 2026-04-16T13:41:06.620910",
+  "generated_at": "2026-04-16T13:41:06.620910",
   "parcours_count": 13,
   "metrics": {
-    "taux_conformite": null,
-    "doublons": null,
-    "diversite_fournisseurs": null,
-    "coherence_score_pertinence": null,
-    "presence_estimatif": null,
-    "score_global": null
+    "taux_conformite": 55.128205128205124,
+    "aberrations_prix": 8,
+    "doublons": 2,
+    "diversite_fournisseurs": 33,
+    "coherence_score_pertinence": 0.48573641183889293,
+    "presence_estimatif": 46.15384615384615,
+    "score_global": 43.5691282277351
   },
+  "observations": [],
   "results_par_parcours": []
 }
