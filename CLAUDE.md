@@ -13,6 +13,8 @@ Ton objectif est d'améliorer les 6 métriques définies dans EVAL.md en résolv
   - Log dans ITERATIONS.md
   
 - **RAG-HP-PUB** : API en production. Tu y modifies l'endpoint `graphoptim-service/matching` uniquement.
+  - **Chemin absolu** : `C:\Users\USER\Documents\VSCode\RAG-HP-PUB`
+  - NE JAMAIS POSER DE QUESTION sur le chemin — utiliser ce chemin par défaut
   - Jamais toucher `graph-service/matching` (endpoint prod)
   - Fichiers mutables : Cypher de scoring, prompt LLM, logique matching (pour `graphoptim-service/matching` uniquement)
   - API redémarrée après chaque modification

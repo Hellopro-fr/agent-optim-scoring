@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Itération {{ iteration_num }} — HelloPro Scoring{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <a href="/iterations" class="btn btn-outline-secondary mb-3">← Retour aux itérations</a>
+
+        <h1 class="mb-4">📊 Itération #{{ iteration_num }}</h1>
+
+        {% if metrics %}
+        <!-- Résumé des métriques -->
+        <div class="card mb-4">
+            <div class="card-header">
+                Score global
+            </div>
+            <div class="card-body">
+                <div style="text-align: center; padding: 2rem;">
+                    <div style="font-size: 3rem; font-weight: 700; color: #2c3e50;">
+                        {{ format_metric('score_global', metrics.get('score_global')) }}
+                    </div>
+                    <div style="font-size: 1rem; color: #666; margin-top: 0.5rem;">
+                        Cible: ≥80% {{ get_status('score_global', metrics.get('score_global')) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tableau détaillé des métriques -->
+        <div class="card mb-4">
+            <div class="card-header">
+                Détail des métriques
+            </div>
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead style="background-color: #f8f9fa;">
+                        <tr>
+                            <th>Métrique</th>
+                            <th style="width: 200px;">Valeur</th>
+                            <th style="width: 100px;">Cible</th>
+                            <th style="width: 50px;">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Taux de conformité</strong></td>
+                            <td>{{ format_metric('taux_conformite', metrics.get('taux_conformite')) }}</td>
+                            <td>≥ 80%</td>
+                            <td>{{ get_status('taux_conformite', metrics.get('taux_conformite')) }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Aberrations prix</strong></td>
+                            <td>{{ format_metric('aberrations_prix', metrics.get('aberrations_prix')) }}</td>
+                            <td>0</td>
+                            <td>{{ get_status('aberrations_prix', metrics.get('aberrations_prix')) }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Doublons</strong></td>
+                            <td>{{ format_metric('doublons', metrics.get('doublons')) }}</td>
+                            <td>0</td>
+                            <td>{{ get_status('doublons', metrics.get('doublons')) }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Diversité fournisseurs</strong></td>
+                            <td>{{ format_metric('diversite_fournisseurs', metrics.get('diversite_fournisseurs')) }}</td>
+                            <td>≥ 3</td>
+                            <td>{{ get_status('diversite_fournisseurs', metrics.get('diversite_fournisseurs')) }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Cohérence score/pertinence</strong></td>
+                            <td>{{ format_metric('coherence_score', metrics.get('coherence_score')) }}</td>
+                            <td>≥ 0.5</td>
+                            <td>{{ get_status('coherence_score', metrics.get('coherence_score')) }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Présence estimatif</strong></td>
+                            <td>{{ format_metric('presence_estimatif', metrics.get('presence_estimatif')) }}</td>
+                            <td>≥ 90%</td>
+                            <td>{{ get_status('presence_estimatif', metrics.get('presence_estimatif')) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if parcours_results %}
+        <!-- Résultats par parcours -->
+        <div class="card">
+            <div class="card-header">
+                Résultats par parcours
+            </div>
+            <div class="card-body">
+                {% for parcours_id, produits in parcours_results.items() %}
+                <div class="mb-4">
+                    <h6 style="color: #2c3e50; font-weight: 600;">{{ parcours_id }}</h6>
+                    {% if produits %}
+                    <div style="margin-left: 1rem; border-left: 3px solid #e9ecef; padding-left: 1rem;">
+                        {% for produit in produits %}
+                        <div style="margin-bottom: 0.75rem; font-size: 0.9rem;">
+                            <strong>{{ produit.get('titre_produit', 'Sans titre') }}</strong><br>
+                            <small style="color: #666;">
+                                Fournisseur: {{ produit.get('fournisseur', '—') }}
+                                {% if produit.get('prix_produit') %}
+                                    • Prix: {{ produit.get('prix_produit') }}
+                                {% endif %}
+                            </small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p style="color: #999; margin-left: 1rem;">Aucun produit retourné</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="alert alert-warning">
+            <strong>⚠️ Itération non exécutée</strong> — Les métriques pour cette itération ne sont pas disponibles.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

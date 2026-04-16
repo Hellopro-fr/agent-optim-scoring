@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">🎯 Tableau de bord optimisation HelloPro</h1>
+
+        {% if in_cp1 %}
+        <div class="checkpoint-warning">
+            <div style="display: flex; align-items: flex-start;">
+                <div class="alert-icon">⚠️</div>
+                <div>
+                    <strong>CP1 — Validation baseline requise</strong>
+                    <p style="margin-top: 0.5rem; margin-bottom: 0;">
+                        L'itération 0 (baseline) n'a pas encore été exécutée ou validée.
+                        Lancez l'itération 0 ci-dessous pour établir la référence avant de commencer les optimisations.
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if metrics %}
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <p class="text-muted" style="font-size: 0.9rem;">
+                    <strong>Dernière exécution :</strong> Itération {{ metrics.iteration }}
+                    {% if metrics.get('timestamp') %}
+                        • {{ metrics.timestamp }}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <!-- KPIs Row 1 -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="metric-label">Score global</div>
+                    <div class="metric-value">{{ format_metric('score_global', metrics.get('score_global')) }}</div>
+                    <div class="metric-target">{{ get_status('score_global', metrics.get('score_global')) }} Cible: ≥80%</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="metric-label">Conformité</div>
+                    <div class="metric-value">{{ format_metric('taux_conformite', metrics.get('taux_conformite')) }}</div>
+                    <div class="metric-target">{{ get_status('taux_conformite', metrics.get('taux_conformite')) }} Cible: ≥80%</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="metric-label">Aberrations</div>
+                    <div class="metric-value">{{ format_metric('aberrations_prix', metrics.get('aberrations_prix')) }}</div>
+                    <div class="metric-target">{{ get_status('aberrations_prix', metrics.get('aberrations_prix')) }} Cible: 0</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="metric-label">Doublons</div>
+                    <div class="metric-value">{{ format_metric('doublons', metrics.get('doublons')) }}</div>
+                    <div class="metric-target">{{ get_status('doublons', metrics.get('doublons')) }} Cible: 0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPIs Row 2 -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card metric-card">
+                    <div class="metric-label">Diversité fournisseurs</div>
+                    <div class="metric-value">{{ format_metric('diversite_fournisseurs', metrics.get('diversite_fournisseurs')) }}</div>
+                    <div class="metric-target">{{ get_status('diversite_fournisseurs', metrics.get('diversite_fournisseurs')) }} Cible: ≥3</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card metric-card">
+                    <div class="metric-label">Cohérence score</div>
+                    <div class="metric-value">{{ format_metric('coherence_score', metrics.get('coherence_score')) }}</div>
+                    <div class="metric-target">{{ get_status('coherence_score', metrics.get('coherence_score')) }} Cible: ≥0.5</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card metric-card">
+                    <div class="metric-label">Présence estimatif</div>
+                    <div class="metric-value">{{ format_metric('presence_estimatif', metrics.get('presence_estimatif')) }}</div>
+                    <div class="metric-target">{{ get_status('presence_estimatif', metrics.get('presence_estimatif')) }} Cible: ≥90%</div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <strong>ℹ️ Aucune métrique disponible</strong> — Exécutez l'itération 0 (baseline) pour commencer.
+        </div>
+        {% endif %}
+
+        <!-- Boutons de lancement itérations -->
+        <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+            <div class="card-body">
+                <h5 class="card-title mb-3" style="color: white;">🚀 Lancer une itération</h5>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                    <button class="btn btn-light btn-iterate" data-iteration="0" data-bs-toggle="modal" data-bs-target="#consoleModal">
+                        ▶️ Itération 0 — Baseline
+                    </button>
+                    <button class="btn btn-light btn-iterate" data-iteration="1" data-bs-toggle="modal" data-bs-target="#consoleModal">
+                        ▶️ Itération 1 — P1
+                    </button>
+                    <button class="btn btn-light btn-iterate" data-iteration="2" data-bs-toggle="modal" data-bs-target="#consoleModal">
+                        ▶️ Itération 2 — P3
+                    </button>
+                    <button class="btn btn-light btn-iterate" data-iteration="3" data-bs-toggle="modal" data-bs-target="#consoleModal">
+                        ▶️ Itération 3 — P2
+                    </button>
+                    <button class="btn btn-light btn-iterate" data-iteration="4" data-bs-toggle="modal" data-bs-target="#consoleModal">
+                        ▶️ Itération 4 — P5
+                    </button>
+                    <button class="btn btn-light btn-iterate" data-iteration="5" data-bs-toggle="modal" data-bs-target="#consoleModal">
+                        ▶️ Itération 5 — P6
+                    </button>
+                    <button class="btn btn-light btn-iterate" data-iteration="6" data-bs-toggle="modal" data-bs-target="#consoleModal">
+                        ▶️ Itération 6 — P7
+                    </button>
+                    <button class="btn btn-light btn-iterate" data-iteration="7" data-bs-toggle="modal" data-bs-target="#consoleModal">
+                        ▶️ Itération 7 — P8
+                    </button>
+                    <button class="btn btn-light btn-iterate" data-iteration="8" data-bs-toggle="modal" data-bs-target="#consoleModal">
+                        ▶️ Itération 8 — P9
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {% if iterations %}
+        <div class="card mt-4">
+            <div class="card-header">
+                📋 Historique récent
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead style="background-color: #f8f9fa;">
+                        <tr>
+                            <th style="width: 60px;">Iter</th>
+                            <th>Date</th>
+                            <th style="width: 100px;">Score</th>
+                            <th style="width: 100px;">Décision</th>
+                            <th style="width: 80px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for iteration in iterations[-5:] | reverse %}
+                        <tr>
+                            <td><strong>#{{ iteration.number }}</strong></td>
+                            <td>{{ iteration.timestamp or "—" }}</td>
+                            <td>
+                                {% if iteration.metrics %}
+                                    {{ format_metric('score_global', iteration.metrics.get('score_global')) }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="status-badge status-{{ iteration.decision.lower() }}">
+                                    {{ iteration.decision }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="/iterations/{{ iteration.number }}" class="btn btn-sm btn-outline-primary">
+                                    Détail
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de console -->
+<div class="modal fade" id="consoleModal" tabindex="-1" role="dialog" aria-labelledby="consoleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="consoleModalLabel">Claude travaille sur l'itération <span id="iterationNum">—</span>...</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body console-modal">
+                <div class="console-output" id="consoleOutput" style="min-height: 300px;">
+                    <p style="color: #aaa;">Démarrage de Claude...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="closeConsoleBtn" data-bs-dismiss="modal">Fermer et rafraîchir</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Boutons "Lancer itération"
+    document.querySelectorAll('.btn-iterate').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const iteration = this.dataset.iteration;
+            startIteration(iteration);
+        });
+    });
+
+    // Bouton "Fermer et rafraîchir"
+    document.getElementById('closeConsoleBtn').addEventListener('click', function() {
+        location.reload();
+    });
+});
+
+function startIteration(iterationNum) {
+    const consoleOutput = document.getElementById('consoleOutput');
+    const iterationNumSpan = document.getElementById('iterationNum');
+
+    consoleOutput.innerHTML = '<p style="color: #aaa;">Démarrage de l\'itération ' + iterationNum + '...</p>';
+    iterationNumSpan.textContent = iterationNum;
+
+    // Lancer l'itération via POST
+    fetch('/iterate/' + iterationNum + '/start', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                consoleOutput.innerHTML = '<p style="color: #ff6666;">Erreur: ' + data.error + '</p>';
+            } else {
+                // Démarrer le stream
+                streamIteration(iterationNum);
+            }
+        })
+        .catch(err => {
+            consoleOutput.innerHTML = '<p style="color: #ff6666;">Erreur: ' + err.message + '</p>';
+        });
+}
+
+function streamIteration(iterationNum) {
+    const consoleOutput = document.getElementById('consoleOutput');
+    consoleOutput.innerHTML = '';
+
+    // Ouvrir le SSE stream
+    const eventSource = new EventSource('/iterate/' + iterationNum + '/stream');
+
+    eventSource.addEventListener('message', function(event) {
+        try {
+            const data = JSON.parse(event.data);
+
+            if (data.error) {
+                const p = document.createElement('p');
+                p.style.color = '#ff6666';
+                p.textContent = 'ERREUR: ' + data.error;
+                consoleOutput.appendChild(p);
+                if (data.done) {
+                    eventSource.close();
+                }
+            } else if (data.done) {
+                const p = document.createElement('p');
+                p.style.color = '#66ff66';
+                p.style.fontWeight = 'bold';
+                p.textContent = 'Itération terminée (code ' + data.code + ')';
+                consoleOutput.appendChild(p);
+                eventSource.close();
+
+                // Auto-rafraîchir après 3 secondes
+                setTimeout(function() {
+                    location.reload();
+                }, 3000);
+            } else if (data.line) {
+                const p = document.createElement('p');
+                p.className = 'console-line';
+                p.textContent = data.line;
+                consoleOutput.appendChild(p);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            }
+        } catch (e) {
+            console.error('Erreur parsing SSE:', e);
+        }
+    });
+
+    eventSource.onerror = function() {
+        consoleOutput.innerHTML += '<p style="color: #ff6666;">Connexion fermée</p>';
+        eventSource.close();
+    };
+}
+</script>
+{% endblock %}

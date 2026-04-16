@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Problèmes P1-P9 — HelloPro Scoring{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">🔧 Statut des 9 problèmes</h1>
+
+        {% if problems %}
+        <div class="row">
+            {% for problem in problems %}
+            <div class="col-md-6 mb-3">
+                <div class="card" style="border-left: 4px solid {% if problem.status == 'EN COURS' %}#ffc107{% elif problem.status == 'GARDÉ' %}#28a745{% elif problem.status == 'SKIPPED' %}#6c757d{% else %}#e9ecef{% endif %};">
+                    <div class="card-body">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div>
+                                <h6 style="margin-bottom: 0; font-weight: 600; color: #2c3e50;">
+                                    P{{ problem.number }} — {{ problem.name }}
+                                </h6>
+                                <div style="margin-top: 0.5rem;">
+                                    {% if problem.status == 'EN COURS' %}
+                                        <span style="display: inline-block; background-color: #ffc107; color: #333; padding: 0.25rem 0.75rem; border-radius: 3px; font-size: 0.8rem; font-weight: 600;">
+                                            🟡 EN COURS
+                                        </span>
+                                        {% if problem.iteration %}
+                                            <small style="color: #666; margin-left: 0.5rem;">Itération {{ problem.iteration }}</small>
+                                        {% endif %}
+                                    {% elif problem.status == 'GARDÉ' %}
+                                        <span style="display: inline-block; background-color: #28a745; color: white; padding: 0.25rem 0.75rem; border-radius: 3px; font-size: 0.8rem; font-weight: 600;">
+                                            🟢 GARDÉ
+                                        </span>
+                                        {% if problem.iteration %}
+                                            <small style="color: #666; margin-left: 0.5rem;">Itération {{ problem.iteration }}</small>
+                                        {% endif %}
+                                    {% elif problem.status == 'SKIPPED' %}
+                                        <span style="display: inline-block; background-color: #6c757d; color: white; padding: 0.25rem 0.75rem; border-radius: 3px; font-size: 0.8rem; font-weight: 600;">
+                                            ⛔ IGNORÉ
+                                        </span>
+                                    {% else %}
+                                        <span style="display: inline-block; background-color: #e9ecef; color: #333; padding: 0.25rem 0.75rem; border-radius: 3px; font-size: 0.8rem; font-weight: 600;">
+                                            ⚪ BACKLOG
+                                        </span>
+                                        {% if problem.iteration %}
+                                            <small style="color: #666; margin-left: 0.5rem;">Itération {{ problem.iteration }}</small>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Ordre d'attaque suggéré -->
+        <div class="card mt-4">
+            <div class="card-header">
+                📅 Ordre d'attaque suggéré
+            </div>
+            <div class="card-body">
+                <ol style="margin-bottom: 0;">
+                    <li><strong>P1</strong> — Absence caractéristique → pénalité manquante</li>
+                    <li><strong>P3</strong> — LLM juge sur titre seul, ignore descriptif</li>
+                    <li><strong>P2</strong> — Produits hors catégorie remontent trop haut</li>
+                    <li><strong>P5</strong> — Zéro résultat certains parcours</li>
+                    <li><strong>P6</strong> — Mélange produits neuf/occasion</li>
+                    <li><strong>P7</strong> — Erreur calcul scoring multi-caractéristiques</li>
+                    <li><strong>P8</strong> — Manque reranking après matching</li>
+                    <li><strong>P9</strong> — Caching produits dénormalisés</li>
+                </ol>
+                <p style="color: #666; margin-top: 1rem; font-size: 0.9rem;">
+                    <strong>Note :</strong> P4 (86% prix sur demande) est un diagnostic, non corrigible.
+                </p>
+            </div>
+        </div>
+
+        {% else %}
+        <div class="alert alert-info">
+            <strong>ℹ️ Aucun problème chargé</strong>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
