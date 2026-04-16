@@ -178,21 +178,51 @@
     </div>
 </div>
 
-<!-- Modal de console -->
-<div class="modal fade" id="consoleModal" tabindex="-1" role="dialog" aria-labelledby="consoleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
+<!-- Modal de console interactive -->
+<div class="modal fade" id="consoleModal" tabindex="-1" role="dialog"
+     aria-labelledby="consoleModalLabel" aria-hidden="true"
+     data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="consoleModalLabel">Claude travaille sur l'itération <span id="iterationNum">—</span>...</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header" style="background-color: #2c3e50; color: white;">
+                <h5 class="modal-title" id="consoleModalLabel">
+                    Claude — Itération <span id="iterationNum">—</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body console-modal">
-                <div class="console-output" id="consoleOutput" style="min-height: 300px;">
-                    <p style="color: #aaa;">Démarrage de Claude...</p>
+            <div class="modal-body console-modal" style="padding: 0;">
+                <div class="console-output" id="consoleOutput"
+                     style="min-height: 400px; max-height: 70vh;">
+                    <p style="color: #aaa;">En attente...</p>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" id="closeConsoleBtn" data-bs-dismiss="modal">Fermer et rafraîchir</button>
+            <div class="modal-footer" style="flex-direction: column; align-items: stretch; gap: 0.5rem; padding: 0.75rem;">
+                <!-- Loader pendant que Claude travaille -->
+                <div id="loaderArea" style="display: none; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0;">
+                        <div class="spinner-border spinner-border-sm text-info" role="status"></div>
+                        <span style="color: #aaa; font-size: 0.85rem;">Claude travaille...</span>
+                    </div>
+                </div>
+                <!-- Zone de saisie (masquée tant que Claude n'attend pas) -->
+                <div id="inputArea" style="display: none; width: 100%;">
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="userInput" class="form-control"
+                               placeholder="Votre réponse à Claude..."
+                               style="font-family: 'Courier New', monospace; font-size: 0.9rem;">
+                        <button id="sendBtn" class="btn btn-primary" style="white-space: nowrap;">
+                            Envoyer
+                        </button>
+                    </div>
+                    <small style="color: #999; margin-top: 0.25rem; display: block;">
+                        Entrée pour envoyer — Claude attend votre réponse
+                    </small>
+                </div>
+                <div style="display: flex; justify-content: flex-end; width: 100%;">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="closeConsoleBtn" data-bs-dismiss="modal">
+                        Fermer
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -202,91 +232,220 @@
 
 {% block extra_js %}
 <script>
+let currentEventSource = null;
+let currentIteration = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     // Boutons "Lancer itération"
     document.querySelectorAll('.btn-iterate').forEach(btn => {
         btn.addEventListener('click', function() {
-            const iteration = this.dataset.iteration;
-            startIteration(iteration);
+            startIteration(this.dataset.iteration);
         });
     });
 
-    // Bouton "Fermer et rafraîchir"
+    // Fermer : couper le SSE et rafraîchir les KPIs
     document.getElementById('closeConsoleBtn').addEventListener('click', function() {
+        if (currentEventSource) {
+            currentEventSource.close();
+            currentEventSource = null;
+        }
         location.reload();
+    });
+
+    // Envoyer un message
+    document.getElementById('sendBtn').addEventListener('click', sendMessage);
+    document.getElementById('userInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') sendMessage();
     });
 });
 
+
 function startIteration(iterationNum) {
     const consoleOutput = document.getElementById('consoleOutput');
-    const iterationNumSpan = document.getElementById('iterationNum');
+    const inputArea = document.getElementById('inputArea');
 
-    consoleOutput.innerHTML = '<p style="color: #aaa;">Démarrage de l\'itération ' + iterationNum + '...</p>';
-    iterationNumSpan.textContent = iterationNum;
+    consoleOutput.innerHTML = '<p style="color: #aaa;">Lancement de l\'itération ' + iterationNum + '...</p>';
+    document.getElementById('iterationNum').textContent = iterationNum;
+    inputArea.style.display = 'none';
+    currentIteration = iterationNum;
 
-    // Lancer l'itération via POST
+    // Couper un éventuel stream précédent
+    if (currentEventSource) {
+        currentEventSource.close();
+        currentEventSource = null;
+    }
+
     fetch('/iterate/' + iterationNum + '/start', { method: 'POST' })
         .then(r => r.json())
         .then(data => {
             if (data.error) {
                 consoleOutput.innerHTML = '<p style="color: #ff6666;">Erreur: ' + data.error + '</p>';
             } else {
-                // Démarrer le stream
-                streamIteration(iterationNum);
+                connectStream(iterationNum);
             }
         })
         .catch(err => {
-            consoleOutput.innerHTML = '<p style="color: #ff6666;">Erreur: ' + err.message + '</p>';
+            consoleOutput.innerHTML = '<p style="color: #ff6666;">Erreur réseau: ' + err.message + '</p>';
         });
 }
 
-function streamIteration(iterationNum) {
+
+function connectStream(iterationNum) {
     const consoleOutput = document.getElementById('consoleOutput');
+    const inputArea = document.getElementById('inputArea');
+    const loaderArea = document.getElementById('loaderArea');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+
     consoleOutput.innerHTML = '';
+    loaderArea.style.display = 'block';
+    inputArea.style.display = 'none';
+    let isDone = false;
+    let mdBuffer = '';       // Accumule le markdown du tour courant
+    let mdBlock = null;      // Element DOM du bloc markdown en cours
+    let renderTimer = null;  // Debounce du rendu
 
-    // Ouvrir le SSE stream
-    const eventSource = new EventSource('/iterate/' + iterationNum + '/stream');
+    function flushMarkdown() {
+        if (!mdBuffer) return;
+        if (!mdBlock) {
+            mdBlock = document.createElement('div');
+            mdBlock.className = 'md-block';
+            consoleOutput.appendChild(mdBlock);
+        }
+        mdBlock.innerHTML = marked.parse(mdBuffer);
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    }
 
-    eventSource.addEventListener('message', function(event) {
+    function scheduleRender() {
+        if (renderTimer) clearTimeout(renderTimer);
+        renderTimer = setTimeout(flushMarkdown, 80);
+    }
+
+    const es = new EventSource('/iterate/' + iterationNum + '/stream');
+    currentEventSource = es;
+
+    es.addEventListener('message', function(event) {
         try {
             const data = JSON.parse(event.data);
 
-            if (data.error) {
+            if (data.keepalive) {
+                return;
+
+            } else if (data.line) {
+                // Ligne de texte de Claude → accumuler dans le buffer markdown
+                mdBuffer += data.line + '\n';
+                scheduleRender();
+
+            } else if (data.user) {
+                // Flush le markdown Claude avant le message utilisateur
+                flushMarkdown();
+                mdBuffer = '';
+                mdBlock = null;
+
+                const div = document.createElement('div');
+                div.style.cssText = 'color:#66ccff; font-weight:bold; margin:1rem 0 0.5rem; padding-top:0.5rem; border-top:1px solid #444;';
+                div.textContent = '\u25b6 Vous : ' + data.user;
+                consoleOutput.appendChild(div);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+
+            } else if (data.waiting_input) {
+                // Flush final du markdown
+                flushMarkdown();
+                mdBuffer = '';
+                mdBlock = null;
+
+                loaderArea.style.display = 'none';
+
+                const p = document.createElement('p');
+                p.style.cssText = 'color:#ffc107; margin-top:0.5rem;';
+                p.textContent = '\u23f3 Claude attend votre réponse...';
+                consoleOutput.appendChild(p);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+
+                inputArea.style.display = 'block';
+                userInput.disabled = false;
+                sendBtn.disabled = false;
+                userInput.value = '';
+                userInput.focus();
+
+            } else if (data.done) {
+                flushMarkdown();
+                loaderArea.style.display = 'none';
+                isDone = true;
+                const p = document.createElement('p');
+                p.style.cssText = 'color:#66ff66; font-weight:bold; margin-top:1rem;';
+                p.textContent = 'Session terminée.';
+                consoleOutput.appendChild(p);
+                inputArea.style.display = 'none';
+                es.close();
+                currentEventSource = null;
+
+            } else if (data.error) {
+                flushMarkdown();
                 const p = document.createElement('p');
                 p.style.color = '#ff6666';
                 p.textContent = 'ERREUR: ' + data.error;
                 consoleOutput.appendChild(p);
-                if (data.done) {
-                    eventSource.close();
-                }
-            } else if (data.done) {
-                const p = document.createElement('p');
-                p.style.color = '#66ff66';
-                p.style.fontWeight = 'bold';
-                p.textContent = 'Itération terminée (code ' + data.code + ')';
-                consoleOutput.appendChild(p);
-                eventSource.close();
-
-                // Auto-rafraîchir après 3 secondes
-                setTimeout(function() {
-                    location.reload();
-                }, 3000);
-            } else if (data.line) {
-                const p = document.createElement('p');
-                p.className = 'console-line';
-                p.textContent = data.line;
-                consoleOutput.appendChild(p);
-                consoleOutput.scrollTop = consoleOutput.scrollHeight;
             }
         } catch (e) {
-            console.error('Erreur parsing SSE:', e);
+            console.error('SSE parse error:', e);
         }
     });
 
-    eventSource.onerror = function() {
-        consoleOutput.innerHTML += '<p style="color: #ff6666;">Connexion fermée</p>';
-        eventSource.close();
+    es.onerror = function() {
+        es.close();
+        currentEventSource = null;
+        loaderArea.style.display = 'none';
+        if (!isDone) {
+            const p = document.createElement('p');
+            p.style.color = '#ff6666';
+            p.textContent = 'Connexion perdue.';
+            consoleOutput.appendChild(p);
+        }
     };
+}
+
+
+function sendMessage() {
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const inputArea = document.getElementById('inputArea');
+    const message = userInput.value.trim();
+
+    if (!message || currentIteration === null) return;
+
+    // Désactiver l'input, afficher le loader
+    userInput.disabled = true;
+    sendBtn.disabled = true;
+    inputArea.style.display = 'none';
+    document.getElementById('loaderArea').style.display = 'block';
+
+    fetch('/iterate/' + currentIteration + '/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: message })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            const consoleOutput = document.getElementById('consoleOutput');
+            const p = document.createElement('p');
+            p.style.color = '#ff6666';
+            p.textContent = 'Erreur envoi: ' + data.error;
+            consoleOutput.appendChild(p);
+            // Réactiver l'input
+            inputArea.style.display = 'block';
+            userInput.disabled = false;
+            sendBtn.disabled = false;
+        }
+        userInput.value = '';
+    })
+    .catch(err => {
+        console.error('Send error:', err);
+        inputArea.style.display = 'block';
+        userInput.disabled = false;
+        sendBtn.disabled = false;
+    });
 }
 </script>
 {% endblock %}

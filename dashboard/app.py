@@ -5,9 +5,11 @@ Permet aux non-devs de lancer des itérations et suivre la progression en live.
 """
 
 import json
+import os
 import re
 import subprocess
 import shutil
+import threading
 import time
 from pathlib import Path
 from flask import Flask, render_template, jsonify, request, Response
@@ -18,9 +20,107 @@ RESULTS_DIR = PROJECT_ROOT / "results"
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 app = Flask(__name__, template_folder=str(TEMPLATES_DIR))
+app.config["TEMPLATES_AUTO_RELOAD"] = True
 
-# Dictionnaire global pour tracker les subprocessus en cours
-_processes = {}  # {iteration_num: {"proc": process, "log_file": path}}
+# Sessions interactives : chaque itération maintient une conversation Claude
+_sessions = {}  # {n: {"proc", "events", "new_event", "status", "log_file"}}
+
+
+def _parse_stream_event(raw_line):
+    """Parse une ligne stream-json Claude CLI. Retourne (texte_affichable, session_id|None)."""
+    try:
+        event = json.loads(raw_line)
+    except (json.JSONDecodeError, TypeError):
+        # Pas du JSON → traiter comme texte brut
+        return (raw_line, None)
+
+    session_id = event.get("session_id")
+    text = ""
+    etype = event.get("type", "")
+
+    # content_block_delta → token de texte en streaming
+    if etype == "content_block_delta":
+        text = event.get("delta", {}).get("text", "")
+
+    # assistant message (certaines versions CLI)
+    elif etype == "assistant":
+        msg = event.get("message", event)
+        content = msg.get("content", "")
+        if isinstance(content, list):
+            for block in content:
+                if isinstance(block, dict) and block.get("type") == "text":
+                    text += block.get("text", "")
+        elif isinstance(content, str):
+            text = content
+
+    # result → fin de réponse, contient session_id
+    elif etype == "result":
+        session_id = event.get("session_id", session_id)
+
+    return (text, session_id)
+
+
+def _stdout_reader(proc, session):
+    """Thread de lecture : parse le stream-json de Claude, pousse le texte dans events."""
+    log_path = session["log_file"]
+    try:
+        with open(log_path, "a", encoding="utf-8") as logf:
+            for raw_line in iter(proc.stdout.readline, ""):
+                raw_line = raw_line.rstrip("\n\r")
+                if not raw_line:
+                    continue
+
+                text, sid = _parse_stream_event(raw_line)
+
+                if sid:
+                    session["session_id"] = sid
+
+                if text:
+                    logf.write(text + "\n")
+                    logf.flush()
+                    session["events"].append({"type": "text", "data": text})
+                    session["new_event"].set()
+    except Exception as e:
+        session["events"].append({"type": "error", "data": str(e)})
+        session["new_event"].set()
+    finally:
+        proc.stdout.close()
+        proc.wait()
+        session["proc"] = None
+        session["status"] = "waiting_input"
+        session["events"].append({"type": "waiting_input"})
+        session["new_event"].set()
+
+
+def _launch_turn(n, prompt, is_first=False):
+    """Lance un tour de conversation Claude (subprocess + reader thread)."""
+    session = _sessions[n]
+    claude_cmd = shutil.which("claude")
+
+    cmd = [claude_cmd, "-p", prompt, "--output-format", "stream-json", "--verbose"]
+    if not is_first and session.get("session_id"):
+        cmd.extend(["--resume", session["session_id"]])
+    elif not is_first:
+        cmd.append("-c")  # Fallback si pas de session_id
+
+    env = os.environ.copy()
+    env["PYTHONUNBUFFERED"] = "1"
+
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        encoding="utf-8",
+        cwd=str(PROJECT_ROOT),
+        bufsize=1,
+        env=env,
+    )
+    session["proc"] = proc
+    session["status"] = "running"
+
+    t = threading.Thread(target=_stdout_reader, args=(proc, session), daemon=True)
+    t.start()
 
 
 def load_metrics(iteration_num):
@@ -229,121 +329,125 @@ def api_metrics_latest():
 
 @app.route("/iterate/<int:n>/start", methods=["POST"])
 def start_iteration(n):
-    """Démarre une itération N en subprocess avec capture via fichier de log"""
-    if n in _processes:
-        return jsonify({"error": "Iteration already running"}), 400
+    """Démarre une session interactive Claude pour l'itération N."""
+    # Nettoyer une éventuelle session précédente
+    if n in _sessions:
+        old = _sessions[n]
+        if old.get("status") == "running" and old.get("proc"):
+            return jsonify({"error": "Itération déjà en cours"}), 400
+        # Session terminée ou en attente → on la remplace
+        if old.get("proc"):
+            try:
+                old["proc"].terminate()
+            except Exception:
+                pass
 
-    try:
-        # Trouver le chemin complet de claude
-        claude_cmd = shutil.which("claude")
-        if not claude_cmd:
-            return jsonify({"error": "claude command not found in PATH"}), 500
+    claude_cmd = shutil.which("claude")
+    if not claude_cmd:
+        return jsonify({"error": "claude introuvable dans le PATH"}), 500
 
-        # Créer le répertoire de logs
-        log_dir = PROJECT_ROOT / "dashboard" / "logs"
-        log_dir.mkdir(parents=True, exist_ok=True)
-        log_file = log_dir / f"iteration_{n}.log"
+    log_dir = PROJECT_ROOT / "dashboard" / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / f"iteration_{n}.log"
 
-        # Lancer Claude en redirigeant stdout vers le fichier de log
-        with open(log_file, "w", encoding="utf-8") as logf:
-            proc = subprocess.Popen(
-                [claude_cmd, "-p", f"/iterate {n}"],
-                stdout=logf,
-                stderr=subprocess.STDOUT,
-                text=True,
-                cwd=str(PROJECT_ROOT),
-                encoding="utf-8"
-            )
+    # Vider le log
+    open(log_file, "w").close()
 
-        _processes[n] = {
-            "proc": proc,
-            "log_file": str(log_file),
-            "start_time": time.time()
-        }
+    _sessions[n] = {
+        "proc": None,
+        "events": [],
+        "new_event": threading.Event(),
+        "status": "starting",
+        "log_file": str(log_file),
+    }
 
-        return jsonify({
-            "status": "started",
-            "iteration": n,
-            "message": f"Itération {n} en cours... Consultez la console ci-dessous"
-        })
+    _launch_turn(n, f"/iterate {n}", is_first=True)
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return jsonify({"status": "started", "iteration": n})
+
+
+@app.route("/iterate/<int:n>/send", methods=["POST"])
+def send_message(n):
+    """Envoie un message utilisateur pour continuer la conversation Claude."""
+    session = _sessions.get(n)
+    if not session:
+        return jsonify({"error": "Pas de session active"}), 400
+    if session["status"] != "waiting_input":
+        return jsonify({"error": "Claude n'attend pas de réponse"}), 400
+
+    data = request.get_json()
+    message = (data or {}).get("message", "").strip()
+    if not message:
+        return jsonify({"error": "Message vide"}), 400
+
+    # Enregistrer le message utilisateur dans les events + log
+    session["events"].append({"type": "user", "data": message})
+    session["new_event"].set()
+    with open(session["log_file"], "a", encoding="utf-8") as f:
+        f.write(f"\n>>> UTILISATEUR: {message}\n\n")
+
+    _launch_turn(n, message, is_first=False)
+
+    return jsonify({"status": "sent"})
 
 
 @app.route("/iterate/<int:n>/stream")
 def stream_iteration(n):
-    """SSE - Stream la sortie de Claude depuis le fichier de log"""
+    """SSE — stream bidirectionnel : texte Claude + signaux waiting_input."""
     def generate():
-        proc_info = _processes.get(n)
-        if not proc_info:
-            yield "data: {\"error\": \"Iteration not started\"}\n\n"
+        session = _sessions.get(n)
+        if not session:
+            yield f"data: {json.dumps({'error': 'Pas de session'})}\n\n"
             return
 
-        log_file_path = proc_info.get("log_file")
-        proc = proc_info.get("proc")
+        events = session["events"]
+        flag = session["new_event"]
+        idx = 0
+        last_activity = time.time()
+        max_idle = 3600  # 1h d'inactivité max
 
-        if not log_file_path or not Path(log_file_path).exists():
-            yield "data: {\"error\": \"Log file not found\"}\n\n"
-            return
+        while True:
+            # Drainer tous les events disponibles
+            had_events = False
+            while idx < len(events):
+                event = events[idx]
+                idx += 1
+                had_events = True
 
-        try:
-            last_position = 0
-            max_wait = 600  # 10 minutes max
-            start_time = time.time()
+                etype = event.get("type")
+                if etype == "text":
+                    yield f"data: {json.dumps({'line': event['data']})}\n\n"
+                elif etype == "user":
+                    yield f"data: {json.dumps({'user': event['data']})}\n\n"
+                elif etype == "waiting_input":
+                    yield f"data: {json.dumps({'waiting_input': True})}\n\n"
+                elif etype == "error":
+                    yield f"data: {json.dumps({'error': event['data']})}\n\n"
+                elif etype == "done":
+                    yield f"data: {json.dumps({'done': True})}\n\n"
+                    return
 
-            while time.time() - start_time < max_wait:
-                # Lire les nouvelles lignes du fichier
-                try:
-                    with open(log_file_path, "r", encoding="utf-8", errors="replace") as f:
-                        f.seek(last_position)
-                        for line in f:
-                            line_clean = line.rstrip("\n\r")
-                            if line_clean:
-                                yield f"data: {json.dumps({'line': line_clean})}\n\n"
-                        last_position = f.tell()
-                except Exception:
-                    pass
+            if had_events:
+                last_activity = time.time()
 
-                # Vérifier si le processus est terminé
-                poll_result = proc.poll()
-                if poll_result is not None:
-                    # Dernière lecture pour capturer ce qui reste
-                    try:
-                        with open(log_file_path, "r", encoding="utf-8", errors="replace") as f:
-                            f.seek(last_position)
-                            for line in f:
-                                line_clean = line.rstrip("\n\r")
-                                if line_clean:
-                                    yield f"data: {json.dumps({'line': line_clean})}\n\n"
-                    except Exception:
-                        pass
+            # Timeout d'inactivité
+            if time.time() - last_activity > max_idle:
+                yield f"data: {json.dumps({'error': 'Session expirée (1h sans activité)'})}\n\n"
+                return
 
-                    # Signal que c'est terminé
-                    yield f"data: {json.dumps({'done': True, 'code': poll_result})}\n\n"
-                    break
+            # Attendre de nouveaux events
+            flag.wait(timeout=10)
+            flag.clear()
 
-                # Attendre avant de relire
-                time.sleep(0.2)
-
-            # Timeout atteint
-            if time.time() - start_time >= max_wait:
-                yield f"data: {json.dumps({'error': 'Timeout', 'done': True})}\n\n"
-
-        finally:
-            # Nettoyer
-            if n in _processes:
-                try:
-                    proc.terminate()
-                except:
-                    pass
-                _processes.pop(n, None)
+            # Keepalive (data event, pas un commentaire SSE)
+            if idx >= len(events):
+                yield f"data: {json.dumps({'keepalive': True})}\n\n"
 
     return Response(generate(), mimetype="text/event-stream",
                     headers={
                         "Cache-Control": "no-cache",
                         "X-Accel-Buffering": "no",
-                        "Connection": "keep-alive"
+                        "Connection": "keep-alive",
                     })
 
 
@@ -371,8 +475,10 @@ if __name__ == "__main__":
     print("  GET  /              - Tableau de bord (KPIs)")
     print("  GET  /iterations    - Historique des itérations")
     print("  GET  /problems      - Statut P1-P9")
-    print("  POST /iterate/<N>/start - Commande a lancer")
+    print("  POST /iterate/<N>/start - Démarrer une itération")
+    print("  POST /iterate/<N>/send  - Répondre à Claude")
+    print("  GET  /iterate/<N>/stream - SSE temps réel")
     print()
     print("=" * 70)
     print()
-    app.run(host="0.0.0.0", port=5050, debug=False)
+    app.run(host="0.0.0.0", port=5050, debug=False, threaded=True)
