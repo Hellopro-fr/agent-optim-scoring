@@ -19,51 +19,44 @@
 {% if metrics %}
 <!-- KPIs -->
 <div class="row g-3 mb-4">
-    <div class="col-6 col-lg-3">
+    <div class="col-6 col-lg-4">
         <div class="card metric-card">
-            <div class="metric-label">Score global</div>
+            <div class="metric-label">Score global <span class="metric-info" data-tooltip="Indicateur synthetique de la qualite globale des resultats. Moyenne ponderee des 5 metriques (Conformite x2, les autres x1, total poids = 6). Plus il est haut, meilleure est la selection de produits affichee a l'utilisateur.">?</span></div>
             <div class="metric-value">{{ format_metric('score_global', metrics.get('score_global')) }}</div>
             <div class="metric-target">{{ get_status('score_global', metrics.get('score_global')) | safe }} Cible : ≥80%</div>
         </div>
     </div>
-    <div class="col-6 col-lg-3">
+    <div class="col-6 col-lg-4">
         <div class="card metric-card">
-            <div class="metric-label">Conformite</div>
+            <div class="metric-label">Conformite <span class="metric-info" data-tooltip="% de produits dans les resultats qui correspondent reellement au besoin exprime : bonne categorie, bon sous-type, caracteristiques compatibles, etat (neuf/occasion) conforme. C'est la metrique la plus importante (poids x2).">?</span></div>
             <div class="metric-value">{{ format_metric('taux_conformite', metrics.get('taux_conformite')) }}</div>
             <div class="metric-target">{{ get_status('taux_conformite', metrics.get('taux_conformite')) | safe }} Cible : ≥80%</div>
         </div>
     </div>
-    <div class="col-6 col-lg-3">
+    <div class="col-6 col-lg-4">
         <div class="card metric-card">
-            <div class="metric-label">Aberrations prix</div>
-            <div class="metric-value">{{ format_metric('aberrations_prix', metrics.get('aberrations_prix')) }}</div>
-            <div class="metric-target">{{ get_status('aberrations_prix', metrics.get('aberrations_prix')) | safe }} Cible : 0</div>
-        </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="card metric-card">
-            <div class="metric-label">Doublons</div>
+            <div class="metric-label">Doublons <span class="metric-info" data-tooltip="Nombre de produits identiques ou quasi-identiques dans la selection (meme fournisseur + descriptif technique quasi-identique). Attention : meme titre ne suffit pas, il faut comparer le descriptif. On veut 0 doublon pour ne pas saturer l'acheteur.">?</span></div>
             <div class="metric-value">{{ format_metric('doublons', metrics.get('doublons')) }}</div>
             <div class="metric-target">{{ get_status('doublons', metrics.get('doublons')) | safe }} Cible : 0</div>
         </div>
     </div>
     <div class="col-6 col-lg-4">
         <div class="card metric-card">
-            <div class="metric-label">Diversite fournisseurs</div>
+            <div class="metric-label">Diversite fournisseurs <span class="metric-info" data-tooltip="Nombre de fournisseurs differents representes dans les resultats. Une bonne diversite evite de presenter un seul fournisseur et permet la mise en concurrence. Cible : au moins 3 fournisseurs distincts par requete.">?</span></div>
             <div class="metric-value">{{ format_metric('diversite_fournisseurs', metrics.get('diversite_fournisseurs')) }}</div>
             <div class="metric-target">{{ get_status('diversite_fournisseurs', metrics.get('diversite_fournisseurs')) | safe }} Cible : ≥3</div>
         </div>
     </div>
     <div class="col-6 col-lg-4">
         <div class="card metric-card">
-            <div class="metric-label">Coherence score</div>
+            <div class="metric-label">Coherence score <span class="metric-info" data-tooltip="Mesure si les produits les mieux scores par l'API sont effectivement les plus pertinents (correlation positive entre score interne et pertinence reelle). Si un produit hors sujet a un meilleur score qu'un produit parfait, la coherence chute.">?</span></div>
             <div class="metric-value">{{ format_metric('coherence_score', metrics.get('coherence_score')) }}</div>
             <div class="metric-target">{{ get_status('coherence_score', metrics.get('coherence_score')) | safe }} Cible : ≥0.5</div>
         </div>
     </div>
     <div class="col-6 col-lg-4">
         <div class="card metric-card">
-            <div class="metric-label">Presence estimatif</div>
+            <div class="metric-label">Presence estimatif <span class="metric-info" data-tooltip="% de produits affichant un prix estime (pas 'prix sur demande'). Permet a l'acheteur de comparer rapidement sans devoir contacter chaque fournisseur. Cible : ≥90% des produits doivent avoir un prix visible.">?</span></div>
             <div class="metric-value">{{ format_metric('presence_estimatif', metrics.get('presence_estimatif')) }}</div>
             <div class="metric-target">{{ get_status('presence_estimatif', metrics.get('presence_estimatif')) | safe }} Cible : ≥90%</div>
         </div>
@@ -88,16 +81,24 @@
                 <p style="margin: 0.25rem 0 0; font-size: 0.8rem; color: rgba(255,255,255,0.5);">Chaque bouton demarre une session interactive avec l'agent HelloPro</p>
             </div>
         </div>
+        <!-- Legend -->
+        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem; font-size: 0.7rem; color: rgba(255,255,255,0.5);">
+            <span><span class="iter-dot iter-dot-never"></span> Jamais lancee</span>
+            <span><span class="iter-dot iter-dot-done"></span> Terminee</span>
+            <span><span class="iter-dot iter-dot-running"></span> En cours</span>
+            <span><span class="iter-dot iter-dot-waiting"></span> Attend reponse</span>
+        </div>
         <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-            <button class="btn btn-iterate" data-iteration="0" data-bs-toggle="modal" data-bs-target="#consoleModal"
-                    style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: white; border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 600; transition: all 0.2s;">
-                Iter 0 — Baseline
-            </button>
-            {% for i in range(1, 9) %}
-            {% set problems = ['P1','P3','P2','P5','P6','P7','P8','P9'] %}
-            <button class="btn btn-iterate" data-iteration="{{ i }}" data-bs-toggle="modal" data-bs-target="#consoleModal"
-                    style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 500; transition: all 0.2s;">
-                Iter {{ i }} — {{ problems[i-1] }}
+            {% set problems = ['Baseline','P1','P3','P2','P5','P6','P7','P8','P9'] %}
+            {% for i in range(0, 9) %}
+            {% set state = iteration_states.get(i, 'never') %}
+            <button class="btn btn-iterate btn-iter-state btn-iter-{{ state }}" data-iteration="{{ i }}" data-state="{{ state }}" data-bs-toggle="modal" data-bs-target="#consoleModal">
+                <span class="iter-dot iter-dot-{{ state }}"></span>
+                <span class="iter-label">Iter {{ i }} — {{ problems[i] }}</span>
+                {% if state == 'done' %}<span class="iter-badge">OK</span>{% endif %}
+                {% if state == 'running' %}<span class="iter-badge iter-badge-running">...</span>{% endif %}
+                {% if state == 'waiting' %}<span class="iter-badge iter-badge-waiting">?</span>{% endif %}
+                {% if state == 'starting' %}<span class="iter-badge iter-badge-running">...</span>{% endif %}
             </button>
             {% endfor %}
         </div>
@@ -234,7 +235,50 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('userInput').addEventListener('keydown', function(e) {
         if (e.key === 'Enter') sendMessage();
     });
+
+    // Poll iteration states every 5s to refresh badges live
+    startStatesPolling();
 });
+
+function refreshIterationStates() {
+    fetch('/api/iteration-states')
+        .then(r => r.json())
+        .then(states => {
+            Object.entries(states).forEach(([n, state]) => {
+                const btn = document.querySelector('.btn-iter-state[data-iteration="' + n + '"]');
+                if (!btn) return;
+                const currentState = btn.dataset.state;
+                if (currentState === state) return;  // Pas de changement
+
+                // Mettre à jour les classes
+                btn.classList.remove('btn-iter-never', 'btn-iter-done', 'btn-iter-running', 'btn-iter-waiting', 'btn-iter-starting');
+                btn.classList.add('btn-iter-' + state);
+                btn.dataset.state = state;
+
+                // Mettre à jour le dot
+                const dot = btn.querySelector('.iter-dot');
+                if (dot) {
+                    dot.classList.remove('iter-dot-never', 'iter-dot-done', 'iter-dot-running', 'iter-dot-waiting', 'iter-dot-starting');
+                    dot.classList.add('iter-dot-' + state);
+                }
+
+                // Mettre à jour le badge
+                const existingBadge = btn.querySelector('.iter-badge');
+                if (existingBadge) existingBadge.remove();
+                let badgeHtml = '';
+                if (state === 'done') badgeHtml = '<span class="iter-badge">OK</span>';
+                else if (state === 'running' || state === 'starting') badgeHtml = '<span class="iter-badge iter-badge-running">...</span>';
+                else if (state === 'waiting') badgeHtml = '<span class="iter-badge iter-badge-waiting">?</span>';
+                if (badgeHtml) btn.insertAdjacentHTML('beforeend', badgeHtml);
+            });
+        })
+        .catch(err => console.warn('States polling error:', err));
+}
+
+function startStatesPolling() {
+    refreshIterationStates();
+    setInterval(refreshIterationStates, 5000);  // Toutes les 5 secondes
+}
 
 
 function startIteration(iterationNum) {

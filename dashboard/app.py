@@ -239,7 +239,6 @@ def get_metric_status(name, value):
     # Seuils cibles (de EVAL.md)
     thresholds = {
         "taux_conformite": {"target": 80, "type": "min"},
-        "aberrations_prix": {"target": 0, "type": "max"},
         "doublons": {"target": 0, "type": "max"},
         "diversite_fournisseurs": {"target": 3, "type": "min"},
         "coherence_score": {"target": 0.5, "type": "min"},
@@ -257,12 +256,47 @@ def get_metric_status(name, value):
         return "🟢" if value <= threshold["target"] else "🔴"
 
 
+def get_iteration_states(max_n: int = 8) -> dict:
+    """
+    Retourne l'état de chaque itération 0..max_n.
+
+    États possibles :
+    - "never"    : jamais lancée (pas de metrics_N.json, pas de session)
+    - "done"     : terminée (metrics_N.json existe ET pas de session active)
+    - "running"  : Claude est en train d'exécuter
+    - "waiting"  : Claude attend une réponse utilisateur
+    - "starting" : session en cours de démarrage
+    """
+    states = {}
+    for n in range(max_n + 1):
+        metrics_file = RESULTS_DIR / f"metrics_{n:03d}.json"
+        metrics_exists = metrics_file.exists()
+
+        session = _sessions.get(n)
+        session_status = session.get("status") if session else None
+
+        if session_status == "running":
+            state = "running"
+        elif session_status == "waiting_input":
+            state = "waiting"
+        elif session_status == "starting":
+            state = "starting"
+        elif metrics_exists:
+            state = "done"
+        else:
+            state = "never"
+
+        states[n] = state
+    return states
+
+
 @app.route("/")
 def index():
     """Page principale — tableau de bord"""
     latest_metrics = load_latest_metrics()
     baseline = load_baseline()
     iterations = parse_iterations_md()
+    iteration_states = get_iteration_states()
 
     # Déterminer si on est en CP1 (baseline non validée)
     in_cp1 = (baseline and baseline.get("_status") == "EN ATTENTE") or latest_metrics is None
@@ -271,9 +305,16 @@ def index():
                           metrics=latest_metrics,
                           baseline=baseline,
                           iterations=iterations,
+                          iteration_states=iteration_states,
                           format_metric=format_metric_value,
                           get_status=get_metric_status,
                           in_cp1=in_cp1)
+
+
+@app.route("/api/iteration-states")
+def api_iteration_states():
+    """API JSON — retourne l'état de toutes les itérations (pour polling live)."""
+    return jsonify(get_iteration_states())
 
 
 @app.route("/iterations")

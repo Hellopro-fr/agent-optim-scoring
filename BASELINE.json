@@ -1,16 +1,15 @@
 {
   "_info": "Baseline de l'itération 0. Recalculée à chaque lancement d'iter 0. Immuable pour toutes les itérations suivantes (garantie par save_baseline). Le champ `observations` est préservé entre les runs.",
-  "_status": "RECALCULATED — dernière mise à jour 2026-04-16T14:08:07.837397",
-  "generated_at": "2026-04-16T14:08:07.837397",
+  "_status": "RECALCULATED — dernière mise à jour 2026-04-17T10:12:03.453954",
+  "generated_at": "2026-04-17T10:12:03.453954",
   "parcours_count": 13,
   "metrics": {
     "taux_conformite": 55.128205128205124,
-    "aberrations_prix": 8,
     "doublons": 2,
     "diversite_fournisseurs": 33,
     "coherence_score_pertinence": 0.48573641183889293,
     "presence_estimatif": 46.15384615384615,
-    "score_global": 43.5691282277351
+    "score_global": 50.830649599024284
   },
   "observations": [],
   "results_par_parcours": []

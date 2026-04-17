@@ -17,7 +17,7 @@ import os
 import argparse
 from datetime import datetime
 from pathlib import Path
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Optional
 import requests
 from dotenv import load_dotenv
@@ -66,7 +66,6 @@ class Metrics:
     """Conteneur pour les métriques d'une itération"""
     iteration: int
     taux_conformite: float  # % de produits conformes
-    aberrations_prix: int   # Nombre d'aberrations détectées
     doublons: int           # Nombre de doublons détectés
     diversite_fournisseurs: int  # Nombre de fournisseurs uniques
     coherence_score: float  # Corrélation score/pertinence (0-1)
@@ -74,10 +73,9 @@ class Metrics:
 
     def score_global(self) -> float:
         """Calcule le score global pondéré selon EVAL.md"""
-        # Poids: conformité x2, tous les autres x1
+        # Poids: conformité x2, tous les autres x1 (total = 6)
         weights = {
             'taux_conformite': 2.0,
-            'aberrations_prix': 1.0,
             'doublons': 1.0,
             'diversite_fournisseurs': 1.0,
             'coherence_score': 1.0,
@@ -87,7 +85,6 @@ class Metrics:
         # Normaliser les métriques (0-1)
         norm_values = {
             'taux_conformite': self.taux_conformite / 100.0,  # Déjà en %
-            'aberrations_prix': 1.0 if self.aberrations_prix == 0 else 0.0,  # 0 anomalies = 1.0
             'doublons': 1.0 if self.doublons == 0 else 0.0,  # 0 doublons = 1.0
             'diversite_fournisseurs': min(self.diversite_fournisseurs / 3.0, 1.0),  # Cible >= 3
             'coherence_score': self.coherence_score,  # Déjà 0-1
@@ -104,7 +101,6 @@ class Metrics:
         return {
             'iteration': self.iteration,
             'taux_conformite': self.taux_conformite,
-            'aberrations_prix': self.aberrations_prix,
             'doublons': self.doublons,
             'diversite_fournisseurs': self.diversite_fournisseurs,
             'coherence_score': self.coherence_score,
@@ -392,7 +388,6 @@ def calculate_parcours_metrics(api_results: dict, evaluation: Optional[dict], pr
     metrics = {
         "conformes": 0,
         "total_evalues": 0,
-        "aberrations_prix": 0,
         "doublons": 0,
         "fournisseurs_count": len(api_results["fournisseurs"]),
         "coherence": 0.5,  # Sera calculé réellement ci-dessous
@@ -435,41 +430,19 @@ def calculate_parcours_metrics(api_results: dict, evaluation: Optional[dict], pr
         if all_baremes:
             metrics["coherence"] = sum(all_baremes) / len(all_baremes)
 
-    # Détection des aberrations prix via les détails produits
+    # Calcul estimatif_present et détection doublons via les détails produits
     if product_details:
-        prix_values = []
         estimatif_count = 0
         for prod_id in api_results["produits_acceptes"]:
             if prod_id in product_details:
                 prod = product_details[prod_id]
-                # Extraire prix si disponible (format: "99 EUR", "99.99 EUR", etc.)
                 prix_str = prod.get("produit", {}).get("prix_produit", "")
                 if prix_str:
                     estimatif_count += 1
-                    try:
-                        prix_num = float(prix_str.replace(" EUR", "").replace(",", "."))
-                        prix_values.append(prix_num)
-                    except (ValueError, AttributeError):
-                        pass
 
         # Calculer estimatif_present (% produits avec prix)
         if api_results["produits_acceptes"]:
             metrics["estimatif_present"] = estimatif_count > 0
-
-        # Détecter les aberrations (prix anormalement bas/haut)
-        if prix_values:
-            avg_prix = sum(prix_values) / len(prix_values)
-            for prod_id in api_results["produits_acceptes"]:
-                if prod_id in product_details:
-                    prod = product_details[prod_id]
-                    prix_str = prod.get("produit", {}).get("prix_produit", "")
-                    try:
-                        prix_num = float(prix_str.replace(" EUR", "").replace(",", "."))
-                        # Aberration si facteur > 10 ou < 0.1
-                        if avg_prix > 0 and (prix_num / avg_prix > 10 or prix_num / avg_prix < 0.1):
-                            metrics["aberrations_prix"] += 1
-                    except (ValueError, AttributeError):
-                        pass
 
         # Détection des doublons via les noms de produits
         noms = []
@@ -482,18 +455,14 @@ def calculate_parcours_metrics(api_results: dict, evaluation: Optional[dict], pr
         # Chercher les doublons (même nom ou très similaires)
         for i, nom1 in enumerate(noms):
             for nom2 in noms[i+1:]:
-                # Doublons si nom identique ou très similaire (>80% matching)
                 if nom1 == nom2:
                     metrics["doublons"] += 1
 
-    # Anomalies documentées dans l'évaluation
+    # Anomalies documentées dans l'évaluation (doublons uniquement)
     if "anomalies" in evaluation:
         anomalies = evaluation["anomalies"]
         if isinstance(anomalies, list):
-            # Ne compter que si pas déjà détecté
             for a in anomalies:
-                if "prix" in a.lower() and metrics["aberrations_prix"] == 0:
-                    metrics["aberrations_prix"] += 1
                 if "doublon" in a.lower() and metrics["doublons"] == 0:
                     metrics["doublons"] += 1
 
@@ -510,7 +479,6 @@ def evaluate_iteration(iteration_num: int) -> Metrics:
     # Accumulateurs
     total_conformite = 0.0
     total_parcours = 0
-    total_aberrations = 0
     total_doublons = 0
     fournisseurs_global = set()
     coherence_scores = []
@@ -566,7 +534,6 @@ def evaluate_iteration(iteration_num: int) -> Metrics:
             total_conformite += 50.0  # Valeur par défaut si pas d'évaluation
 
         total_parcours += 1
-        total_aberrations += parcours_metrics["aberrations_prix"]
         total_doublons += parcours_metrics["doublons"]
         fournisseurs_global.update(api_results["fournisseurs"])
         coherence_scores.append(parcours_metrics["coherence"])
@@ -582,7 +549,6 @@ def evaluate_iteration(iteration_num: int) -> Metrics:
     metrics = Metrics(
         iteration=iteration_num,
         taux_conformite=taux_conformite,
-        aberrations_prix=total_aberrations,
         doublons=total_doublons,
         diversite_fournisseurs=len(fournisseurs_global),
         coherence_score=coherence_moyenne,
@@ -649,7 +615,6 @@ def save_baseline(metrics: Metrics, parcours_count: int):
         "parcours_count": parcours_count,
         "metrics": {
             "taux_conformite": metrics_dict["taux_conformite"],
-            "aberrations_prix": metrics_dict["aberrations_prix"],
             "doublons": metrics_dict["doublons"],
             "diversite_fournisseurs": metrics_dict["diversite_fournisseurs"],
             # Note: nom canonique selon EVAL.md (la dataclass utilise "coherence_score")
@@ -677,7 +642,9 @@ def load_baseline() -> Optional[Metrics]:
     with open(metrics_file, "r") as f:
         data = json.load(f)
 
-    return Metrics(**{k: v for k, v in data.items() if k != 'score_global'})
+    # Ne garder que les champs connus de la dataclass (ignore anciens champs retirés)
+    valid_fields = {f.name for f in fields(Metrics)}
+    return Metrics(**{k: v for k, v in data.items() if k in valid_fields})
 
 
 def main(iteration_num: int):

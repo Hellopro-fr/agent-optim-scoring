@@ -7,7 +7,6 @@
 | Métrique | Description | Seuil cible |
 |---|---|---|
 | Taux de conformité | % de produits de la sélection qui correspondent au besoin | ≥ 80% |
-| Aberrations prix | Prix manifestement incohérent (facteur x10+) | 0 |
 | Doublons | Produits identiques ou quasi-identiques dans la sélection | 0 |
 | Diversité fournisseurs | Nombre de fournisseurs différents (si disponibles) | ≥ 3 |
 | Cohérence score/pertinence | Les produits les mieux scorés sont les plus pertinents | Corrélation positive |
@@ -26,6 +25,7 @@ Deux produits sont doublons si :
 - ⚠️ Même titre ne suffit PAS à conclure doublon (vérifier le descriptif)
 
 ## Évaluation globale
-Score global = moyenne pondérée des métriques :
+Score global = moyenne pondérée des 5 métriques :
 - Taux de conformité : poids 2
-- Toutes les autres : poids 1
+- Doublons, Diversité fournisseurs, Cohérence score, Présence estimatif : poids 1 chacune
+- Total poids = 6

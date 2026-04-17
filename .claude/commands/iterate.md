@@ -105,12 +105,11 @@ Si le script échoue, diagnostique et corrige avant de continuer.
 
 ## Étape 6 — Analyser et décider
 
-Compare les 6 métriques avec l'itération précédente (ou la baseline pour iter 1) :
+Compare les 5 métriques avec l'itération précédente (ou la baseline pour iter 1) :
 
 | Métrique | Avant | Après | Δ |
 |---|---|---|---|
 | Taux conformité | … | … | … |
-| Aberrations prix | … | … | … |
 | Doublons | … | … | … |
 | Diversité fournisseurs | … | … | … |
 | Cohérence score | … | … | … |

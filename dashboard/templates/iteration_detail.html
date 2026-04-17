@@ -48,7 +48,7 @@
         </thead>
         <tbody>
             <tr>
-                <td>Taux de conformite</td>
+                <td>Taux de conformite <span class="metric-info" data-tooltip="% de produits dans les resultats qui correspondent reellement au besoin : bonne categorie, bon sous-type, caracteristiques compatibles, etat (neuf/occasion) conforme. Metrique la plus importante (poids x2).">?</span></td>
                 <td><strong>{{ format_metric('taux_conformite', metrics.get('taux_conformite')) }}</strong></td>
                 <td style="color: var(--text-tertiary);">≥ 80%</td>
                 <td>
@@ -60,19 +60,7 @@
                 </td>
             </tr>
             <tr>
-                <td>Aberrations prix</td>
-                <td><strong>{{ format_metric('aberrations_prix', metrics.get('aberrations_prix')) }}</strong></td>
-                <td style="color: var(--text-tertiary);">0</td>
-                <td>
-                    {% if metrics.get('aberrations_prix') is not none and metrics.get('aberrations_prix') <= 0 %}
-                        <span class="badge-status badge-success">OK</span>
-                    {% else %}
-                        <span class="badge-status badge-danger">Miss</span>
-                    {% endif %}
-                </td>
-            </tr>
-            <tr>
-                <td>Doublons</td>
+                <td>Doublons <span class="metric-info" data-tooltip="Nombre de produits identiques ou quasi-identiques dans la selection (meme fournisseur + descriptif technique quasi-identique). On veut 0 doublon pour ne pas saturer l'acheteur.">?</span></td>
                 <td><strong>{{ format_metric('doublons', metrics.get('doublons')) }}</strong></td>
                 <td style="color: var(--text-tertiary);">0</td>
                 <td>
@@ -84,7 +72,7 @@
                 </td>
             </tr>
             <tr>
-                <td>Diversite fournisseurs</td>
+                <td>Diversite fournisseurs <span class="metric-info" data-tooltip="Nombre de fournisseurs differents representes. Evite de presenter un seul fournisseur et permet la mise en concurrence. Cible : au moins 3 fournisseurs distincts.">?</span></td>
                 <td><strong>{{ format_metric('diversite_fournisseurs', metrics.get('diversite_fournisseurs')) }}</strong></td>
                 <td style="color: var(--text-tertiary);">≥ 3</td>
                 <td>
@@ -96,7 +84,7 @@
                 </td>
             </tr>
             <tr>
-                <td>Coherence score/pertinence</td>
+                <td>Coherence score/pertinence <span class="metric-info" data-tooltip="Mesure si les produits les mieux scores par l'API sont effectivement les plus pertinents. Si un produit hors sujet a un meilleur score qu'un produit parfait, la coherence chute.">?</span></td>
                 <td><strong>{{ format_metric('coherence_score', metrics.get('coherence_score')) }}</strong></td>
                 <td style="color: var(--text-tertiary);">≥ 0.5</td>
                 <td>
@@ -108,7 +96,7 @@
                 </td>
             </tr>
             <tr>
-                <td>Presence estimatif</td>
+                <td>Presence estimatif <span class="metric-info" data-tooltip="% de produits affichant un prix estime (pas 'prix sur demande'). Permet a l'acheteur de comparer rapidement sans contacter chaque fournisseur.">?</span></td>
                 <td><strong>{{ format_metric('presence_estimatif', metrics.get('presence_estimatif')) }}</strong></td>
                 <td style="color: var(--text-tertiary);">≥ 90%</td>
                 <td>

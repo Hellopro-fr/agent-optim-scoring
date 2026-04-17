@@ -155,6 +155,11 @@
         .metric-card {
             text-align: left;
             padding: 1.25rem;
+            overflow: visible;
+            position: relative;
+        }
+        .metric-card:has(.metric-info:hover) {
+            z-index: 2000;
         }
         .metric-card .metric-label {
             font-size: 0.75rem;
@@ -163,6 +168,71 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
             margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .metric-info {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--text-tertiary, #6b7280);
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+            cursor: help;
+            position: relative;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        .metric-info:hover {
+            background: var(--text-primary, #111827);
+        }
+        .metric-info::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            color: #fff;
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 400;
+            letter-spacing: 0;
+            text-transform: none;
+            white-space: normal;
+            width: 260px;
+            max-width: 280px;
+            line-height: 1.4;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.15s, visibility 0.15s;
+            pointer-events: none;
+            z-index: 9999;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .metric-info::before {
+            content: "";
+            position: absolute;
+            bottom: calc(100% + 2px);
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #1f2937;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.15s, visibility 0.15s;
+            z-index: 9999;
+        }
+        .metric-info:hover::after,
+        .metric-info:hover::before {
+            opacity: 1;
+            visibility: visible;
         }
         .metric-card .metric-value {
             font-size: 1.75rem;
@@ -330,6 +400,82 @@
             margin-bottom: 0.35rem;
         }
         .empty-state p { font-size: 0.875rem; }
+
+        /* ── Iteration buttons with state badges ── */
+        .btn-iter-state {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.8);
+            border-radius: 8px;
+            padding: 0.5rem 0.9rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .btn-iter-state:hover {
+            background: rgba(255,255,255,0.12);
+            border-color: rgba(255,255,255,0.25);
+            color: white;
+        }
+        .btn-iter-done {
+            background: rgba(16,185,129,0.12);
+            border-color: rgba(16,185,129,0.35);
+            color: #6ee7b7;
+        }
+        .btn-iter-done:hover {
+            background: rgba(16,185,129,0.2);
+            color: #a7f3d0;
+        }
+        .btn-iter-running,
+        .btn-iter-starting {
+            background: rgba(59,130,246,0.15);
+            border-color: rgba(59,130,246,0.4);
+            color: #93c5fd;
+            animation: pulse-blue 1.5s ease-in-out infinite;
+        }
+        .btn-iter-waiting {
+            background: rgba(245,158,11,0.15);
+            border-color: rgba(245,158,11,0.45);
+            color: #fcd34d;
+            animation: pulse-yellow 1.2s ease-in-out infinite;
+        }
+        @keyframes pulse-blue {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.35); }
+            50% { box-shadow: 0 0 0 6px rgba(59,130,246,0); }
+        }
+        @keyframes pulse-yellow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.5); }
+            50% { box-shadow: 0 0 0 6px rgba(245,158,11,0); }
+        }
+        .iter-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            flex-shrink: 0;
+        }
+        .iter-dot-done { background: #10b981; }
+        .iter-dot-running, .iter-dot-starting { background: #3b82f6; }
+        .iter-dot-waiting { background: #f59e0b; }
+        .iter-dot-never { background: rgba(255,255,255,0.25); }
+        .iter-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.15);
+            color: inherit;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 4px;
+            margin-left: 0.25rem;
+            letter-spacing: 0.04em;
+        }
+        .iter-badge-running { background: rgba(59,130,246,0.3); }
+        .iter-badge-waiting { background: rgba(245,158,11,0.3); }
 
         /* ── Responsive ── */
         @media (max-width: 991px) {

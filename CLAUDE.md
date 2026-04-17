@@ -21,6 +21,7 @@ Ton objectif est d'améliorer les 6 métriques définies dans EVAL.md en résolv
 
 ## Fichiers immuables (NEVER modifie)
 1. EVAL.md — définit ce que "mieux" signifie (Sacred)
+   - **Exception** : retrait ponctuel de `aberrations_prix` (2026-04-17) par décision humaine — scope recentré sur l'affichage des produits cohérents. Le fichier redevient immuable après cette modification.
 2. PROBLEMS.md — liste les 9 problèmes à résoudre (source de vérité)
 3. BASELINE.json — itération 0 locked (après init)
 4. CLAUDE.md — ces règles
@@ -39,12 +40,32 @@ Ton objectif est d'améliorer les 6 métriques définies dans EVAL.md en résolv
 1. **Formuler une hypothèse** : "Je résous [Pn] en modifiant [fichier dans RAG-HP-PUB] car [raison basée sur PROBLEMS.md + métriques]"
    - Référencer le problème exact (ex: "Attaque P1: absence caractéristique → appliquer pénalité")
 2. **Documenter dans ITERATIONS.md AVANT d'exécuter** (voir format ci-dessous)
-3. **Modifier UN SEUL fichier** dans RAG-HP-PUB :
-   - Soit le fichier Cypher de scoring (relatif à `graphoptim-service/matching`)
-   - Soit le prompt LLM de nettoyage (relatif à `graphoptim-service/matching`)
-   - Soit la logique de matching (relatif à `graphoptim-service/matching`)
-   - **Jamais plus qu'un par itération**
-4. **Redémarrer l'API** (pour que le changement soit appliqué)
+3. **Modifier UNE SEULE hypothèse cohérente** dans RAG-HP-PUB :
+   - Cible : dossier `graph-rag-api-recherche-optim-service/` uniquement
+   - Fichiers possibles : Cypher de scoring, prompt LLM, logique matching, config
+   - **Plusieurs fichiers acceptés SI** :
+     - Tous modifiés pour la même hypothèse (même Pn)
+     - Rollback atomique possible (un seul commit git)
+     - Lien logique évident entre les modifications
+   - **Interdit** : mélanger plusieurs hypothèses dans une même itération
+   - Si l'hypothèse nécessite 2 changements indépendants → 2 itérations séparées
+4. **Redémarrer l'API** (pour que le changement soit appliqué) — **APRÈS les commits git** :
+   ```bash
+   # 1. Commit les modifs dans RAG-HP-PUB
+   cd ../RAG-HP-PUB
+   git pull --rebase
+   git add apps-microservices/graph-rag-api-recherche-optim-service/
+   git commit -m "iter-N: [Pn] — description"
+   git push
+   
+   # 2. Redémarrer UNIQUEMENT le service optim (rebuild + run en détaché)
+   docker compose up -d --build graph-rag-api-recherche-optim-service
+   
+   # 3. Vérifier que le service est OK
+   docker compose ps graph-rag-api-recherche-optim-service
+   # Retourner dans optim-scoring
+   cd ../optim-scoring
+   ```
 5. **Exécuter le pipeline** :
    ```bash
    python scripts/run_pipeline.py --iteration N
@@ -90,7 +111,6 @@ Pour chaque itération, ajouter une section :
 | Métrique | Avant | Après | Différence |
 |---|---|---|---|
 | Taux conformité | X% | Y% | +Z% |
-| Aberrations prix | X | Y | -Z |
 | Doublons | X | Y | -Z |
 | Diversité fournisseurs | X | Y | +Z |
 | Cohérence score | X | Y | +Z |
@@ -144,13 +164,14 @@ Pour chaque itération, ajouter une section :
 
 ## Contraintes
 
-1. **Une seule modification par itération** — deux fichiers = deux itérations
+1. **Une seule hypothèse cohérente par itération** — plusieurs fichiers OK si liés à la même hypothèse, rollback atomique possible. Deux hypothèses différentes = deux itérations.
 2. **Jamais modifier `graph-service/matching` prod** — uniquement `graphoptim-service/matching`
 3. **Toujours exécuter le pipeline réellement** — pas de simulation
 4. **Documenter AVANT d'exécuter** — ITERATIONS.md avant modification
 5. **Rollback immédiat si régression** — ne pas espérer une récupération
 6. **Ne jamais modifier optim-scoring** (ce repo) — c'est le harness, pas le code à optimiser
 7. **Git : commit + push chaque itération** — historique traçable
+8. **Git : toujours `pull` avant `push`** — `git pull --rebase` pour récupérer les MAJ distantes avant de pousser, éviter les conflits et préserver un historique linéaire
 
 ---
 
