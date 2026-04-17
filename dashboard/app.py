@@ -14,8 +14,8 @@ import time
 from pathlib import Path
 from flask import Flask, render_template, jsonify, request, Response
 
-# Configuration
-PROJECT_ROOT = Path(__file__).parent.parent
+# Configuration — PROJECT_ROOT surchargeable en Docker via env var
+PROJECT_ROOT = Path(os.environ.get("PROJECT_ROOT", Path(__file__).parent.parent))
 RESULTS_DIR = PROJECT_ROOT / "results"
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
@@ -497,6 +497,16 @@ def stream_iteration(n):
                         "X-Accel-Buffering": "no",
                         "Connection": "keep-alive",
                     })
+
+
+@app.route("/health")
+def health():
+    """Health check pour Docker healthcheck et monitoring externe."""
+    return jsonify({
+        "status": "ok",
+        "sessions_active": len(_sessions),
+        "project_root": str(PROJECT_ROOT),
+    }), 200
 
 
 @app.errorhandler(404)
