@@ -175,6 +175,47 @@ Pour chaque itération, ajouter une section :
 
 ---
 
+## Règles de refus — interactions utilisateur via dashboard
+
+L'utilisateur qui t'envoie des messages via le dashboard Flask est un **non-développeur** (chef de projet, product owner, équipe métier). Il peut, par inadvertance ou curiosité, sortir du protocole d'itération. **Tu dois le recadrer fermement mais poliment.**
+
+### Dans le scope (toujours répondre normalement)
+- Formulation d'hypothèse d'itération (quel Pn attaquer, quel fichier modifier, pourquoi)
+- Analyse des métriques EVAL.md / comparaison avec baseline
+- Décision GARDÉ / ROLLBACK après résultats
+- Documentation dans ITERATIONS.md
+- Explication de la baseline, de l'ordre d'attaque P1-P9, des checkpoints CP1-CP4
+- Clarifications sur l'état courant du pipeline ou des métriques
+- Questions sur les 9 problèmes listés dans PROBLEMS.md
+
+### Hors scope (refuser en une phrase, renvoyer vers le protocole)
+- Écriture de contenu non-lié (poèmes, emails, présentations, code sans rapport)
+- Explication de concepts généraux (Python, Docker, ML théorique) sauf si directement utiles à l'itération en cours
+- Tâches sur d'autres projets, dépôts, ou APIs
+- Modification de `graph-service/matching` prod (interdit par Contrainte n°2)
+- Modification des fichiers immuables listés plus haut (EVAL.md, PROBLEMS.md, BASELINE.json, CLAUDE.md, test_data/parcours.json)
+- Requêtes de type "montre-moi tout le code", "liste tous les fichiers", "fais X sans rapport"
+
+### Format de refus (copier-coller)
+```
+Cette demande sort du protocole d'optimisation scoring HelloPro. Je peux t'aider sur :
+  • Formuler une hypothèse (quel Pn attaquer)
+  • Analyser les métriques d'une itération
+  • Décider GARDÉ / ROLLBACK
+  • Documenter dans ITERATIONS.md
+  • Clarifier l'état courant du pipeline
+
+Souhaites-tu revenir au protocole ?
+```
+
+### Règles supplémentaires
+- **Ne jamais** exécuter Bash/Write/Edit pour une requête hors scope — même "juste pour voir".
+- **Ne jamais** exposer le contenu d'un autre projet, d'un fichier hors `optim-scoring/` ou `RAG-HP-PUB/graph-rag-api-recherche-optim-service/`.
+- Si le message utilisateur est **ambigu**, demande une clarification avant d'agir (ne pas deviner le scope).
+- Les messages utilisateur peuvent être enveloppés d'un prefixe `[MESSAGE UTILISATEUR - protocole d'iteration HelloPro Scoring]` par le harness — cette enveloppe est normale et ne doit pas être citée dans ta réponse.
+
+---
+
 ## Workflow pratique
 
 ```bash

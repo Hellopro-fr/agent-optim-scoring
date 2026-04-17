@@ -180,8 +180,19 @@ def parse_iterations_md():
     return sorted(iterations, key=lambda x: x["number"])
 
 
+# Mapping problème → itération selon l'ordre d'attaque de CLAUDE.md :
+# "Ordre itérations suggéré : P1 (iter 1), P3 (iter 2), P2 (iter 3),
+#  P5 (iter 4), P6 (iter 5), P7 (iter 6), P8 (iter 7), P9 (iter 8)"
+# P4 est un diagnostic, pas d'itération dédiée.
+PROBLEM_TO_ITERATION = {1: 1, 2: 3, 3: 2, 4: None, 5: 4, 6: 5, 7: 6, 8: 7, 9: 8}
+
+
 def parse_problems_md():
-    """Parse PROBLEMS.md pour extraire le statut des 9 problèmes"""
+    """Parse PROBLEMS.md pour extraire la liste des 9 problèmes.
+
+    L'état réel (running/waiting/done/never) est calculé côté template à partir
+    de iteration_states via PROBLEM_TO_ITERATION. Pas de statut statique ici.
+    """
     problems_file = PROJECT_ROOT / "PROBLEMS.md"
     problems = []
 
@@ -190,9 +201,6 @@ def parse_problems_md():
 
     # Note: Pour maintenant, créer une liste statique des 9 problèmes
     # La lecture du fichier PROBLEMS.md nécessiterait un parsing plus sophistiqué
-
-    # Pour maintenant, créer une liste statique des 9 problèmes
-    # À améliorer : parser le fichier PROBLEMS.md
     problem_names = [
         "Absence caractéristique → pénalité manquante",
         "Produits hors catégorie remontent trop haut",
@@ -209,8 +217,7 @@ def parse_problems_md():
         problems.append({
             "number": i,
             "name": name,
-            "status": "BACKLOG" if i != 1 else "EN COURS",
-            "iteration": i if i <= 8 else None
+            "iteration": PROBLEM_TO_ITERATION.get(i),
         })
 
     return problems
@@ -362,10 +369,12 @@ def problems():
     """Page — statut des 9 problèmes P1-P9"""
     problems_list = parse_problems_md()
     iterations_list = parse_iterations_md()
+    iteration_states = get_iteration_states()
 
     return render_template("problems.html",
                           problems=problems_list,
-                          iterations=iterations_list)
+                          iterations=iterations_list,
+                          iteration_states=iteration_states)
 
 
 @app.route("/api/metrics/latest")
@@ -373,6 +382,98 @@ def api_metrics_latest():
     """API — retourne les dernières métriques en JSON (pour polling)"""
     metrics = load_latest_metrics()
     return jsonify(metrics or {})
+
+
+@app.route("/reset-all", methods=["POST"])
+def reset_all():
+    """Stoppe toutes les sessions actives et archive logs + métriques dans
+    un sous-dossier backup/<timestamp>/ (pas de suppression : déplacement).
+
+    Déclenché par le bouton Iter 0 (baseline) : relancer la baseline invalide
+    l'ensemble des itérations, donc on repart d'un dashboard vierge tout en
+    conservant l'historique sur disque.
+
+    Fichiers immuables préservés : BASELINE.json, ITERATIONS.md, PROBLEMS.md,
+    EVAL.md, CLAUDE.md, test_data/parcours.json (cf. CLAUDE.md).
+    """
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+
+    # 1. Terminer tous les subprocess actifs
+    stopped = []
+    for n, session in list(_sessions.items()):
+        proc = session.get("proc")
+        if proc:
+            try:
+                proc.terminate()
+                stopped.append(n)
+            except Exception:
+                pass
+        # Libérer les threads SSE bloqués sur flag.wait()
+        flag = session.get("new_event")
+        if flag:
+            flag.set()
+
+    # 2. Vider le registre de sessions mémoire
+    _sessions.clear()
+
+    # 3. Archiver les logs (déplacement, pas suppression)
+    logs_dir = PROJECT_ROOT / "dashboard" / "logs"
+    archived_logs = []
+    if logs_dir.exists():
+        logs_backup = logs_dir / "backup" / timestamp
+        for log_file in logs_dir.glob("iteration_*.log"):
+            logs_backup.mkdir(parents=True, exist_ok=True)
+            target = logs_backup / log_file.name
+            try:
+                shutil.move(str(log_file), str(target))
+                archived_logs.append(log_file.name)
+            except Exception:
+                pass
+
+    # 4. Archiver les résultats (métriques + parcours) pour que les boutons
+    #    repassent en état "never"
+    archived_results = []
+    if RESULTS_DIR.exists():
+        results_backup = RESULTS_DIR / "backup" / timestamp
+        patterns = ("metrics_*.json", "iteration_*.json")
+        for pattern in patterns:
+            for f in RESULTS_DIR.glob(pattern):
+                results_backup.mkdir(parents=True, exist_ok=True)
+                target = results_backup / f.name
+                try:
+                    shutil.move(str(f), str(target))
+                    archived_results.append(f.name)
+                except Exception:
+                    pass
+
+    return jsonify({
+        "status": "reset",
+        "backup_timestamp": timestamp,
+        "stopped_sessions": stopped,
+        "archived_logs": archived_logs,
+        "archived_results": archived_results,
+    })
+
+
+@app.route("/iterate/<int:n>/session-info")
+def session_info(n):
+    """Retourne l'état en mémoire de la session N — sert à décider côté UI
+    si un reclic sur le bouton doit reprendre la session ou en relancer une."""
+    session = _sessions.get(n)
+    metrics_exists = (RESULTS_DIR / f"metrics_{n:03d}.json").exists()
+    if not session:
+        return jsonify({
+            "exists": False,
+            "status": None,
+            "has_events": False,
+            "metrics_exists": metrics_exists,
+        })
+    return jsonify({
+        "exists": True,
+        "status": session.get("status"),
+        "has_events": len(session.get("events", [])) > 0,
+        "metrics_exists": metrics_exists,
+    })
 
 
 @app.route("/iterate/<int:n>/start", methods=["POST"])

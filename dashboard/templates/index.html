@@ -340,7 +340,32 @@ function startIteration(iterationNum) {
     const inputArea = document.getElementById('inputArea');
     const loaderArea = document.getElementById('loaderArea');
 
-    consoleOutput.innerHTML = '<p style="color: #6e6e73;">Lancement de l\'iteration ' + iterationNum + '...</p>';
+    // Iter 0 = Baseline -> reinitialisation globale du dashboard.
+    // On avertit l'utilisateur AVANT toute action, puis on archive logs+metrics
+    // et on relance une baseline propre.
+    if (String(iterationNum) === '0') {
+        const ok = window.confirm(
+            'Iteration 0 = Baseline.\n\n' +
+            'Relancer la baseline va :\n' +
+            '  - Arreter toutes les iterations en cours\n' +
+            '  - Reinitialiser le dashboard\n' +
+            '  - Archiver les logs et metriques dans backup/<timestamp>/\n' +
+            '    (les fichiers ne sont pas supprimes, juste deplaces)\n\n' +
+            'Continuer ?'
+        );
+        if (!ok) {
+            // L'utilisateur annule : on ferme le modal que Bootstrap a ouvert
+            // automatiquement via data-bs-toggle="modal".
+            const modalEl = document.getElementById('consoleModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+            return;
+        }
+        resetAllAndLaunch(iterationNum);
+        return;
+    }
+
+    consoleOutput.innerHTML = '<p style="color: #6e6e73;">Verification de l\'etat de la session...</p>';
     document.getElementById('iterationNum').textContent = iterationNum;
     inputArea.style.display = 'none';
     loaderArea.style.display = 'block'; startLoaderRotation();
@@ -350,6 +375,91 @@ function startIteration(iterationNum) {
         currentEventSource.close();
         currentEventSource = null;
     }
+
+    // Demander au backend l'etat reel de la session (data-state peut etre stale
+    // jusqu'a 5s entre deux pollings). Decide si on reprend ou on relance.
+    fetch('/iterate/' + iterationNum + '/session-info')
+        .then(r => r.json())
+        .then(info => {
+            const status = info.status;
+            const activeStatuses = ['starting', 'running', 'waiting_input'];
+
+            if (info.exists && activeStatuses.indexOf(status) !== -1) {
+                // Process attache en cours / en attente -> reprise live
+                resumeSession(iterationNum, status);
+                return;
+            }
+
+            if (info.exists && info.has_events && info.metrics_exists) {
+                // Iteration terminee mais historique encore en memoire -> choix
+                loaderArea.style.display = 'none'; stopLoaderRotation();
+                const relancer = window.confirm(
+                    'Iteration ' + iterationNum + ' deja terminee.\n\n' +
+                    'OK = relancer une nouvelle iteration (ecrase l\'historique)\n' +
+                    'Annuler = revoir la conversation precedente (lecture seule)'
+                );
+                if (relancer) {
+                    launchFresh(iterationNum);
+                } else {
+                    resumeSession(iterationNum, 'history');
+                }
+                return;
+            }
+
+            // never, ou done sans historique -> nouveau lancement
+            launchFresh(iterationNum);
+        })
+        .catch(err => {
+            // En cas d'erreur reseau sur session-info, fallback = nouveau lancement
+            console.warn('session-info failed, falling back to start:', err);
+            launchFresh(iterationNum);
+        });
+}
+
+function resetAllAndLaunch(iterationNum) {
+    const consoleOutput = document.getElementById('consoleOutput');
+    const inputArea = document.getElementById('inputArea');
+    const loaderArea = document.getElementById('loaderArea');
+
+    consoleOutput.innerHTML = '<p style="color: #6e6e73;">Reinitialisation du dashboard (archivage logs + metriques)...</p>';
+    document.getElementById('iterationNum').textContent = iterationNum;
+    inputArea.style.display = 'none';
+    loaderArea.style.display = 'block'; startLoaderRotation();
+    currentIteration = iterationNum;
+
+    if (currentEventSource) {
+        currentEventSource.close();
+        currentEventSource = null;
+    }
+
+    fetch('/reset-all', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            const nbLogs = (data.archived_logs || []).length;
+            const nbRes = (data.archived_results || []).length;
+            const stamp = data.backup_timestamp || '';
+            consoleOutput.innerHTML =
+                '<p style="color:#a6e3a1; font-size:0.8rem;">' +
+                'Dashboard reinitialise. ' + nbLogs + ' logs + ' + nbRes +
+                ' resultats archives dans backup/' + stamp + '/.</p>' +
+                '<p style="color:#6e6e73;">Lancement de la baseline (Iter 0)...</p>';
+            // Mettre a jour les badges des boutons (tous -> "never")
+            refreshIterationStates();
+            // Puis lancer la baseline fraiche
+            launchFresh(iterationNum);
+        })
+        .catch(err => {
+            loaderArea.style.display = 'none'; stopLoaderRotation();
+            consoleOutput.innerHTML = '<p style="color: var(--red);">Erreur reinit: ' + err.message + '</p>';
+        });
+}
+
+function launchFresh(iterationNum) {
+    const consoleOutput = document.getElementById('consoleOutput');
+    const loaderArea = document.getElementById('loaderArea');
+
+    consoleOutput.innerHTML = '<p style="color: #6e6e73;">Lancement de l\'iteration ' + iterationNum + '...</p>';
+    loaderArea.style.display = 'block'; startLoaderRotation();
 
     fetch('/iterate/' + iterationNum + '/start', { method: 'POST' })
         .then(r => r.json())
@@ -367,6 +477,29 @@ function startIteration(iterationNum) {
         });
 }
 
+function resumeSession(iterationNum, status) {
+    // Reprise d'une session existante : on ouvre le modal, on affiche une
+    // banniere de reprise, puis on connecte le stream qui rejoue les events
+    // depuis idx=0 (historique complet) et continue en live si proc actif.
+    const consoleOutput = document.getElementById('consoleOutput');
+
+    let label;
+    if (status === 'running' || status === 'starting') {
+        label = 'Reprise de la session en cours...';
+    } else if (status === 'waiting_input') {
+        label = 'Reprise : l\'agent HelloPro attend votre reponse.';
+    } else {
+        label = 'Relecture de la conversation precedente (lecture seule).';
+    }
+
+    consoleOutput.innerHTML =
+        '<div class="resume-banner" style="color:#89b4fa; background:#111827; ' +
+        'border-left:3px solid #89b4fa; padding:0.5rem 0.75rem; margin-bottom:0.75rem; ' +
+        'font-size:0.8rem;">\u25b6 ' + label + '</div>';
+
+    connectStream(iterationNum);
+}
+
 
 function connectStream(iterationNum) {
     const consoleOutput = document.getElementById('consoleOutput');
@@ -375,7 +508,6 @@ function connectStream(iterationNum) {
     const userInput = document.getElementById('userInput');
     const sendBtn = document.getElementById('sendBtn');
 
-    consoleOutput.innerHTML = '';
     loaderArea.style.display = 'block'; startLoaderRotation();
     inputArea.style.display = 'none';
     let isDone = false;
@@ -398,6 +530,12 @@ function connectStream(iterationNum) {
         if (renderTimer) clearTimeout(renderTimer);
         renderTimer = setTimeout(flushMarkdown, 80);
     }
+
+    // Preserver la banniere de reprise si presente (posee par resumeSession),
+    // sinon vider la console comme avant.
+    const banner = consoleOutput.querySelector('.resume-banner');
+    consoleOutput.innerHTML = '';
+    if (banner) consoleOutput.appendChild(banner);
 
     const es = new EventSource('/iterate/' + iterationNum + '/stream');
     currentEventSource = es;

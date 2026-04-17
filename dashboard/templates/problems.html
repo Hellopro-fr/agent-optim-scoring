@@ -9,25 +9,50 @@
 </div>
 
 {% if problems %}
+{# Legende cohérente avec les boutons d'iteration du dashboard #}
+<div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.72rem; color: var(--text-tertiary);">
+    <span><span class="iter-dot iter-dot-never"></span> Jamais lancee</span>
+    <span><span class="iter-dot iter-dot-done"></span> Terminee</span>
+    <span><span class="iter-dot iter-dot-running"></span> En cours</span>
+    <span><span class="iter-dot iter-dot-waiting"></span> Attend reponse</span>
+    <span><span class="iter-dot iter-dot-never"></span> Diagnostic (pas d'iteration)</span>
+</div>
+
 <div class="row g-3">
     {% for problem in problems %}
+    {# Calcule l'etat a partir de l'iteration liee (P4 n'en a pas) #}
+    {% set state = iteration_states.get(problem.iteration, 'never') if problem.iteration is not none else 'none' %}
+    {% set border_color = {
+        'running': '#3b82f6', 'starting': '#3b82f6',
+        'waiting': '#f59e0b',
+        'done': '#10b981'
+    }.get(state, 'var(--border)') %}
     <div class="col-12 col-md-6">
-        <div class="card" style="border-left: 3px solid {% if problem.status == 'EN COURS' %}var(--amber){% elif problem.status == 'GARDÉ' %}var(--green){% elif problem.status == 'SKIPPED' %}var(--text-tertiary){% else %}var(--border){% endif %};">
+        <div class="card problem-card"
+             data-problem="{{ problem.number }}"
+             data-iteration="{{ problem.iteration if problem.iteration is not none else '' }}"
+             data-state="{{ state }}"
+             style="border-left: 3px solid {{ border_color }};">
             <div class="card-body" style="padding: 1rem 1.25rem;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div>
+                    <div style="flex: 1;">
                         <span style="font-size: 0.7rem; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">P{{ problem.number }}</span>
                         <h3 style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin: 0.25rem 0 0.5rem;">{{ problem.name }}</h3>
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            {% if problem.status == 'EN COURS' %}
-                                <span class="badge-status badge-warning">En cours</span>
-                            {% elif problem.status == 'GARDÉ' %}
-                                <span class="badge-status badge-success">Resolu</span>
-                            {% elif problem.status == 'SKIPPED' %}
-                                <span class="badge-status badge-neutral">Ignore</span>
-                            {% else %}
-                                <span class="badge-status badge-neutral">Backlog</span>
-                            {% endif %}
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                            <span class="problem-state-wrap" style="display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--text-secondary);">
+                                <span class="iter-dot iter-dot-{{ state if state != 'none' else 'never' }}"></span>
+                                <span class="problem-state-label">
+                                    {%- if state == 'running' or state == 'starting' -%}En cours
+                                    {%- elif state == 'waiting' -%}Attend reponse
+                                    {%- elif state == 'done' -%}Resolu
+                                    {%- elif state == 'none' -%}Diagnostic
+                                    {%- else -%}Backlog
+                                    {%- endif -%}
+                                </span>
+                                {% if state == 'done' %}<span class="iter-badge">OK</span>{% endif %}
+                                {% if state == 'running' or state == 'starting' %}<span class="iter-badge iter-badge-running">...</span>{% endif %}
+                                {% if state == 'waiting' %}<span class="iter-badge iter-badge-waiting">?</span>{% endif %}
+                            </span>
                             {% if problem.iteration %}
                                 <span style="font-size: 0.72rem; color: var(--text-tertiary);">Iteration {{ problem.iteration }}</span>
                             {% endif %}
@@ -80,4 +105,70 @@
     </div>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Polling live 5s pour mettre a jour l'etat des cartes probleme en miroir
+// des boutons d'iteration sur le dashboard.
+const BORDER_BY_STATE = {
+    running: '#3b82f6', starting: '#3b82f6',
+    waiting: '#f59e0b',
+    done: '#10b981'
+};
+const LABEL_BY_STATE = {
+    running: 'En cours', starting: 'En cours',
+    waiting: 'Attend reponse',
+    done: 'Resolu',
+    never: 'Backlog'
+};
+
+function updateProblemCard(card, state) {
+    const currentState = card.dataset.state;
+    if (currentState === state) return;
+    card.dataset.state = state;
+
+    card.style.borderLeftColor = BORDER_BY_STATE[state] || 'var(--border)';
+
+    const dot = card.querySelector('.iter-dot');
+    if (dot) {
+        dot.classList.remove('iter-dot-never', 'iter-dot-done', 'iter-dot-running', 'iter-dot-waiting', 'iter-dot-starting');
+        dot.classList.add('iter-dot-' + state);
+    }
+
+    const label = card.querySelector('.problem-state-label');
+    if (label) label.textContent = LABEL_BY_STATE[state] || 'Backlog';
+
+    // Reconstruire le badge
+    const wrap = card.querySelector('.problem-state-wrap');
+    if (wrap) {
+        const oldBadge = wrap.querySelector('.iter-badge');
+        if (oldBadge) oldBadge.remove();
+        let badgeHtml = '';
+        if (state === 'done') badgeHtml = '<span class="iter-badge">OK</span>';
+        else if (state === 'running' || state === 'starting') badgeHtml = '<span class="iter-badge iter-badge-running">...</span>';
+        else if (state === 'waiting') badgeHtml = '<span class="iter-badge iter-badge-waiting">?</span>';
+        if (badgeHtml) wrap.insertAdjacentHTML('beforeend', badgeHtml);
+    }
+}
+
+function refreshProblemStates() {
+    fetch('/api/iteration-states')
+        .then(r => r.json())
+        .then(states => {
+            document.querySelectorAll('.problem-card').forEach(card => {
+                const iterAttr = card.dataset.iteration;
+                if (!iterAttr) return;  // P4 : pas d'iteration, on laisse "Diagnostic"
+                const state = states[iterAttr] || 'never';
+                updateProblemCard(card, state);
+            });
+        })
+        .catch(err => console.warn('problems polling error:', err));
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    refreshProblemStates();
+    setInterval(refreshProblemStates, 5000);
+});
+</script>
 {% endblock %}
