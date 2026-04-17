@@ -1,0 +1,18 @@
+DEBUG: Flask app created, routes will be registered next
+======================================================================
+DEBUG: Starting Flask app from run_app.py
+App object: <Flask 'dashboard.app'>
+App routes before start:
+  /iterate/<int:n>/start
+  /iterate/<int:n>/stream
+======================================================================
+DEBUG: About to call app.run()
+ * Serving Flask app 'dashboard.app'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5051
+ * Running on http://192.168.80.221:5051
+Press CTRL+C to quit
+127.0.0.1 - - [16/Apr/2026 10:30:44] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [16/Apr/2026 10:30:44] "POST /iterate/4/start HTTP/1.1" 200 -

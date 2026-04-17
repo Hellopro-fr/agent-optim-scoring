@@ -1,0 +1,99 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                    INSTALLATION CLAUDE - GUIDE RAPIDE ADMIN                      ║
+║                           (5 min pour les profs!)                                ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+📋 CHECKLIST PRE-INSTALL
+├─ OS: Linux/macOS/Windows Server
+├─ Python 3.9+ installed
+├─ Internet access (pour Anthropic API)
+└─ ~500MB disque libre
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔧 INSTALLATION (3 commandes)
+
+1️⃣  INSTALLER CLAUDE CLI
+    $ pip install claude-code
+    $ claude --version  # Vérifier
+
+2️⃣  INSTALLER DÉPENDANCES
+    $ cd /chemin/vers/optim-scoring
+    $ pip install -r requirements.txt
+
+3️⃣  CONFIGURER AUTH
+    $ export ANTHROPIC_API_KEY="sk-ant-[TOKEN_ICI]"
+
+    ⚠️  Où obtenir le token ?
+        → https://console.anthropic.com/
+        → Générer une nouvelle API key
+        → Garder secret (NEVER partager)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ VÉRIFICATION (30 secondes)
+
+    $ claude --version          # Doit afficher version
+    $ python dashboard/app.py   # Doit démarrer sans erreur
+
+    Puis ouvrir navigateur:
+    → http://<VM_IP>:5050
+    → Doit afficher un dashboard avec boutons
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📂 FICHIERS IMPORTANTS
+
+    /chemin/vers/optim-scoring/.env
+    ├─ TOKEN_INFO_PRODUIT        [fourni par dev team]
+    ├─ NEXT_TOKEN_API_QUESTION   [fourni par dev team]
+    └─ RAG_HP_PUB_PATH           [chemin local au repo RAG-HP-PUB]
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🚀 DÉMARRAGE SERVICE
+
+  Mode développement (CLI):
+    $ python dashboard/app.py
+    Accès: http://VM:5050
+    Logs: console
+
+  Mode production (systemd - Linux):
+    Voir INSTALLATION_VM_ADMIN.md section "Mode production"
+
+═══════════════════════════════════════════════════════════════════════════════
+
+❌ TROUBLESHOOTING (TOP 5)
+
+  1. "claude: command not found"
+     → pip install claude-code
+     → Restart terminal
+
+  2. "ANTHROPIC_API_KEY not found"
+     → export ANTHROPIC_API_KEY="sk-ant-..."
+     → Ou ajouter à .bashrc/.zshrc
+
+  3. Port 5050 occupé
+     → lsof -i :5050
+     → kill -9 <PID>
+
+  4. Python version too old
+     → apt install python3.11
+     → Update pip: pip install --upgrade pip
+
+  5. Flask not found
+     → pip install -r requirements.txt
+     → Vérifier venv si utilisé
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📞 QUESTIONS ?
+
+  Doc complet: INSTALLATION_VM_ADMIN.md
+  Issues: GitHub/issues
+  Support: team@hellopro.dev
+
+═══════════════════════════════════════════════════════════════════════════════
+
+⏱️  Temps total installation: 5-10 minutes
+🎯 Succès: Dashboard accessible, boutons fonctionnent
