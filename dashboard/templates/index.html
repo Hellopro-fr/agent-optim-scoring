@@ -115,6 +115,21 @@
                 </span>
             </button>
             {% endfor %}
+            {# Boutons generes pour chaque probleme custom (iterations 9+) #}
+            {% for cp in custom_problems %}
+            {% set state = iteration_states.get(cp.iteration, 'never') %}
+            <button class="btn btn-iterate btn-iter-state btn-iter-{{ state }}" data-iteration="{{ cp.iteration }}" data-state="{{ state }}" data-bs-toggle="modal" data-bs-target="#consoleModal">
+                <span class="iter-dot iter-dot-{{ state }}"></span>
+                <span class="iter-label">Iter {{ cp.iteration }} — P{{ cp.number }}</span>
+                {% if state == 'done' %}<span class="iter-badge">OK</span>{% endif %}
+                {% if state == 'running' or state == 'starting' %}<span class="iter-badge iter-badge-running">...</span>{% endif %}
+                {% if state == 'waiting' %}<span class="iter-badge iter-badge-waiting">?</span>{% endif %}
+                <span class="iter-help-wrap" onclick="event.stopPropagation();">
+                    <svg class="iter-help-icon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <span class="iter-tooltip">P{{ cp.number }} — {{ cp.name }}{% if cp.severity %} ({{ cp.severity }}){% endif %}</span>
+                </span>
+            </button>
+            {% endfor %}
         </div>
         <style>
             .iter-help-wrap {

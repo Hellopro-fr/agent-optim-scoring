@@ -202,38 +202,158 @@ def parse_iterations_md():
 # P4 est un diagnostic, pas d'itération dédiée.
 PROBLEM_TO_ITERATION = {1: 1, 2: 3, 3: 2, 4: None, 5: 4, 6: 5, 7: 6, 8: 7, 9: 8}
 
+# Persistance des problèmes custom (P1-P9 immuables restent hardcodés).
+CUSTOM_PROBLEMS_FILE = PROJECT_ROOT / "custom_problems.json"
+SEVERITIES = ["CRITIQUE", "ÉLEVÉE", "MODÉRÉE", "OBSERVATION"]
+BASE_METRICS = [
+    "Conformité",
+    "Doublons",
+    "Diversité fournisseurs",
+    "Cohérence score/pertinence",
+    "Présence estimatif",
+    "Aberrations prix",
+]
+
+
+def load_custom_problems():
+    """Charge les problèmes custom depuis le JSON dédié.
+
+    Retourne toujours un dict avec les 3 clés attendues, même si le fichier
+    n'existe pas encore (défaut à la première création).
+    `next_iteration` commence à 9 car 0-8 sont réservés aux originaux.
+    """
+    default = {"next_iteration": 9, "custom_metrics": [], "problems": []}
+    if not CUSTOM_PROBLEMS_FILE.exists():
+        return default
+    try:
+        with open(CUSTOM_PROBLEMS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return default
+    # Garanties de robustesse
+    data.setdefault("next_iteration", 9)
+    data.setdefault("custom_metrics", [])
+    data.setdefault("problems", [])
+    return data
+
+
+def save_custom_problems(data):
+    """Sauvegarde atomique : écrit dans un .tmp puis rename."""
+    tmp = CUSTOM_PROBLEMS_FILE.with_suffix(".json.tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    tmp.replace(CUSTOM_PROBLEMS_FILE)
+
+
+def get_all_metrics():
+    """Liste complète des métriques proposées (base + custom dédupliquées)."""
+    data = load_custom_problems()
+    seen = list(BASE_METRICS)
+    for m in data.get("custom_metrics", []):
+        if m and m not in seen:
+            seen.append(m)
+    return seen
+
 
 def parse_problems_md():
-    """Parse PROBLEMS.md pour extraire la liste des 9 problèmes.
+    """Retourne la liste des problèmes (9 originaux immuables + customs).
+
+    Les 9 problèmes P1-P9 sont hardcodés (miroir fidèle de PROBLEMS.md qui
+    reste intouchée conformément à CLAUDE.md). Les problèmes custom sont
+    chargés depuis `custom_problems.json`.
 
     L'état réel (running/waiting/done/never) est calculé côté template à partir
-    de iteration_states via PROBLEM_TO_ITERATION. Pas de statut statique ici.
+    de iteration_states. Pas de statut statique ici.
     """
-    problems_file = PROJECT_ROOT / "PROBLEMS.md"
     problems = []
 
-    if not problems_file.exists():
-        return problems
-
-    # Note: Pour maintenant, créer une liste statique des 9 problèmes
-    # La lecture du fichier PROBLEMS.md nécessiterait un parsing plus sophistiqué
-    problem_names = [
-        "Absence caractéristique → pénalité manquante",
-        "Produits hors catégorie remontent trop haut",
-        "LLM juge sur titre seul, ignore descriptif",
-        "86% Prix sur demande (diagnostic)",
-        "Zéro résultat certains parcours1",
-        "Mélange produits neuf/occasion",
-        "Erreur calcul scoring multi-caractéristiques",
-        "Manque reranking après matching",
-        "Caching produits dénormalisés"
+    # Problèmes originaux P1-P9 (immuables, miroir de PROBLEMS.md)
+    official = [
+        {
+            "number": 1,
+            "name": "Absence caractéristique → pénalité manquante",
+            "severity": "CRITIQUE",
+            "description": "Quand une caractéristique requise est absente du produit, le score actuel = 0 (neutre). Le système devrait appliquer une pénalité (ex: -0.5) plutôt que d'ignorer l'absence.",
+            "metrics": ["Conformité"],
+        },
+        {
+            "number": 2,
+            "name": "Produits hors catégorie remontent trop haut",
+            "severity": "CRITIQUE",
+            "description": "Certains produits ne correspondent pas au besoin exprimé (ex: distributeur comptoir au lieu de sur-pied) mais restent dans le top 5 recommandé. Le LLM reranker doit mieux filtrer ces cas.",
+            "metrics": ["Conformité"],
+        },
+        {
+            "number": 3,
+            "name": "LLM juge sur titre seul, ignore descriptif",
+            "severity": "CRITIQUE",
+            "description": "Le LLM analyse le titre du produit sans tenir compte de sa description technique. Exemple: 'Tracteur' remonte même si le type (vigneron vs standard) ne correspond pas au besoin.",
+            "metrics": ["Conformité", "Cohérence score/pertinence"],
+        },
+        {
+            "number": 4,
+            "name": "86% Prix sur demande (diagnostic)",
+            "severity": "OBSERVATION",
+            "description": "Manque massif de données pricing chez les fournisseurs. Impact : estimatif imprécis, impossible de détecter aberrations prix. À ignorer pour les itérations (limité par les données sources).",
+            "metrics": ["Aberrations prix"],
+        },
+        {
+            "number": 5,
+            "name": "Zéro résultat certains parcours",
+            "severity": "ÉLEVÉE",
+            "description": "Certains parcours ne retournent aucun produit conforme. Cause possible : liste_caracteristique trop restrictive, ou Cypher/logique matching trop stricte.",
+            "metrics": ["Conformité"],
+        },
+        {
+            "number": 6,
+            "name": "Mélange produits neuf/occasion",
+            "severity": "ÉLEVÉE",
+            "description": "Quand le parcours spécifie 'Neuf', l'API retourne aussi des produits d'occasion. Le filtre sur etat_produit ne fonctionne pas correctement.",
+            "metrics": ["Conformité", "Doublons"],
+        },
+        {
+            "number": 7,
+            "name": "Doublons et surreprésentation fournisseur",
+            "severity": "MODÉRÉE",
+            "description": "La même marque/fournisseur apparaît plusieurs fois dans le top 5 (ex: même modèle en deux variantes). Le système doit diversifier par fournisseur.",
+            "metrics": ["Doublons", "Diversité fournisseurs"],
+        },
+        {
+            "number": 8,
+            "name": "Caractéristiques discriminantes ignorées",
+            "severity": "MODÉRÉE",
+            "description": "Certaines caractéristiques critiques (ex: largeur de passage pour minipelle) ne sont pas prises en compte par le scoring, ou ont un poids insuffisant.",
+            "metrics": ["Conformité", "Cohérence score/pertinence"],
+        },
+        {
+            "number": 9,
+            "name": "Sélections trop restreintes ou hors sujet",
+            "severity": "MODÉRÉE",
+            "description": "Inversement de P5 : certains parcours retournent des produits non pertinents ou trop restrictifs. Exemple : un filtre sur capacité exclut tous les produits viables.",
+            "metrics": ["Conformité", "Diversité fournisseurs"],
+        },
     ]
-
-    for i, name in enumerate(problem_names, 1):
+    for p in official:
         problems.append({
-            "number": i,
-            "name": name,
-            "iteration": PROBLEM_TO_ITERATION.get(i),
+            "number": p["number"],
+            "name": p["name"],
+            "iteration": PROBLEM_TO_ITERATION.get(p["number"]),
+            "immutable": True,
+            "severity": p["severity"],
+            "description": p["description"],
+            "metrics": p["metrics"],
+        })
+
+    # Problèmes custom
+    for cp in load_custom_problems()["problems"]:
+        problems.append({
+            "number": cp.get("number"),
+            "name": cp.get("name", ""),
+            "iteration": cp.get("iteration"),
+            "immutable": False,
+            "severity": cp.get("severity", "MODÉRÉE"),
+            "description": cp.get("description", ""),
+            "metrics": cp.get("metrics", []),
         })
 
     return problems
@@ -405,7 +525,7 @@ def get_metric_status(name, value):
 
 def get_iteration_states(max_n: int = 8) -> dict:
     """
-    Retourne l'état de chaque itération 0..max_n.
+    Retourne l'état de chaque itération 0..max_n + itérations custom.
 
     États possibles :
     - "never"    : jamais lancée (pas de metrics_N.json, pas de session)
@@ -414,6 +534,12 @@ def get_iteration_states(max_n: int = 8) -> dict:
     - "waiting"  : Claude attend une réponse utilisateur
     - "starting" : session en cours de démarrage
     """
+    # Étendre max_n pour couvrir les itérations custom (9+)
+    custom_iters = [cp.get("iteration") for cp in load_custom_problems()["problems"]]
+    custom_iters = [i for i in custom_iters if isinstance(i, int)]
+    if custom_iters:
+        max_n = max(max_n, max(custom_iters))
+
     states = {}
     for n in range(max_n + 1):
         metrics_file = RESULTS_DIR / f"metrics_{n:03d}.json"
@@ -450,6 +576,7 @@ def index():
     baseline = load_baseline()
     iterations = parse_iterations_md()
     iteration_states = get_iteration_states()
+    custom_problems = load_custom_problems()["problems"]
 
     # Déterminer si on est en CP1 (baseline non validée)
     in_cp1 = (baseline and baseline.get("_status") == "EN ATTENTE") or latest_metrics is None
@@ -459,6 +586,7 @@ def index():
                           baseline=baseline,
                           iterations=iterations,
                           iteration_states=iteration_states,
+                          custom_problems=custom_problems,
                           format_metric=format_metric_value,
                           get_status=get_metric_status,
                           in_cp1=in_cp1)
@@ -512,15 +640,162 @@ def iteration_detail(n):
 
 @app.route("/problems")
 def problems():
-    """Page — statut des 9 problèmes P1-P9"""
+    """Page — statut des 9 problèmes P1-P9 + problèmes custom."""
     problems_list = parse_problems_md()
     iterations_list = parse_iterations_md()
     iteration_states = get_iteration_states()
+    custom_data = load_custom_problems()
 
     return render_template("problems.html",
                           problems=problems_list,
                           iterations=iterations_list,
-                          iteration_states=iteration_states)
+                          iteration_states=iteration_states,
+                          severities=SEVERITIES,
+                          metrics=get_all_metrics(),
+                          next_iteration=custom_data["next_iteration"])
+
+
+@app.route("/api/problems", methods=["GET"])
+def api_problems_list():
+    """Liste complète (originaux + customs) + listes de choix pour les forms."""
+    return jsonify({
+        "problems": parse_problems_md(),
+        "severities": SEVERITIES,
+        "metrics": get_all_metrics(),
+        "next_iteration": load_custom_problems()["next_iteration"],
+    })
+
+
+@app.route("/api/problems", methods=["POST"])
+def api_problems_create():
+    """Crée un nouveau problème custom.
+
+    Body JSON : {name, severity, description, metrics: [...]}
+    Le numéro d'itération est auto-incrémenté à partir de 9 (réservés 0-8).
+    Les métriques inconnues sont ajoutées à la liste globale custom_metrics.
+    """
+    body = request.get_json(silent=True) or {}
+    name = (body.get("name") or "").strip()
+    severity = (body.get("severity") or "").strip()
+    description = (body.get("description") or "").strip()
+    metrics = body.get("metrics") or []
+
+    if not name:
+        return jsonify({"error": "Le libellé est obligatoire"}), 400
+    if severity not in SEVERITIES:
+        return jsonify({"error": f"Sévérité invalide. Valeurs acceptées : {SEVERITIES}"}), 400
+    if not description:
+        return jsonify({"error": "La description est obligatoire"}), 400
+    if not isinstance(metrics, list):
+        return jsonify({"error": "metrics doit être une liste"}), 400
+
+    # Nettoyer et dédupliquer les métriques
+    clean_metrics = []
+    for m in metrics:
+        if isinstance(m, str) and m.strip() and m.strip() not in clean_metrics:
+            clean_metrics.append(m.strip())
+
+    data = load_custom_problems()
+
+    # Ajouter les nouvelles métriques (hors base) au pool global
+    known = set(BASE_METRICS) | set(data.get("custom_metrics", []))
+    for m in clean_metrics:
+        if m not in known:
+            data.setdefault("custom_metrics", []).append(m)
+            known.add(m)
+
+    # Numéro de problème : max existant (>= 10) ou 10 si aucun
+    existing_numbers = [p.get("number", 0) for p in data["problems"]]
+    next_number = max(existing_numbers + [9]) + 1
+
+    problem = {
+        "number": next_number,
+        "name": name,
+        "severity": severity,
+        "iteration": data["next_iteration"],
+        "description": description,
+        "metrics": clean_metrics,
+        "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+    }
+    data["problems"].append(problem)
+    data["next_iteration"] += 1
+    save_custom_problems(data)
+
+    return jsonify({"status": "created", "problem": problem}), 201
+
+
+@app.route("/api/problems/<int:number>", methods=["PATCH"])
+def api_problems_update(number):
+    """Modifie un problème custom (P1-P9 immuables : refus 403).
+
+    Champs modifiables : name, severity, description, metrics.
+    Le numéro et l'itération ne sont jamais modifiables.
+    """
+    if number <= 9:
+        return jsonify({"error": "Les problèmes P1-P9 sont immuables"}), 403
+
+    body = request.get_json(silent=True) or {}
+    data = load_custom_problems()
+
+    target = next((p for p in data["problems"] if p.get("number") == number), None)
+    if target is None:
+        return jsonify({"error": "Problème introuvable"}), 404
+
+    if "name" in body:
+        name = (body["name"] or "").strip()
+        if not name:
+            return jsonify({"error": "Le libellé ne peut pas être vide"}), 400
+        target["name"] = name
+
+    if "severity" in body:
+        if body["severity"] not in SEVERITIES:
+            return jsonify({"error": f"Sévérité invalide. Valeurs acceptées : {SEVERITIES}"}), 400
+        target["severity"] = body["severity"]
+
+    if "description" in body:
+        description = (body["description"] or "").strip()
+        if not description:
+            return jsonify({"error": "La description ne peut pas être vide"}), 400
+        target["description"] = description
+
+    if "metrics" in body:
+        metrics = body["metrics"]
+        if not isinstance(metrics, list):
+            return jsonify({"error": "metrics doit être une liste"}), 400
+        clean_metrics = []
+        for m in metrics:
+            if isinstance(m, str) and m.strip() and m.strip() not in clean_metrics:
+                clean_metrics.append(m.strip())
+        # Ajouter les nouvelles au pool global
+        known = set(BASE_METRICS) | set(data.get("custom_metrics", []))
+        for m in clean_metrics:
+            if m not in known:
+                data.setdefault("custom_metrics", []).append(m)
+                known.add(m)
+        target["metrics"] = clean_metrics
+
+    save_custom_problems(data)
+    return jsonify({"status": "updated", "problem": target})
+
+
+@app.route("/api/problems/<int:number>", methods=["DELETE"])
+def api_problems_delete(number):
+    """Supprime un problème custom (P1-P9 immuables : refus 403).
+
+    Ne décrémente PAS next_iteration pour éviter toute collision avec un
+    éventuel metrics_NNN.json déjà généré pour cette itération.
+    """
+    if number <= 9:
+        return jsonify({"error": "Les problèmes P1-P9 sont immuables"}), 403
+
+    data = load_custom_problems()
+    before = len(data["problems"])
+    data["problems"] = [p for p in data["problems"] if p.get("number") != number]
+    if len(data["problems"]) == before:
+        return jsonify({"error": "Problème introuvable"}), 404
+
+    save_custom_problems(data)
+    return jsonify({"status": "deleted", "number": number})
 
 
 @app.route("/manuel")
@@ -711,6 +986,42 @@ def session_info(n):
     })
 
 
+def build_iterate_prompt(n: int) -> str:
+    """Construit le prompt envoyé à Claude CLI pour l'itération N.
+
+    Pour les itérations 0-8 (originales) → prompt minimal `/iterate N`, Claude
+    lit PROBLEMS.md pour identifier le Pn correspondant.
+
+    Pour les itérations custom (N >= 9) → prompt enrichi avec le libellé, la
+    sévérité, la description et les métriques affectées lus depuis
+    `custom_problems.json`, car ces problèmes ne figurent pas dans PROBLEMS.md.
+    """
+    base = f"/iterate {n}"
+
+    if n <= 8:
+        return base
+
+    custom = next(
+        (p for p in load_custom_problems()["problems"] if p.get("iteration") == n),
+        None,
+    )
+    if not custom:
+        return base  # Itération orpheline (problème supprimé) → fallback
+
+    metrics_line = ", ".join(custom.get("metrics") or []) or "non précisées"
+    context = (
+        f"\n\n---\n"
+        f"**Problème custom P{custom.get('number')}** (hors PROBLEMS.md, défini par l'utilisateur via le dashboard)\n\n"
+        f"- Libellé : {custom.get('name', '')}\n"
+        f"- Sévérité : {custom.get('severity', 'MODÉRÉE')}\n"
+        f"- Description : {custom.get('description', '')}\n"
+        f"- Métriques affectées : {metrics_line}\n\n"
+        f"Tu n'as pas besoin de chercher ce problème dans PROBLEMS.md : il n'y est pas. "
+        f"Utilise directement ce contexte comme source pour les étapes 1 et 2 du protocole.\n"
+    )
+    return base + context
+
+
 @app.route("/iterate/<int:n>/start", methods=["POST"])
 def start_iteration(n):
     """Démarre une session interactive Claude pour l'itération N."""
@@ -745,7 +1056,7 @@ def start_iteration(n):
         "log_file": str(log_file),
     }
 
-    _launch_turn(n, f"/iterate {n}", is_first=True)
+    _launch_turn(n, build_iterate_prompt(n), is_first=True)
 
     return jsonify({"status": "started", "iteration": n})
 

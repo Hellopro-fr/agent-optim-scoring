@@ -28,6 +28,8 @@ Lis dans cet ordre et résume ce que tu comprends :
 
 ## Étape 1 — Choisir le problème à attaquer
 
+### Cas A : itérations originales (N ∈ [1, 8])
+
 Ordre suggéré par CLAUDE.md :
 - iter 1 → P1
 - iter 2 → P3
@@ -40,6 +42,19 @@ Ordre suggéré par CLAUDE.md :
 
 Si l'utilisateur a passé `P<num>` en second argument, force ce problème.
 Sinon, si les itérations précédentes ont dévié de l'ordre (rollbacks, plateau), justifie ton choix à partir des métriques dans [ITERATIONS.md](ITERATIONS.md).
+
+### Cas B : itérations custom (N ≥ 9)
+
+Ces itérations correspondent à des problèmes **ajoutés par l'utilisateur via le dashboard** (`/problems`) et persistés dans `custom_problems.json`. Ils ne figurent pas dans PROBLEMS.md — c'est normal et légitime, pas une violation du protocole.
+
+**Le prompt qui te parvient contient déjà le contexte complet** (libellé, sévérité, description, métriques affectées) sous un bloc markdown `**Problème custom P<num>**`. Utilise ces informations directement comme source d'hypothèse. Ne demande PAS à l'utilisateur de préciser le problème et **ne force pas `P<num>`** en second argument, c'est inutile.
+
+Si ce bloc est absent (cas rare : problème supprimé entre l'ajout et le lancement), demande à l'utilisateur les détails ou lis `custom_problems.json` directement.
+
+Règles spécifiques pour les itérations custom :
+- Les checkpoints CP2/CP3/CP4 s'appliquent toujours, mais calculés sur les itérations **effectivement exécutées** (pas sur la numérotation absolue). Ne te bloque pas parce que "iter 9 CP2 non validé" si des iter 1-8 n'ont jamais tourné — signale-le à l'utilisateur mais continue si il insiste.
+- Les trous dans ITERATIONS.md (iter originales non exécutées) ne sont pas un blocage pour une itération custom : ce sont deux pistes indépendantes.
+- Les règles de modification de RAG-HP-PUB (un seul fichier, jamais `graph-service/matching`) restent identiques.
 
 ---
 
