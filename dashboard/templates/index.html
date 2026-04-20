@@ -23,42 +23,42 @@
         <div class="card metric-card">
             <div class="metric-label">Score global <span class="metric-info" data-tooltip="Indicateur synthetique de la qualite globale des resultats. Moyenne ponderee des 5 metriques (Conformite x2, les autres x1, total poids = 6). Plus il est haut, meilleure est la selection de produits affichee a l'utilisateur.">?</span></div>
             <div class="metric-value">{{ format_metric('score_global', metrics.get('score_global')) }}</div>
-            <div class="metric-target">{{ get_status('score_global', metrics.get('score_global')) | safe }} Cible : ≥80%</div>
+            <div class="metric-target">{{ get_status('score_global', metrics.get('score_global')) | safe }} Cible : {{ thresholds.score_global.comparator }}{{ thresholds.score_global.target }}{{ thresholds.score_global.unit }}</div>
         </div>
     </div>
     <div class="col-6 col-lg-4">
         <div class="card metric-card">
             <div class="metric-label">Conformite <span class="metric-info" data-tooltip="% de produits dans les resultats qui correspondent reellement au besoin exprime : bonne categorie, bon sous-type, caracteristiques compatibles, etat (neuf/occasion) conforme. C'est la metrique la plus importante (poids x2).">?</span></div>
             <div class="metric-value">{{ format_metric('taux_conformite', metrics.get('taux_conformite')) }}</div>
-            <div class="metric-target">{{ get_status('taux_conformite', metrics.get('taux_conformite')) | safe }} Cible : ≥80%</div>
+            <div class="metric-target">{{ get_status('taux_conformite', metrics.get('taux_conformite')) | safe }} Cible : {{ thresholds.taux_conformite.comparator }}{{ thresholds.taux_conformite.target }}{{ thresholds.taux_conformite.unit }}</div>
         </div>
     </div>
     <div class="col-6 col-lg-4">
         <div class="card metric-card">
             <div class="metric-label">Doublons <span class="metric-info" data-tooltip="Nombre de produits identiques ou quasi-identiques dans la selection (meme fournisseur + descriptif technique quasi-identique). Attention : meme titre ne suffit pas, il faut comparer le descriptif. On veut 0 doublon pour ne pas saturer l'acheteur.">?</span></div>
             <div class="metric-value">{{ format_metric('doublons', metrics.get('doublons')) }}</div>
-            <div class="metric-target">{{ get_status('doublons', metrics.get('doublons')) | safe }} Cible : 0</div>
+            <div class="metric-target">{{ get_status('doublons', metrics.get('doublons')) | safe }} Cible : {{ thresholds.doublons.comparator }}{{ thresholds.doublons.target }}{{ thresholds.doublons.unit }}</div>
         </div>
     </div>
     <div class="col-6 col-lg-4">
         <div class="card metric-card">
             <div class="metric-label">Diversite fournisseurs <span class="metric-info" data-tooltip="Nombre de fournisseurs differents representes dans les resultats. Une bonne diversite evite de presenter un seul fournisseur et permet la mise en concurrence. Cible : au moins 3 fournisseurs distincts par requete.">?</span></div>
             <div class="metric-value">{{ format_metric('diversite_fournisseurs', metrics.get('diversite_fournisseurs')) }}</div>
-            <div class="metric-target">{{ get_status('diversite_fournisseurs', metrics.get('diversite_fournisseurs')) | safe }} Cible : ≥3</div>
+            <div class="metric-target">{{ get_status('diversite_fournisseurs', metrics.get('diversite_fournisseurs')) | safe }} Cible : {{ thresholds.diversite_fournisseurs.comparator }}{{ thresholds.diversite_fournisseurs.target }}{{ thresholds.diversite_fournisseurs.unit }}</div>
         </div>
     </div>
     <div class="col-6 col-lg-4">
         <div class="card metric-card">
             <div class="metric-label">Coherence score <span class="metric-info" data-tooltip="Mesure si les produits les mieux scores par l'API sont effectivement les plus pertinents (correlation positive entre score interne et pertinence reelle). Si un produit hors sujet a un meilleur score qu'un produit parfait, la coherence chute.">?</span></div>
             <div class="metric-value">{{ format_metric('coherence_score', metrics.get('coherence_score')) }}</div>
-            <div class="metric-target">{{ get_status('coherence_score', metrics.get('coherence_score')) | safe }} Cible : ≥0.5</div>
+            <div class="metric-target">{{ get_status('coherence_score', metrics.get('coherence_score')) | safe }} Cible : {{ thresholds.coherence_score.comparator }}{{ thresholds.coherence_score.target }}{{ thresholds.coherence_score.unit }}</div>
         </div>
     </div>
     <div class="col-6 col-lg-4">
         <div class="card metric-card">
             <div class="metric-label">Presence estimatif <span class="metric-info" data-tooltip="% de produits affichant un prix estime (pas 'prix sur demande'). Permet a l'acheteur de comparer rapidement sans devoir contacter chaque fournisseur. Cible : ≥90% des produits doivent avoir un prix visible.">?</span></div>
             <div class="metric-value">{{ format_metric('presence_estimatif', metrics.get('presence_estimatif')) }}</div>
-            <div class="metric-target">{{ get_status('presence_estimatif', metrics.get('presence_estimatif')) | safe }} Cible : ≥90%</div>
+            <div class="metric-target">{{ get_status('presence_estimatif', metrics.get('presence_estimatif')) | safe }} Cible : {{ thresholds.presence_estimatif.comparator }}{{ thresholds.presence_estimatif.target }}{{ thresholds.presence_estimatif.unit }}</div>
         </div>
     </div>
 </div>

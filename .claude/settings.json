@@ -53,7 +53,8 @@
       "Edit(./results/**)",
       "Write(./results/**)",
       "Glob",
-      "Grep"
+      "Grep",
+      "Bash(netstat -ano)"
     ],
     "deny": [
       "Bash(sudo *)",

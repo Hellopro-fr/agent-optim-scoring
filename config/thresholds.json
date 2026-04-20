@@ -1,0 +1,44 @@
+{
+  "taux_conformite": {
+    "target": 80,
+    "type": "min",
+    "unit": "%",
+    "label": "Taux de conformité",
+    "comparator": "≥"
+  },
+  "doublons": {
+    "target": 0,
+    "type": "max",
+    "unit": "",
+    "label": "Doublons",
+    "comparator": "≤"
+  },
+  "diversite_fournisseurs": {
+    "target": 3,
+    "type": "min",
+    "unit": "",
+    "label": "Diversité fournisseurs",
+    "comparator": "≥"
+  },
+  "coherence_score": {
+    "target": 0.5,
+    "type": "min",
+    "unit": "",
+    "label": "Cohérence score",
+    "comparator": "≥"
+  },
+  "presence_estimatif": {
+    "target": 90,
+    "type": "min",
+    "unit": "%",
+    "label": "Présence estimatif",
+    "comparator": "≥"
+  },
+  "score_global": {
+    "target": 80,
+    "type": "min",
+    "unit": "%",
+    "label": "Score global",
+    "comparator": "≥"
+  }
+}

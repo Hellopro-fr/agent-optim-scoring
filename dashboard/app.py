@@ -12,15 +12,31 @@ import shutil
 import threading
 import time
 from pathlib import Path
-from flask import Flask, render_template, jsonify, request, Response
+from flask import Flask, render_template, jsonify, request, Response, redirect, url_for, flash
 
 # Configuration — PROJECT_ROOT surchargeable en Docker via env var
 PROJECT_ROOT = Path(os.environ.get("PROJECT_ROOT", Path(__file__).parent.parent))
 RESULTS_DIR = PROJECT_ROOT / "results"
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
+# Config des cibles / seuils (modifiables via /config par un utilisateur humain)
+CONFIG_DIR = PROJECT_ROOT / "config"
+THRESHOLDS_FILE = CONFIG_DIR / "thresholds.json"
+EVAL_FILE = PROJECT_ROOT / "EVAL.md"
+EVAL_BACKUP_DIR = PROJECT_ROOT / "backup" / "eval"
+
+DEFAULT_THRESHOLDS = {
+    "taux_conformite":        {"target": 80,  "type": "min", "unit": "%", "label": "Taux de conformité",     "comparator": "≥"},
+    "doublons":               {"target": 0,   "type": "max", "unit": "",  "label": "Doublons",                "comparator": "≤"},
+    "diversite_fournisseurs": {"target": 3,   "type": "min", "unit": "",  "label": "Diversité fournisseurs",  "comparator": "≥"},
+    "coherence_score":        {"target": 0.5, "type": "min", "unit": "",  "label": "Cohérence score",         "comparator": "≥"},
+    "presence_estimatif":     {"target": 90,  "type": "min", "unit": "%", "label": "Présence estimatif",      "comparator": "≥"},
+    "score_global":           {"target": 80,  "type": "min", "unit": "%", "label": "Score global",            "comparator": "≥"},
+}
+
 app = Flask(__name__, template_folder=str(TEMPLATES_DIR))
 app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "hellopro-scoring-dashboard-dev")
 
 # Sessions interactives : chaque itération maintient une conversation Claude
 _sessions = {}  # {n: {"proc", "events", "new_event", "status", "log_file"}}
@@ -238,29 +254,153 @@ def format_metric_value(name, value):
         return str(int(value))
 
 
+def load_thresholds() -> dict:
+    """Charge les cibles/seuils depuis config/thresholds.json.
+    Fallback sur DEFAULT_THRESHOLDS si le fichier n'existe pas (1er lancement)."""
+    if not THRESHOLDS_FILE.exists():
+        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        THRESHOLDS_FILE.write_text(
+            json.dumps(DEFAULT_THRESHOLDS, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        return dict(DEFAULT_THRESHOLDS)
+    try:
+        return json.loads(THRESHOLDS_FILE.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return dict(DEFAULT_THRESHOLDS)
+
+
+def _build_eval_table(thresholds: dict) -> str:
+    """Reconstruit le tableau markdown des métriques pour EVAL.md."""
+    header = (
+        "| Métrique | Description | Seuil cible |\n"
+        "|---|---|---|\n"
+    )
+    descriptions = {
+        "taux_conformite": "% de produits de la sélection qui correspondent au besoin",
+        "doublons": "Produits identiques ou quasi-identiques dans la sélection",
+        "diversite_fournisseurs": "Nombre de fournisseurs différents (si disponibles)",
+        "coherence_score": "Les produits les mieux scorés sont les plus pertinents",
+        "presence_estimatif": "Un estimatif est présenté quand les données le permettent",
+    }
+    # Ordre officiel (cf. EVAL.md)
+    order = [
+        "taux_conformite",
+        "doublons",
+        "diversite_fournisseurs",
+        "coherence_score",
+        "presence_estimatif",
+    ]
+    rows = []
+    for name in order:
+        if name not in thresholds:
+            continue
+        t = thresholds[name]
+        label = t.get("label", name)
+        target = t.get("target")
+        unit = t.get("unit", "")
+        comp = t.get("comparator", "≥")
+        # Cas spéciaux pour rester fidèle au format original d'EVAL.md
+        if name == "doublons":
+            seuil = "0"
+        elif name == "coherence_score":
+            seuil = "Corrélation positive"
+        else:
+            # Formater sans décimale superflue
+            if isinstance(target, float) and target.is_integer():
+                target_str = str(int(target))
+            else:
+                target_str = str(target)
+            seuil = f"{comp} {target_str}{unit}"
+        desc = descriptions.get(name, "")
+        rows.append(f"| {label} | {desc} | {seuil} |")
+    return header + "\n".join(rows) + "\n"
+
+
+def save_thresholds(new_values: dict) -> str:
+    """Sauvegarde les nouvelles valeurs de cibles.
+
+    new_values: {metric_name: float_or_int}
+    Retourne le nom du fichier backup créé (ou "" si EVAL.md absent).
+    """
+    # 1. Backup EVAL.md s'il existe
+    EVAL_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+    backup_name = ""
+    if EVAL_FILE.exists():
+        ts = time.strftime("%Y%m%d_%H%M%S")
+        backup_name = f"EVAL_{ts}.md"
+        shutil.copy(EVAL_FILE, EVAL_BACKUP_DIR / backup_name)
+
+    # 2. Charger les seuils actuels et mettre à jour les targets
+    current = load_thresholds()
+    for name, value in new_values.items():
+        if name in current:
+            current[name]["target"] = value
+
+    # 3. Réécrire le tableau dans EVAL.md (regex sur le bloc métriques)
+    if EVAL_FILE.exists():
+        eval_content = EVAL_FILE.read_text(encoding="utf-8")
+        new_table = _build_eval_table(current)
+        eval_content = re.sub(
+            r"(## Métriques principales\n\n)(.*?)(\n## Définition de \"conforme\")",
+            lambda m: m.group(1) + new_table + m.group(3),
+            eval_content,
+            count=1,
+            flags=re.DOTALL,
+        )
+        EVAL_FILE.write_text(eval_content, encoding="utf-8")
+
+    # 4. Écrire config/thresholds.json
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    THRESHOLDS_FILE.write_text(
+        json.dumps(current, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    return backup_name
+
+
+def list_eval_backups() -> list:
+    """Retourne la liste des backups EVAL.md triés par date décroissante.
+    Chaque entrée : {filename, timestamp_display}."""
+    if not EVAL_BACKUP_DIR.exists():
+        return []
+    files = sorted(
+        [f for f in EVAL_BACKUP_DIR.glob("EVAL_*.md")],
+        key=lambda p: p.name,
+        reverse=True,
+    )
+    result = []
+    for f in files:
+        # Extraire timestamp du nom: EVAL_YYYYMMDD_HHMMSS.md
+        m = re.match(r"EVAL_(\d{8})_(\d{6})\.md", f.name)
+        if m:
+            date_part, time_part = m.group(1), m.group(2)
+            display = f"{date_part[:4]}-{date_part[4:6]}-{date_part[6:8]} {time_part[:2]}:{time_part[2:4]}:{time_part[4:6]}"
+        else:
+            display = f.name
+        result.append({"filename": f.name, "timestamp_display": display})
+    return result
+
+
 def get_metric_status(name, value):
-    """Retourne le statut (🟢/🟡/🔴) d'une métrique"""
+    """Retourne le statut (🟢/🔴/⚪) d'une métrique contre sa cible."""
     if value is None:
         return "⚪"
 
-    # Seuils cibles (de EVAL.md)
-    thresholds = {
-        "taux_conformite": {"target": 80, "type": "min"},
-        "doublons": {"target": 0, "type": "max"},
-        "diversite_fournisseurs": {"target": 3, "type": "min"},
-        "coherence_score": {"target": 0.5, "type": "min"},
-        "presence_estimatif": {"target": 90, "type": "min"},
-        "score_global": {"target": 80, "type": "min"}
-    }
-
+    thresholds = load_thresholds()
     if name not in thresholds:
         return "⚪"
 
     threshold = thresholds[name]
-    if threshold["type"] == "min":
-        return "🟢" if value >= threshold["target"] else "🔴"
+    target = threshold.get("target")
+    if target is None:
+        return "⚪"
+
+    if threshold.get("type") == "min":
+        return "🟢" if value >= target else "🔴"
     else:  # max
-        return "🟢" if value <= threshold["target"] else "🔴"
+        return "🟢" if value <= target else "🔴"
 
 
 def get_iteration_states(max_n: int = 8) -> dict:
@@ -295,6 +435,12 @@ def get_iteration_states(max_n: int = 8) -> dict:
 
         states[n] = state
     return states
+
+
+@app.context_processor
+def inject_thresholds():
+    """Rend `thresholds` accessible dans TOUS les templates (index, iteration_detail, etc.)."""
+    return {"thresholds": load_thresholds()}
 
 
 @app.route("/")
@@ -386,6 +532,84 @@ def manuel():
         with open(manuel_file, "r", encoding="utf-8") as f:
             content = f.read()
     return render_template("manuel.html", manuel_content=content)
+
+
+@app.route("/config", methods=["GET", "POST"])
+def config_page():
+    """Page admin — modifier les cibles/seuils d'affichage.
+
+    GET  : affiche le formulaire pré-rempli avec les valeurs courantes.
+    POST : valide, sauvegarde (backup EVAL.md + MAJ config/thresholds.json + MAJ EVAL.md)
+           puis redirige vers GET avec un flash message.
+    """
+    if request.method == "POST":
+        action = request.form.get("action", "save")
+
+        if action == "reset":
+            new_values = {k: v["target"] for k, v in DEFAULT_THRESHOLDS.items()}
+        else:
+            new_values = {}
+            errors = []
+            for name in DEFAULT_THRESHOLDS.keys():
+                raw = request.form.get(name, "").strip()
+                if raw == "":
+                    errors.append(f"Champ '{name}' vide")
+                    continue
+                try:
+                    val = float(raw)
+                except ValueError:
+                    errors.append(f"Champ '{name}' n'est pas un nombre : {raw!r}")
+                    continue
+                if val < 0:
+                    errors.append(f"Champ '{name}' ne peut pas être négatif")
+                    continue
+                # Validation par type de métrique
+                if name in ("doublons", "diversite_fournisseurs"):
+                    new_values[name] = int(val)
+                elif name in ("taux_conformite", "presence_estimatif", "score_global"):
+                    if val > 100:
+                        errors.append(f"Champ '{name}' ne peut pas dépasser 100%")
+                        continue
+                    # int si entier (évite l'affichage "85.0%"), sinon float
+                    new_values[name] = int(val) if val.is_integer() else val
+                else:  # coherence_score
+                    if val > 1:
+                        errors.append(f"Champ '{name}' ne peut pas dépasser 1")
+                        continue
+                    new_values[name] = val
+
+            if errors:
+                for e in errors:
+                    flash(e, "error")
+                return redirect(url_for("config_page"))
+
+        backup_name = save_thresholds(new_values)
+        if action == "reset":
+            flash(f"Cibles réinitialisées aux valeurs par défaut. Backup : {backup_name}", "success")
+        else:
+            flash(f"Cibles mises à jour. Backup EVAL.md : {backup_name}", "success")
+        return redirect(url_for("config_page"))
+
+    # GET
+    return render_template(
+        "config.html",
+        history=list_eval_backups(),
+    )
+
+
+@app.route("/config/backup/<filename>")
+def config_backup_download(filename):
+    """Sert un backup EVAL.md en lecture seule pour historique."""
+    # Sécurité : pas de traversée de dossier, uniquement les fichiers EVAL_*.md
+    if not re.match(r"^EVAL_\d{8}_\d{6}\.md$", filename):
+        return "Invalid filename", 400
+    target = EVAL_BACKUP_DIR / filename
+    if not target.exists():
+        return "Not found", 404
+    return Response(
+        target.read_text(encoding="utf-8"),
+        mimetype="text/markdown; charset=utf-8",
+    )
 
 
 @app.route("/api/metrics/latest")
