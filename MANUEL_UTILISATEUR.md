@@ -63,17 +63,19 @@ Ces 5 indicateurs mesurent la **qualité de la sélection produits**. Ils sont a
 
 Chaque itération s'attaque à **un seul problème** identifié, dans un ordre défini.
 
-| Code | Problème | Itération |
-|---|---|---|
-| P1 | Absence de caractéristique non pénalisée dans le scoring | 1 |
-| P3 | Le LLM juge sur le titre seul, ignore le descriptif technique | 2 |
-| P2 | Produits hors catégorie qui remontent trop haut | 3 |
-| P4 | 86% des prix en "Prix sur demande" | *Diagnostic — pas traité* |
-| P5 | Zéro résultat pour certains parcours | 4 |
-| P6 | Mélange produits neuf / occasion | 5 |
-| P7 | Doublons et sur-représentation d'un fournisseur | 6 |
-| P8 | Caractéristiques discriminantes ignorées | 7 |
-| P9 | Sélections trop restrictives ou hors sujet | 8 |
+| Code | Problème | Sévérité | Itération |
+|---|---|---|---|
+| P1 | Absence de caractéristique non pénalisée dans le scoring | 🔴 CRITIQUE | 1 |
+| P3 | Le LLM juge sur le titre seul, ignore le descriptif technique | 🔴 CRITIQUE | 2 |
+| P2 | Produits hors catégorie qui remontent trop haut | 🔴 CRITIQUE | 3 |
+| P4 | 86% des prix en "Prix sur demande" | ⚪ OBSERVATION | *Diagnostic — pas traité* |
+| P5 | Zéro résultat pour certains parcours | 🟠 ÉLEVÉE | 4 |
+| P6 | Mélange produits neuf / occasion | 🟠 ÉLEVÉE | 5 |
+| P7 | Doublons et sur-représentation d'un fournisseur | 🔵 MODÉRÉE | 6 |
+| P8 | Caractéristiques discriminantes ignorées | 🔵 MODÉRÉE | 7 |
+| P9 | Sélections trop restrictives ou hors sujet | 🔵 MODÉRÉE | 8 |
+
+**Code couleur sévérité** : 🔴 CRITIQUE (à attaquer en premier) · 🟠 ÉLEVÉE · 🔵 MODÉRÉE · ⚪ OBSERVATION (diagnostic seulement).
 
 > **P4 est un constat**, pas un problème qu'on peut corriger : il dépend des données fournisseurs, pas du code. Il reste affiché pour mémoire.
 
@@ -210,11 +212,17 @@ Affiche le journal complet (`ITERATIONS.md`) avec pour chaque essai :
 
 ### Page Problèmes
 
-Vue par problème : P1-P9 (immuables) **+ vos problèmes personnalisés** (P10, P11…). Chaque carte indique :
-- Le numéro du problème et son libellé.
-- L'itération qui s'en occupe.
-- L'état (Backlog / En cours / Résolu).
-- Pour les problèmes personnalisés : badge de sévérité coloré, description, métriques affectées, et les boutons **Modifier** / **Supprimer**.
+Un **tableau unique** liste tous les problèmes (P1-P9 officiels immuables + vos problèmes personnalisés P10, P11…). Colonnes :
+
+| Colonne | Contenu |
+|---|---|
+| **Code** | P1 à P9 (officiels) ou P10+ (personnalisés) |
+| **Libellé** | Titre du problème. Description complète visible au survol. |
+| **Sévérité** | Badge coloré : 🔴 CRITIQUE · 🟠 ÉLEVÉE · 🔵 MODÉRÉE · ⚪ OBSERVATION |
+| **Itération** | Numéro d'itération dédiée (ou `—` pour P4 diagnostic) |
+| **État** | Backlog / En cours / Attend réponse / Résolu |
+| **Métriques** | Métriques impactées. Si plus de 2, affichage "+N" (survoler pour la liste complète). |
+| **Actions** | **Modifier** / **Supprimer** pour les personnalisés. Mention "immuable" pour P1-P9. |
 
 En haut à droite, le bouton **+ Nouveau problème** ouvre le formulaire de création (voir §5.4).
 
