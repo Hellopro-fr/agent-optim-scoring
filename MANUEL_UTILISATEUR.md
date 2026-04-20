@@ -153,7 +153,7 @@ Les badges se rafraîchissent automatiquement toutes les 5 secondes.
    | **Sévérité** | ✅ | CRITIQUE · ÉLEVÉE · MODÉRÉE (défaut) · OBSERVATION |
    | **Itération** | (auto) | Numéro attribué automatiquement, non modifiable |
    | **Description** | ✅ | Ce que vous observez, pourquoi c'est un problème, sur quel cas |
-   | **Métriques affectées** | Facultatif | Sélectionner dans la liste existante (Ctrl/Cmd + clic pour en choisir plusieurs), ou saisir un nom dans "Ajouter une nouvelle métrique" puis cliquer **Ajouter** |
+   | **Métriques affectées** | Facultatif | Cocher les métriques concernées dans la liste. Pour en ajouter une qui n'existe pas encore, la saisir dans "Ajouter une nouvelle métrique" puis cliquer **Ajouter** (elle est cochée automatiquement). |
 
 4. Cliquer **Enregistrer**.
 

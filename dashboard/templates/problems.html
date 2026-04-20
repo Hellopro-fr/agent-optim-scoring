@@ -189,14 +189,16 @@
                                   style="width: 100%; padding: 0.55rem 0.8rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.85rem; background: var(--bg); color: var(--text-primary); font-family: inherit; resize: vertical;"></textarea>
                     </div>
                     <div style="margin-bottom: 0.5rem;">
-                        <label for="pf-metrics" style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.3rem;">Metriques affectees (facultatif)</label>
-                        <select id="pf-metrics" name="metrics" multiple size="5"
-                                style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem; background: var(--bg); color: var(--text-primary);">
+                        <label style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.3rem;">Metriques affectees (facultatif)</label>
+                        <div id="pf-metrics" style="max-height: 160px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.5rem 0.75rem; background: var(--bg); display: flex; flex-direction: column; gap: 0.35rem;">
                             {% for m in metrics %}
-                            <option value="{{ m }}">{{ m }}</option>
+                            <label class="pf-metric-row" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.82rem; color: var(--text-primary); padding: 0.2rem 0;">
+                                <input type="checkbox" class="pf-metric-checkbox" value="{{ m }}" style="cursor: pointer;">
+                                <span>{{ m }}</span>
+                            </label>
                             {% endfor %}
-                        </select>
-                        <small style="color: var(--text-tertiary); font-size: 0.7rem;">Ctrl/Cmd+clic pour selection multiple</small>
+                        </div>
+                        <small style="color: var(--text-tertiary); font-size: 0.7rem;">Cochez les metriques concernees</small>
                     </div>
                     <div style="display: flex; gap: 0.4rem; align-items: center; margin-bottom: 0.6rem;">
                         <input type="text" id="pf-new-metric" placeholder="Ajouter une nouvelle metrique..."
@@ -294,9 +296,37 @@ function openCreateModal() {
     document.getElementById('problemForm').reset();
     document.getElementById('pf-severity').value = 'MODÉRÉE';
     document.getElementById('pf-iteration').value = NEXT_ITERATION;
+    resetMetricCheckboxes();
     showFormError('');
     const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('problemFormModal'));
     modal.show();
+}
+
+function setMetricChecked(value, checked) {
+    const cb = document.querySelector('.pf-metric-checkbox[value="' + CSS.escape(value) + '"]');
+    if (cb) cb.checked = checked;
+}
+
+function appendMetricCheckbox(value, checked) {
+    const container = document.getElementById('pf-metrics');
+    const label = document.createElement('label');
+    label.className = 'pf-metric-row';
+    label.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.82rem; color: var(--text-primary); padding: 0.2rem 0;';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'pf-metric-checkbox';
+    cb.value = value;
+    cb.checked = !!checked;
+    cb.style.cursor = 'pointer';
+    const span = document.createElement('span');
+    span.textContent = value;
+    label.appendChild(cb);
+    label.appendChild(span);
+    container.appendChild(label);
+}
+
+function resetMetricCheckboxes() {
+    document.querySelectorAll('.pf-metric-checkbox').forEach(cb => { cb.checked = false; });
 }
 
 function openEditModal(number) {
@@ -310,17 +340,16 @@ function openEditModal(number) {
     document.getElementById('pf-iteration').value = p.iteration || '';
     document.getElementById('pf-description').value = p.description || '';
 
-    // Pre-selection des metriques
-    const select = document.getElementById('pf-metrics');
-    const existing = new Set((p.metrics || []));
-    // S'assurer que chaque metrique du probleme existe dans les options
+    // Pre-selection des metriques via checkboxes
+    resetMetricCheckboxes();
+    const existing = new Set(p.metrics || []);
     existing.forEach(m => {
-        if (!Array.from(select.options).some(o => o.value === m)) {
-            select.add(new Option(m, m));
+        const cb = document.querySelector('.pf-metric-checkbox[value="' + CSS.escape(m) + '"]');
+        if (cb) {
+            cb.checked = true;
+        } else {
+            appendMetricCheckbox(m, true);
         }
-    });
-    Array.from(select.options).forEach(o => {
-        o.selected = existing.has(o.value);
     });
 
     showFormError('');
@@ -332,21 +361,20 @@ function addCustomMetric() {
     const input = document.getElementById('pf-new-metric');
     const value = (input.value || '').trim();
     if (!value) return;
-    const select = document.getElementById('pf-metrics');
-    const existing = Array.from(select.options).find(o => o.value === value);
+    const existing = document.querySelector('.pf-metric-checkbox[value="' + CSS.escape(value) + '"]');
     if (existing) {
-        existing.selected = true;
+        existing.checked = true;
     } else {
-        const opt = new Option(value, value, true, true);
-        select.add(opt);
+        appendMetricCheckbox(value, true);
     }
     input.value = '';
     input.focus();
 }
 
 function getSelectedMetrics() {
-    const select = document.getElementById('pf-metrics');
-    return Array.from(select.selectedOptions).map(o => o.value);
+    return Array.from(document.querySelectorAll('.pf-metric-checkbox'))
+        .filter(cb => cb.checked)
+        .map(cb => cb.value);
 }
 
 function submitProblemForm() {
