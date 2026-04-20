@@ -34,9 +34,9 @@ Le dashboard a **3 pages** dans le menu de gauche :
 
 | Page | À quoi ça sert |
 |---|---|
-| **Tableau de bord** | Vue d'ensemble : métriques actuelles + boutons pour lancer les itérations |
+| **Tableau de bord** | Vue d'ensemble : métriques actuelles + boutons pour lancer les itérations (originales + personnalisées) |
 | **Iterations** | Historique détaillé de chaque essai (hypothèse, avant/après, décision) |
-| **Problèmes** | Statut des 9 problèmes à résoudre (P1–P9) |
+| **Problèmes** | Statut des 9 problèmes à résoudre (P1–P9) **+ ajout / modification / suppression de problèmes personnalisés** |
 
 ---
 
@@ -78,6 +78,18 @@ Chaque itération s'attaque à **un seul problème** identifié, dans un ordre d
 > **P4 est un constat**, pas un problème qu'on peut corriger : il dépend des données fournisseurs, pas du code. Il reste affiché pour mémoire.
 
 La page **Problèmes** du dashboard montre l'état de chaque problème (Backlog / En cours / Résolu).
+
+### 4.1. Problèmes personnalisés (P10, P11…)
+
+En plus des 9 problèmes d'origine, **vous pouvez ajouter vos propres problèmes** depuis la page Problèmes. Ils reçoivent automatiquement :
+
+- Un **numéro** à partir de P10 (auto-incrémenté, jamais réutilisé même après suppression).
+- Une **itération dédiée** à partir de 9 (iter 9, iter 10, iter 11…).
+- Un nouveau **bouton** dans le bloc "Lancer une itération" du tableau de bord.
+
+**Les 9 problèmes d'origine (P1-P9) sont immuables** : ils ne peuvent être ni modifiés ni supprimés. Seuls les problèmes que vous avez créés sont éditables.
+
+Voir §5.4 pour la procédure de création.
 
 ---
 
@@ -129,6 +141,46 @@ La **baseline** (itération 0) est la mesure de référence sans aucune modifica
 
 Les badges se rafraîchissent automatiquement toutes les 5 secondes.
 
+### 5.4. Créer un problème personnalisé
+
+1. Aller sur la page **Problèmes**.
+2. Cliquer sur **+ Nouveau problème** en haut à droite.
+3. Remplir le formulaire :
+
+   | Champ | Obligatoire | Description |
+   |---|---|---|
+   | **Libellé** | ✅ | Titre court du problème (ex. "Latence API trop élevée") |
+   | **Sévérité** | ✅ | CRITIQUE · ÉLEVÉE · MODÉRÉE (défaut) · OBSERVATION |
+   | **Itération** | (auto) | Numéro attribué automatiquement, non modifiable |
+   | **Description** | ✅ | Ce que vous observez, pourquoi c'est un problème, sur quel cas |
+   | **Métriques affectées** | Facultatif | Sélectionner dans la liste existante (Ctrl/Cmd + clic pour en choisir plusieurs), ou saisir un nom dans "Ajouter une nouvelle métrique" puis cliquer **Ajouter** |
+
+4. Cliquer **Enregistrer**.
+
+Le problème apparaît dans la grille avec le badge de sévérité coloré, et un nouveau bouton **Iter N — P<num>** est disponible sur le tableau de bord pour le lancer.
+
+> Astuce : les nouvelles métriques que vous créez sont proposées dans la liste pour tous les problèmes suivants.
+
+### 5.5. Modifier ou supprimer un problème personnalisé
+
+Sur la carte d'un problème personnalisé, deux boutons :
+
+- **Modifier** → rouvre le formulaire avec les valeurs existantes. Vous pouvez changer libellé / sévérité / description / métriques. Le numéro d'itération reste figé.
+- **Supprimer** → après confirmation, retire le problème et son bouton du tableau de bord.
+
+> **Les problèmes P1-P9 n'ont pas ces boutons** : ils sont immuables par contrat avec l'équipe tech.
+
+> **Supprimer un problème ne libère pas son numéro d'itération** : si vous supprimez P10 (iter 9), le prochain problème créé sera P11 (iter 10), pas P10/iter 9 à nouveau. C'est pour éviter toute confusion avec des résultats précédemment calculés.
+
+### 5.6. Lancer une itération sur un problème personnalisé
+
+Exactement comme pour les itérations 1 à 8 (§5.2) :
+
+1. Tableau de bord → cliquer sur le bouton **Iter N — P<num>** correspondant.
+2. La console s'ouvre. L'agent reçoit automatiquement le contexte du problème (libellé, sévérité, description, métriques) — vous n'avez rien à lui redonner.
+3. Il formule une hypothèse, modifie un fichier dans `graphoptim-service/matching`, relance le pipeline, compare les métriques, décide GARDÉ / ROLLBACK.
+4. À la fin, le bouton passe au vert avec le badge "OK".
+
 ---
 
 ## 6. Les checkpoints (paliers de validation)
@@ -158,12 +210,15 @@ Affiche le journal complet (`ITERATIONS.md`) avec pour chaque essai :
 
 ### Page Problèmes
 
-Vue par problème : P1, P2, … P9. Chaque carte indique :
-- Le numéro du problème et son résumé.
+Vue par problème : P1-P9 (immuables) **+ vos problèmes personnalisés** (P10, P11…). Chaque carte indique :
+- Le numéro du problème et son libellé.
 - L'itération qui s'en occupe.
 - L'état (Backlog / En cours / Résolu).
+- Pour les problèmes personnalisés : badge de sévérité coloré, description, métriques affectées, et les boutons **Modifier** / **Supprimer**.
 
-En bas de la page, la **frise "Ordre d'attaque suggéré"** rappelle la séquence P1 → P3 → P2 → P5 → P6 → P7 → P8 → P9.
+En haut à droite, le bouton **+ Nouveau problème** ouvre le formulaire de création (voir §5.4).
+
+En bas de la page, la **frise "Ordre d'attaque suggéré"** rappelle la séquence originale P1 → P3 → P2 → P5 → P6 → P7 → P8 → P9 (les itérations personnalisées s'enchaînent ensuite librement, sans ordre imposé).
 
 ---
 
@@ -184,6 +239,8 @@ Dans la console, quand l'agent "attend une réponse", vous pouvez lui écrire en
 - Tout ce qui sort du protocole d'optimisation (poèmes, emails, code sans rapport).
 - Modifier les fichiers protégés (EVAL.md, PROBLEMS.md, CLAUDE.md, BASELINE.json, parcours de test).
 - Toucher à l'API de production (`graph-service/matching`) — il ne travaille **que** sur l'environnement d'optimisation `graphoptim-service/matching`.
+
+> Les problèmes personnalisés (P10+) que vous créez depuis la page Problèmes sont stockés à part (`custom_problems.json`) et ne touchent donc **pas** au fichier protégé PROBLEMS.md.
 
 Si vous recevez un refus, c'est normal. Reformulez dans le scope : "Analyse la dernière itération", "Propose l'hypothèse pour la suivante", etc.
 
@@ -231,6 +288,12 @@ R. Quand **toutes les cibles** de §3 sont atteintes, ou quand on constate un pl
 
 **Q. Qui a le droit de modifier EVAL.md ou PROBLEMS.md ?**
 R. Personne en cours de protocole. Ces fichiers sont la **source de vérité** : les modifier en cours de route invaliderait toutes les comparaisons. Seul un changement explicite validé avec l'équipe tech (et tracé) y touche.
+
+**Q. Peut-on ajouter un problème qu'on a découvert en production ?**
+R. Oui, via la page **Problèmes** → bouton **+ Nouveau problème** (§5.4). Ce nouveau problème est stocké à part (il ne modifie pas PROBLEMS.md) et génère automatiquement son propre bouton d'itération sur le tableau de bord.
+
+**Q. Les problèmes personnalisés respectent-ils les checkpoints CP1-CP4 ?**
+R. Oui, mais ils sont indépendants du plan original P1-P9. Si vous lancez iter 10 (un problème personnalisé) alors que iter 1-8 n'ont pas tourné, l'agent le signale mais n'est pas bloqué — les deux pistes sont comptabilisées séparément.
 
 ---
 
