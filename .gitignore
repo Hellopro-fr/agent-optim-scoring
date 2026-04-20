@@ -35,3 +35,7 @@ reports/diagnostic.md
 reports/final.md
 results/iteration_000.json
 .claude/settings.local.json
+
+# Problèmes custom ajoutés depuis le dashboard (état local utilisateur)
+custom_problems.json
+custom_problems.json.tmp

@@ -9,7 +9,7 @@
 | Taux de conformité | % de produits de la sélection qui correspondent au besoin | ≥ 80% |
 | Doublons | Produits identiques ou quasi-identiques dans la sélection | 0 |
 | Diversité fournisseurs | Nombre de fournisseurs différents (si disponibles) | ≥ 3 |
-| Cohérence score/pertinence | Les produits les mieux scorés sont les plus pertinents | Corrélation positive |
+| Cohérence score | Les produits les mieux scorés sont les plus pertinents | Corrélation positive |
 | Présence estimatif | Un estimatif est présenté quand les données le permettent | ≥ 90% |
 
 ## Définition de "conforme"

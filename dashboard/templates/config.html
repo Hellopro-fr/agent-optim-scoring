@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Configuration — HelloPro Scoring{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Configuration des cibles</h1>
+    <p>Modifier les seuils affichés sur le tableau de bord. Chaque sauvegarde crée un backup de EVAL.md.</p>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert-banner {% if category == 'error' %}warning{% else %}info{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    {% if category == 'error' %}
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    {% else %}
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                    {% endif %}
+                </svg>
+                <div>{{ message }}</div>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="alert-banner warning">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <div>
+        <strong>Impact des modifications</strong>
+        <p style="margin: 0.25rem 0 0; opacity: 0.85;">Changer une cible n'affecte que l'affichage (pastille 🟢/🔴 et texte "Cible : ..."). Le calcul du score global (poids, normalisation) reste inchangé — les décisions GARDÉ/ROLLBACK de l'agent IA ne sont pas impactées.</p>
+    </div>
+</div>
+
+<form method="POST" action="{{ url_for('config_page') }}">
+    <div class="card">
+        <div class="card-header">Cibles des 6 métriques</div>
+        <table class="table-modern">
+            <thead>
+                <tr>
+                    <th>Métrique</th>
+                    <th style="width: 80px; text-align: center;">Comparateur</th>
+                    <th style="width: 160px;">Valeur cible</th>
+                    <th style="width: 80px;">Unité</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set metric_order = ['taux_conformite', 'doublons', 'diversite_fournisseurs', 'coherence_score', 'presence_estimatif', 'score_global'] %}
+                {% for name in metric_order %}
+                {% set t = thresholds[name] %}
+                <tr>
+                    <td>
+                        <strong>{{ t.label }}</strong>
+                        {% if name == 'score_global' %}
+                            <span style="color: var(--text-tertiary); font-size: 0.75rem; display: block; margin-top: 0.2rem;">Cible méta (affichage uniquement)</span>
+                        {% elif name == 'doublons' or name == 'diversite_fournisseurs' %}
+                            <span style="color: var(--amber-text); font-size: 0.75rem; display: block; margin-top: 0.2rem;">⚠️ Cible couplée au calcul — modifier n'affecte que l'affichage</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center; font-size: 1.1rem; color: var(--text-secondary);">{{ t.comparator }}</td>
+                    <td>
+                        <input type="number"
+                               name="{{ name }}"
+                               value="{{ t.target }}"
+                               step="{% if name == 'coherence_score' %}0.01{% elif name in ('doublons', 'diversite_fournisseurs') %}1{% else %}0.1{% endif %}"
+                               min="0"
+                               {% if name in ('taux_conformite', 'presence_estimatif', 'score_global') %}max="100"{% endif %}
+                               {% if name == 'coherence_score' %}max="1"{% endif %}
+                               required
+                               style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.5rem 0.75rem; font-size: 0.9rem; color: var(--text-primary); width: 100%; font-family: inherit;">
+                    </td>
+                    <td style="color: var(--text-tertiary);">{{ t.unit if t.unit else '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div style="padding: 1rem 1.25rem; display: flex; gap: 0.5rem; justify-content: flex-end; border-top: 1px solid var(--border-light);">
+            <button type="submit" name="action" value="reset" class="btn-ghost"
+                    onclick="return confirm('Réinitialiser aux valeurs par défaut (80%, 0, 3, 0.5, 90%, 80%) ? Un backup de EVAL.md sera créé.');">
+                Réinitialiser
+            </button>
+            <button type="submit" name="action" value="save" class="btn-primary">
+                Sauvegarder
+            </button>
+        </div>
+    </div>
+</form>
+
+<div class="card">
+    <div class="card-header">Historique des backups EVAL.md</div>
+    {% if history %}
+    <table class="table-modern">
+        <thead>
+            <tr>
+                <th>Date et heure</th>
+                <th>Fichier</th>
+                <th style="width: 100px;"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in history %}
+            <tr>
+                <td>{{ entry.timestamp_display }}</td>
+                <td style="color: var(--text-tertiary); font-family: 'SF Mono', monospace; font-size: 0.8rem;">backup/eval/{{ entry.filename }}</td>
+                <td>
+                    <a href="{{ url_for('config_backup_download', filename=entry.filename) }}"
+                       target="_blank"
+                       style="color: var(--accent); text-decoration: none; font-size: 0.85rem; font-weight: 500;">
+                        Voir
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <h3>Aucun backup pour l'instant</h3>
+        <p>Le premier backup sera créé dès la première sauvegarde.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

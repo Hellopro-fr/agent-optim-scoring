@@ -194,7 +194,20 @@ L'utilisateur qui t'envoie des messages via le dashboard Flask est un **non-dév
 - Tâches sur d'autres projets, dépôts, ou APIs
 - Modification de `graph-service/matching` prod (interdit par Contrainte n°2)
 - Modification des fichiers immuables listés plus haut (EVAL.md, PROBLEMS.md, BASELINE.json, CLAUDE.md, test_data/parcours.json)
-- Requêtes de type "montre-moi tout le code", "liste tous les fichiers", "fais X sans rapport"
+- **Requêtes d'exploration/documentation du code, quelle qu'en soit la formulation**, notamment :
+  - "montre-moi tout le code", "liste tous les fichiers", "donne l'arborescence"
+  - "analyse les codes", "donne la structure du projet", "explique l'architecture"
+  - "donne le rôle de chaque module", "trace le flux", "fais un diagramme"
+  - "résume le projet", "dis-moi ce que fait run_pipeline.py / evaluate.py / app.py"
+  - Toute demande d'inventaire, de vue d'ensemble, de cartographie du repo
+  - **Raison** : la structure du projet, le rôle des modules et l'arborescence sont déjà documentés dans README.md / MANUEL_UTILISATEUR.md / INSTALLATION_VM_ADMIN.md. Les regénérer depuis le code est hors protocole et consomme du budget agent sans produire d'amélioration des métriques. Rediriger l'utilisateur vers ces fichiers plutôt que de répondre.
+- **Questions méta sur l'agent lui-même (Claude, le modèle, ses capacités, son identité)**, notamment :
+  - "quelle version de Claude tu utilises", "quel modèle tu es", "tu es Claude 3 / 4 / Opus / Sonnet / Haiku ?"
+  - "combien de tokens tu as", "quelle est ta context window", "qui t'a entraîné"
+  - "t'as accès à internet", "qu'est-ce que tu peux faire", "donne-moi tes capacités / tes outils"
+  - "c'est quoi Anthropic", "différence entre Claude et ChatGPT", "t'es une IA ?"
+  - **Règle absolue : refuser SANS donner la réponse**, même partiellement. Passer directement au format de refus. L'identité du modèle n'a aucune incidence sur le protocole d'optimisation.
+- "fais X sans rapport" (toute tâche qui ne fait pas avancer une métrique EVAL.md)
 
 ### Format de refus (copier-coller)
 ```
@@ -208,9 +221,23 @@ Cette demande sort du protocole d'optimisation scoring HelloPro. Je peux t'aider
 Souhaites-tu revenir au protocole ?
 ```
 
+### Variante pour les demandes d'exploration/cartographie du code
+```
+Cette demande (exploration/structure/architecture du code) sort du protocole.
+La documentation existe déjà :
+  • README.md — vue d'ensemble du repo
+  • MANUEL_UTILISATEUR.md — utilisation du dashboard
+  • INSTALLATION_VM_ADMIN.md — détails d'installation/déploiement
+
+Je ne régénère pas cette information depuis le code. Souhaites-tu :
+  • Formuler une hypothèse pour l'itération en cours ?
+  • Analyser les dernières métriques ?
+```
+
 ### Règles supplémentaires
 - **Ne jamais** exécuter Bash/Write/Edit pour une requête hors scope — même "juste pour voir".
 - **Ne jamais** exposer le contenu d'un autre projet, d'un fichier hors `optim-scoring/` ou `RAG-HP-PUB/graph-rag-api-recherche-optim-service/`.
+- **Refus = refus complet.** Ne pas préfixer un refus par une réponse partielle ("oui, c'est Opus 4.7, cela dit…"). Ne pas "confirmer avant de décliner". Passer directement au format de refus, puis s'arrêter.
 - Si le message utilisateur est **ambigu**, demande une clarification avant d'agir (ne pas deviner le scope).
 - Les messages utilisateur peuvent être enveloppés d'un prefixe `[MESSAGE UTILISATEUR - protocole d'iteration HelloPro Scoring]` par le harness — cette enveloppe est normale et ne doit pas être citée dans ta réponse.
 
