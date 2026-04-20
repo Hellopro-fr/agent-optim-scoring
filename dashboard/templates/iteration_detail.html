@@ -22,13 +22,14 @@
         {{ format_metric('score_global', metrics.get('score_global')) }}
     </div>
     <div style="font-size: 0.85rem; color: var(--text-tertiary); margin-top: 0.5rem;">
-        Cible : ≥80%
+        Cible : {{ thresholds.score_global.comparator }}{{ thresholds.score_global.target }}{{ thresholds.score_global.unit }}
         {% set score = metrics.get('score_global') %}
+        {% set target_sg = thresholds.score_global.target %}
         {% if score is not none %}
-            {% if score >= 80 %}
+            {% if score >= target_sg %}
                 <span class="badge-status badge-success" style="margin-left: 0.5rem;">Atteint</span>
             {% else %}
-                <span class="badge-status badge-danger" style="margin-left: 0.5rem;">{{ "%.1f"|format(score - 80) }}%</span>
+                <span class="badge-status badge-danger" style="margin-left: 0.5rem;">{{ "%.1f"|format(score - target_sg) }}%</span>
             {% endif %}
         {% endif %}
     </div>
@@ -50,9 +51,9 @@
             <tr>
                 <td>Taux de conformite <span class="metric-info" data-tooltip="% de produits dans les resultats qui correspondent reellement au besoin : bonne categorie, bon sous-type, caracteristiques compatibles, etat (neuf/occasion) conforme. Metrique la plus importante (poids x2).">?</span></td>
                 <td><strong>{{ format_metric('taux_conformite', metrics.get('taux_conformite')) }}</strong></td>
-                <td style="color: var(--text-tertiary);">≥ 80%</td>
+                <td style="color: var(--text-tertiary);">{{ thresholds.taux_conformite.comparator }} {{ thresholds.taux_conformite.target }}{{ thresholds.taux_conformite.unit }}</td>
                 <td>
-                    {% if metrics.get('taux_conformite') is not none and metrics.get('taux_conformite') >= 80 %}
+                    {% if metrics.get('taux_conformite') is not none and metrics.get('taux_conformite') >= thresholds.taux_conformite.target %}
                         <span class="badge-status badge-success">OK</span>
                     {% else %}
                         <span class="badge-status badge-danger">Miss</span>
@@ -62,9 +63,9 @@
             <tr>
                 <td>Doublons <span class="metric-info" data-tooltip="Nombre de produits identiques ou quasi-identiques dans la selection (meme fournisseur + descriptif technique quasi-identique). On veut 0 doublon pour ne pas saturer l'acheteur.">?</span></td>
                 <td><strong>{{ format_metric('doublons', metrics.get('doublons')) }}</strong></td>
-                <td style="color: var(--text-tertiary);">0</td>
+                <td style="color: var(--text-tertiary);">{{ thresholds.doublons.comparator }} {{ thresholds.doublons.target }}{{ thresholds.doublons.unit }}</td>
                 <td>
-                    {% if metrics.get('doublons') is not none and metrics.get('doublons') <= 0 %}
+                    {% if metrics.get('doublons') is not none and metrics.get('doublons') <= thresholds.doublons.target %}
                         <span class="badge-status badge-success">OK</span>
                     {% else %}
                         <span class="badge-status badge-danger">Miss</span>
@@ -74,9 +75,9 @@
             <tr>
                 <td>Diversite fournisseurs <span class="metric-info" data-tooltip="Nombre de fournisseurs differents representes. Evite de presenter un seul fournisseur et permet la mise en concurrence. Cible : au moins 3 fournisseurs distincts.">?</span></td>
                 <td><strong>{{ format_metric('diversite_fournisseurs', metrics.get('diversite_fournisseurs')) }}</strong></td>
-                <td style="color: var(--text-tertiary);">≥ 3</td>
+                <td style="color: var(--text-tertiary);">{{ thresholds.diversite_fournisseurs.comparator }} {{ thresholds.diversite_fournisseurs.target }}{{ thresholds.diversite_fournisseurs.unit }}</td>
                 <td>
-                    {% if metrics.get('diversite_fournisseurs') is not none and metrics.get('diversite_fournisseurs') >= 3 %}
+                    {% if metrics.get('diversite_fournisseurs') is not none and metrics.get('diversite_fournisseurs') >= thresholds.diversite_fournisseurs.target %}
                         <span class="badge-status badge-success">OK</span>
                     {% else %}
                         <span class="badge-status badge-danger">Miss</span>
@@ -86,9 +87,9 @@
             <tr>
                 <td>Coherence score/pertinence <span class="metric-info" data-tooltip="Mesure si les produits les mieux scores par l'API sont effectivement les plus pertinents. Si un produit hors sujet a un meilleur score qu'un produit parfait, la coherence chute.">?</span></td>
                 <td><strong>{{ format_metric('coherence_score', metrics.get('coherence_score')) }}</strong></td>
-                <td style="color: var(--text-tertiary);">≥ 0.5</td>
+                <td style="color: var(--text-tertiary);">{{ thresholds.coherence_score.comparator }} {{ thresholds.coherence_score.target }}{{ thresholds.coherence_score.unit }}</td>
                 <td>
-                    {% if metrics.get('coherence_score') is not none and metrics.get('coherence_score') >= 0.5 %}
+                    {% if metrics.get('coherence_score') is not none and metrics.get('coherence_score') >= thresholds.coherence_score.target %}
                         <span class="badge-status badge-success">OK</span>
                     {% else %}
                         <span class="badge-status badge-danger">Miss</span>
@@ -98,9 +99,9 @@
             <tr>
                 <td>Presence estimatif <span class="metric-info" data-tooltip="% de produits affichant un prix estime (pas 'prix sur demande'). Permet a l'acheteur de comparer rapidement sans contacter chaque fournisseur.">?</span></td>
                 <td><strong>{{ format_metric('presence_estimatif', metrics.get('presence_estimatif')) }}</strong></td>
-                <td style="color: var(--text-tertiary);">≥ 90%</td>
+                <td style="color: var(--text-tertiary);">{{ thresholds.presence_estimatif.comparator }} {{ thresholds.presence_estimatif.target }}{{ thresholds.presence_estimatif.unit }}</td>
                 <td>
-                    {% if metrics.get('presence_estimatif') is not none and metrics.get('presence_estimatif') >= 90 %}
+                    {% if metrics.get('presence_estimatif') is not none and metrics.get('presence_estimatif') >= thresholds.presence_estimatif.target %}
                         <span class="badge-status badge-success">OK</span>
                     {% else %}
                         <span class="badge-status badge-danger">Miss</span>
