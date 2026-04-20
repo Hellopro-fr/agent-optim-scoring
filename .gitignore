@@ -39,4 +39,14 @@ results/iteration_000.json
 # Problèmes custom ajoutés depuis le dashboard (état local utilisateur)
 custom_problems.json
 custom_problems.json.tmp
+
+# Journal d'itérations (contenu local, template livré vierge au client)
 ITERATIONS.md
+
+# Logs Flask (dev et debug)
+debug_flask.log
+dashboard/flask.log
+
+# Scripts de dev (ne pas livrer)
+test_subprocess_approach.py
+start_dashboard_local.bat

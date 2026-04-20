@@ -266,5 +266,92 @@ Avant de valider l'installation, vérifier :
 
 ---
 
-**Document révisé** : 2026-04-16  
-**Version** : 1.0
+## 🧹 Nettoyage avant livraison à un nouveau client
+
+Le projet accumule des artefacts locaux pendant le développement et les tests (logs, résultats de pipeline, baselines expérimentales, sessions Claude, problèmes custom de test). Avant de livrer une installation à un nouveau client ou de repartir d'un état vierge, exécuter la procédure ci-dessous.
+
+### 🔹 Étape 1 — Nettoyage automatisé via l'endpoint `/reset-all`
+
+La route `POST /reset-all` expose deux modes :
+
+| Mode | Usage | Effet |
+|---|---|---|
+| `archive` (défaut) | Bouton Iter 0 du dashboard, usage métier | Déplace logs + résultats dans `backup/<timestamp>/`. Non-destructif. |
+| **`full`** | **Livraison admin, repartir vierge** | **Supprime** tous les artefacts et réécrit les templates vides. |
+
+**Invoquer le mode full** (dashboard démarré) :
+
+```bash
+curl -X POST http://localhost:5050/reset-all \
+     -H "Content-Type: application/json" \
+     -d '{"mode": "full"}'
+```
+
+**Ce que fait le mode full** :
+
+- Termine toutes les sessions Claude en cours et vide le registre mémoire
+- Supprime `dashboard/logs/iteration_*.log` et `dashboard/logs/backup/`
+- Supprime `logs/api_iteration_*.log`
+- Supprime `results/iteration_*.json`, `results/metrics_*.json` et `results/backup/` entier
+- Supprime `debug_flask.log` (racine) et `dashboard/flask.log`
+- Réécrit `BASELINE.json` avec un template `"_status": "NON_GÉNÉRÉ"`
+- Réécrit `ITERATIONS.md` avec uniquement l'en-tête (sans historique de dev)
+- Réécrit `custom_problems.json` avec `{"next_iteration": 9, "custom_metrics": [], "problems": []}`
+
+**Ce que le mode full ne touche PAS** (immuables ou responsabilité admin) :
+
+- Fichiers immuables : `EVAL.md`, `PROBLEMS.md`, `CLAUDE.md`, `test_data/parcours.json`
+- Config : `config/thresholds.json`, `config/api_config.json`, `config/scoring.cypher`, `config/prompt_cleanup.txt`
+- Secrets : `.env` (à gérer manuellement côté admin)
+
+### 🔹 Étape 2 — Nettoyages manuels complémentaires
+
+Certains fichiers ne peuvent pas être gérés par un endpoint HTTP et doivent être supprimés via le shell :
+
+```bash
+cd /chemin/vers/agent-optim-scoring
+
+# Secrets de dev (le client fournira son propre .env depuis .env.example)
+rm -f .env
+
+# Permissions Claude locales du développeur (si présentes)
+rm -f .claude/settings.local.json
+
+# Artefacts de debug / lanceurs dev
+rm -f test_subprocess_approach.py start_dashboard_local.bat
+
+# Caches Python
+find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null
+find . -name "*.pyc" -delete
+```
+
+### 🔹 Étape 3 — Checklist finale avant livraison
+
+Avant de remettre l'installation au client, cocher :
+
+- [ ] `.env` absent à la racine (le client doit le créer à partir de `.env.example`)
+- [ ] `.claude/settings.local.json` absent
+- [ ] `BASELINE.json` contient `"_status": "NON_GÉNÉRÉ"` (vérifier avec `head BASELINE.json`)
+- [ ] `ITERATIONS.md` ne contient que l'en-tête (pas de sections `## Itération N`)
+- [ ] `custom_problems.json` contient `{"next_iteration": 9, "custom_metrics": [], "problems": []}`
+- [ ] `ls results/` → aucun `iteration_*.json` ni `metrics_*.json` ni dossier `backup/`
+- [ ] `ls logs/` → aucun `api_iteration_*.log`
+- [ ] `ls dashboard/logs/` → aucun `iteration_*.log` ni dossier `backup/`
+- [ ] `debug_flask.log`, `dashboard/flask.log`, `test_subprocess_approach.py` absents
+- [ ] Le dashboard démarre sur http://\<vm-ip>:5050 et affiche la bannière **"CP1 — Validation baseline requise"**
+- [ ] La page `/problems` affiche uniquement P1-P9 (pas de problèmes personnalisés)
+- [ ] La page `/iterations` est vide
+
+### 🔹 Étape 4 — Première initialisation par le client
+
+Une fois livré, le client :
+
+1. Copie `.env.example` vers `.env` et remplit les tokens fournis
+2. Démarre le service (`docker compose up -d` ou `python run_app.py`)
+3. Ouvre http://\<vm-ip>:5050 → clique **Iter 0 — Baseline** → confirme
+4. La baseline est générée et `BASELINE.json` devient la référence définitive de cette installation
+
+---
+
+**Document révisé** : 2026-04-20  
+**Version** : 1.1 (ajout section nettoyage pré-livraison)

@@ -955,21 +955,167 @@ def api_metrics_latest():
     return jsonify(metrics or {})
 
 
+# Templates utilisés par le mode `full` de /reset-all pour réinitialiser
+# les fichiers d'état local (baseline, journal d'itérations, problèmes custom).
+BASELINE_TEMPLATE = {
+    "_info": "Baseline de l'itération 0. Sera générée au premier run d'iter 0.",
+    "_status": "NON_GÉNÉRÉ",
+    "generated_at": None,
+    "parcours_count": None,
+    "metrics": {
+        "taux_conformite": None,
+        "doublons": None,
+        "diversite_fournisseurs": None,
+        "coherence_score_pertinence": None,
+        "presence_estimatif": None,
+        "score_global": None,
+    },
+}
+
+ITERATIONS_TEMPLATE = (
+    "# Journal des itérations — Optimisation Scoring HelloPro\n"
+    "\n"
+    "> Ce fichier est APPEND-ONLY. Ne jamais supprimer ou modifier une entrée existante.\n"
+    "> Débute à l'itération 0 (baseline).\n"
+    "\n"
+    "<!-- Les itérations apparaîtront ci-dessous au format défini dans CLAUDE.md §Format ITERATIONS.md -->\n"
+)
+
+CUSTOM_PROBLEMS_TEMPLATE = {
+    "next_iteration": 9,
+    "custom_metrics": [],
+    "problems": [],
+}
+
+
+def _full_wipe():
+    """Supprime tout l'état local de dev, réécrit les templates vides.
+
+    Utilisé par /reset-all mode=full pour préparer une livraison ou repartir
+    d'un état vierge. À la différence du mode archive :
+    - Supprime (au lieu de déplacer) tous les artefacts de run
+    - Réécrit BASELINE.json, ITERATIONS.md, custom_problems.json en templates
+    - Ne touche JAMAIS aux fichiers immuables (EVAL.md, PROBLEMS.md, CLAUDE.md,
+      test_data/parcours.json, config/*) ni aux secrets (.env)
+
+    Retourne un dict récapitulant les suppressions effectuées.
+    """
+    removed = {
+        "dashboard_logs": [],
+        "api_logs": [],
+        "results_files": [],
+        "results_backup": False,
+        "dashboard_logs_backup": False,
+        "flask_logs": [],
+        "templates_rewritten": [],
+    }
+
+    # 1. Supprimer les logs dashboard (iteration_*.log + backup)
+    dashboard_logs_dir = PROJECT_ROOT / "dashboard" / "logs"
+    if dashboard_logs_dir.exists():
+        for log_file in dashboard_logs_dir.glob("iteration_*.log"):
+            try:
+                log_file.unlink()
+                removed["dashboard_logs"].append(log_file.name)
+            except OSError:
+                pass
+        backup_dir = dashboard_logs_dir / "backup"
+        if backup_dir.exists():
+            try:
+                shutil.rmtree(backup_dir)
+                removed["dashboard_logs_backup"] = True
+            except OSError:
+                pass
+
+    # 2. Supprimer les logs API (logs/api_iteration_*.log)
+    api_logs_dir = PROJECT_ROOT / "logs"
+    if api_logs_dir.exists():
+        for log_file in api_logs_dir.glob("api_iteration_*.log"):
+            try:
+                log_file.unlink()
+                removed["api_logs"].append(log_file.name)
+            except OSError:
+                pass
+
+    # 3. Supprimer les fichiers de résultats + dossier backup complet
+    if RESULTS_DIR.exists():
+        for pattern in ("metrics_*.json", "iteration_*.json"):
+            for f in RESULTS_DIR.glob(pattern):
+                try:
+                    f.unlink()
+                    removed["results_files"].append(f.name)
+                except OSError:
+                    pass
+        results_backup = RESULTS_DIR / "backup"
+        if results_backup.exists():
+            try:
+                shutil.rmtree(results_backup)
+                removed["results_backup"] = True
+            except OSError:
+                pass
+
+    # 4. Supprimer les logs Flask à la racine
+    for flask_log in (PROJECT_ROOT / "debug_flask.log", PROJECT_ROOT / "dashboard" / "flask.log"):
+        if flask_log.exists():
+            try:
+                flask_log.unlink()
+                removed["flask_logs"].append(str(flask_log.relative_to(PROJECT_ROOT)))
+            except OSError:
+                pass
+
+    # 5. Réécrire les templates vides (état attendu pour une nouvelle install)
+    try:
+        (PROJECT_ROOT / "BASELINE.json").write_text(
+            json.dumps(BASELINE_TEMPLATE, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        removed["templates_rewritten"].append("BASELINE.json")
+    except OSError:
+        pass
+    try:
+        (PROJECT_ROOT / "ITERATIONS.md").write_text(
+            ITERATIONS_TEMPLATE, encoding="utf-8"
+        )
+        removed["templates_rewritten"].append("ITERATIONS.md")
+    except OSError:
+        pass
+    try:
+        (PROJECT_ROOT / "custom_problems.json").write_text(
+            json.dumps(CUSTOM_PROBLEMS_TEMPLATE, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        removed["templates_rewritten"].append("custom_problems.json")
+    except OSError:
+        pass
+
+    return removed
+
+
 @app.route("/reset-all", methods=["POST"])
 def reset_all():
-    """Stoppe toutes les sessions actives et archive logs + métriques dans
-    un sous-dossier backup/<timestamp>/ (pas de suppression : déplacement).
+    """Stoppe toutes les sessions et nettoie l'état local.
 
-    Déclenché par le bouton Iter 0 (baseline) : relancer la baseline invalide
-    l'ensemble des itérations, donc on repart d'un dashboard vierge tout en
-    conservant l'historique sur disque.
+    Deux modes (body JSON : `{"mode": "archive"|"full"}`, défaut "archive") :
 
-    Fichiers immuables préservés : BASELINE.json, ITERATIONS.md, PROBLEMS.md,
-    EVAL.md, CLAUDE.md, test_data/parcours.json (cf. CLAUDE.md).
+    - **archive** (défaut, comportement historique) : archive (déplace) logs
+      dashboard + résultats dans des sous-dossiers `backup/<timestamp>/`.
+      Déclenché par le bouton Iter 0 du dashboard. Non-destructif.
+
+    - **full** : destructif. Supprime tous les artefacts de runs (logs API,
+      logs dashboard, résultats, backups), puis réécrit BASELINE.json /
+      ITERATIONS.md / custom_problems.json en templates vides. Utilisé pour
+      préparer une livraison à un nouveau client. Voir INSTALLATION_VM_ADMIN.md.
+
+    Fichiers immuables toujours préservés : EVAL.md, PROBLEMS.md, CLAUDE.md,
+    test_data/parcours.json, config/* (cf. CLAUDE.md).
     """
+    mode = (request.get_json(silent=True) or {}).get("mode", "archive")
+    if mode not in ("archive", "full"):
+        return jsonify({"error": f"Mode invalide : {mode}. Valeurs acceptées : archive, full"}), 400
+
     timestamp = time.strftime("%Y%m%d_%H%M%S")
 
-    # 1. Terminer tous les subprocess actifs
+    # 1. Terminer tous les subprocess actifs (commun aux deux modes)
     stopped = []
     for n, session in list(_sessions.items()):
         proc = session.get("proc")
@@ -984,10 +1130,20 @@ def reset_all():
         if flag:
             flag.set()
 
-    # 2. Vider le registre de sessions mémoire
+    # 2. Vider le registre de sessions mémoire (commun)
     _sessions.clear()
 
-    # 3. Archiver les logs (déplacement, pas suppression)
+    # 3. Mode full : wipe destructif + templates, retour immédiat
+    if mode == "full":
+        removed = _full_wipe()
+        return jsonify({
+            "status": "reset",
+            "mode": "full",
+            "stopped_sessions": stopped,
+            "removed": removed,
+        })
+
+    # 4. Mode archive (défaut) : déplace les logs dashboard
     logs_dir = PROJECT_ROOT / "dashboard" / "logs"
     archived_logs = []
     if logs_dir.exists():
@@ -1001,8 +1157,7 @@ def reset_all():
             except Exception:
                 pass
 
-    # 4. Archiver les résultats (métriques + parcours) pour que les boutons
-    #    repassent en état "never"
+    # 5. Mode archive : déplace les résultats pour que les boutons repassent en "never"
     archived_results = []
     if RESULTS_DIR.exists():
         results_backup = RESULTS_DIR / "backup" / timestamp
@@ -1019,6 +1174,7 @@ def reset_all():
 
     return jsonify({
         "status": "reset",
+        "mode": "archive",
         "backup_timestamp": timestamp,
         "stopped_sessions": stopped,
         "archived_logs": archived_logs,
@@ -1120,6 +1276,35 @@ def start_iteration(n):
     _launch_turn(n, build_iterate_prompt(n), is_first=True)
 
     return jsonify({"status": "started", "iteration": n})
+
+
+@app.route("/iterate/<int:n>/dismiss", methods=["POST"])
+def dismiss_iteration(n):
+    """Termine/abandonne une session d'itération.
+
+    Tue le subprocess Claude si présent, purge `_sessions[n]`.
+    Après appel, l'état du bouton repasse à :
+      - `done` si `metrics_NNN.json` existe (itération terminée avec résultats)
+      - `never` sinon (itération abandonnée sans résultats)
+    """
+    session = _sessions.get(n)
+    if not session:
+        return jsonify({"status": "no_session", "iteration": n})
+
+    proc = session.get("proc")
+    if proc:
+        try:
+            proc.terminate()
+        except Exception:
+            pass
+
+    # Libère les threads SSE bloqués sur flag.wait()
+    flag = session.get("new_event")
+    if flag:
+        flag.set()
+
+    _sessions.pop(n, None)
+    return jsonify({"status": "dismissed", "iteration": n})
 
 
 @app.route("/iterate/<int:n>/send", methods=["POST"])

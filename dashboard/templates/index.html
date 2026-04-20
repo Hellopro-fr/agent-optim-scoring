@@ -235,7 +235,11 @@
                     </div>
                     <small style="color: rgba(255,255,255,0.25); margin-top: 0.35rem; display: block; font-size: 0.72rem;">Entree pour envoyer</small>
                 </div>
-                <div style="display: flex; justify-content: flex-end;">
+                <div style="display: flex; justify-content: flex-end; gap: 0.4rem;">
+                    <button type="button" id="dismissIterationBtn"
+                            style="background: transparent; border: 1px solid #5a2a2a; border-radius: 6px; color: rgba(239,68,68,0.75); font-size: 0.75rem; padding: 0.35rem 0.75rem; cursor: pointer; transition: all 0.2s;">
+                        Terminer l'iteration
+                    </button>
                     <button type="button" id="closeConsoleBtn" data-bs-dismiss="modal"
                             style="background: transparent; border: 1px solid #2a2a3e; border-radius: 6px; color: rgba(255,255,255,0.35); font-size: 0.75rem; padding: 0.35rem 0.75rem; cursor: pointer; transition: all 0.2s;">
                         Fermer
@@ -298,6 +302,38 @@ document.addEventListener('DOMContentLoaded', function() {
             currentEventSource = null;
         }
         location.reload();
+    });
+
+    // Terminer l'iteration : tue la session cote serveur + ferme le modal +
+    // reload. Le bouton repasse a "done" si metrics_NNN.json existe, sinon
+    // retour a "never" (gris).
+    document.getElementById('dismissIterationBtn').addEventListener('click', function() {
+        if (currentIteration === null || currentIteration === undefined) {
+            // Aucune iteration ouverte, fallback : comme Fermer
+            location.reload();
+            return;
+        }
+        const iter = currentIteration;
+        const confirmMsg =
+            "Terminer l'iteration " + iter + " ?\n\n" +
+            "Cela ferme la conversation avec l'agent. Si des metriques ont deja\n" +
+            "ete produites (metrics_" + String(iter).padStart(3, '0') + ".json), elles sont conservees\n" +
+            "et le bouton passe au vert. Sinon, retour a l'etat initial.";
+        if (!window.confirm(confirmMsg)) return;
+
+        if (currentEventSource) {
+            currentEventSource.close();
+            currentEventSource = null;
+        }
+
+        fetch('/iterate/' + iter + '/dismiss', { method: 'POST' })
+            .catch(err => console.warn('dismiss error:', err))
+            .finally(() => {
+                const modalEl = document.getElementById('consoleModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+                location.reload();
+            });
     });
 
     document.getElementById('sendBtn').addEventListener('click', sendMessage);
