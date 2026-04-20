@@ -242,36 +242,90 @@ def get_all_metrics():
 def parse_problems_md():
     """Retourne la liste des problèmes (9 originaux immuables + customs).
 
-    Les 9 problèmes P1-P9 sont hardcodés (source de vérité PROBLEMS.md reste
-    intouchée conformément à CLAUDE.md). Les problèmes custom sont chargés
-    depuis `custom_problems.json`.
+    Les 9 problèmes P1-P9 sont hardcodés (miroir fidèle de PROBLEMS.md qui
+    reste intouchée conformément à CLAUDE.md). Les problèmes custom sont
+    chargés depuis `custom_problems.json`.
 
     L'état réel (running/waiting/done/never) est calculé côté template à partir
     de iteration_states. Pas de statut statique ici.
     """
     problems = []
 
-    # Problèmes originaux P1-P9 (immuables)
-    problem_names = [
-        "Absence caractéristique → pénalité manquante",
-        "Produits hors catégorie remontent trop haut",
-        "LLM juge sur titre seul, ignore descriptif",
-        "86% Prix sur demande (diagnostic)",
-        "Zéro résultat certains parcours1",
-        "Mélange produits neuf/occasion",
-        "Erreur calcul scoring multi-caractéristiques",
-        "Manque reranking après matching",
-        "Caching produits dénormalisés"
+    # Problèmes originaux P1-P9 (immuables, miroir de PROBLEMS.md)
+    official = [
+        {
+            "number": 1,
+            "name": "Absence caractéristique → pénalité manquante",
+            "severity": "CRITIQUE",
+            "description": "Quand une caractéristique requise est absente du produit, le score actuel = 0 (neutre). Le système devrait appliquer une pénalité (ex: -0.5) plutôt que d'ignorer l'absence.",
+            "metrics": ["Conformité"],
+        },
+        {
+            "number": 2,
+            "name": "Produits hors catégorie remontent trop haut",
+            "severity": "CRITIQUE",
+            "description": "Certains produits ne correspondent pas au besoin exprimé (ex: distributeur comptoir au lieu de sur-pied) mais restent dans le top 5 recommandé. Le LLM reranker doit mieux filtrer ces cas.",
+            "metrics": ["Conformité"],
+        },
+        {
+            "number": 3,
+            "name": "LLM juge sur titre seul, ignore descriptif",
+            "severity": "CRITIQUE",
+            "description": "Le LLM analyse le titre du produit sans tenir compte de sa description technique. Exemple: 'Tracteur' remonte même si le type (vigneron vs standard) ne correspond pas au besoin.",
+            "metrics": ["Conformité", "Cohérence score/pertinence"],
+        },
+        {
+            "number": 4,
+            "name": "86% Prix sur demande (diagnostic)",
+            "severity": "OBSERVATION",
+            "description": "Manque massif de données pricing chez les fournisseurs. Impact : estimatif imprécis, impossible de détecter aberrations prix. À ignorer pour les itérations (limité par les données sources).",
+            "metrics": ["Aberrations prix"],
+        },
+        {
+            "number": 5,
+            "name": "Zéro résultat certains parcours",
+            "severity": "ÉLEVÉE",
+            "description": "Certains parcours ne retournent aucun produit conforme. Cause possible : liste_caracteristique trop restrictive, ou Cypher/logique matching trop stricte.",
+            "metrics": ["Conformité"],
+        },
+        {
+            "number": 6,
+            "name": "Mélange produits neuf/occasion",
+            "severity": "ÉLEVÉE",
+            "description": "Quand le parcours spécifie 'Neuf', l'API retourne aussi des produits d'occasion. Le filtre sur etat_produit ne fonctionne pas correctement.",
+            "metrics": ["Conformité", "Doublons"],
+        },
+        {
+            "number": 7,
+            "name": "Doublons et surreprésentation fournisseur",
+            "severity": "MODÉRÉE",
+            "description": "La même marque/fournisseur apparaît plusieurs fois dans le top 5 (ex: même modèle en deux variantes). Le système doit diversifier par fournisseur.",
+            "metrics": ["Doublons", "Diversité fournisseurs"],
+        },
+        {
+            "number": 8,
+            "name": "Caractéristiques discriminantes ignorées",
+            "severity": "MODÉRÉE",
+            "description": "Certaines caractéristiques critiques (ex: largeur de passage pour minipelle) ne sont pas prises en compte par le scoring, ou ont un poids insuffisant.",
+            "metrics": ["Conformité", "Cohérence score/pertinence"],
+        },
+        {
+            "number": 9,
+            "name": "Sélections trop restreintes ou hors sujet",
+            "severity": "MODÉRÉE",
+            "description": "Inversement de P5 : certains parcours retournent des produits non pertinents ou trop restrictifs. Exemple : un filtre sur capacité exclut tous les produits viables.",
+            "metrics": ["Conformité", "Diversité fournisseurs"],
+        },
     ]
-    for i, name in enumerate(problem_names, 1):
+    for p in official:
         problems.append({
-            "number": i,
-            "name": name,
-            "iteration": PROBLEM_TO_ITERATION.get(i),
+            "number": p["number"],
+            "name": p["name"],
+            "iteration": PROBLEM_TO_ITERATION.get(p["number"]),
             "immutable": True,
-            "severity": None,
-            "description": None,
-            "metrics": [],
+            "severity": p["severity"],
+            "description": p["description"],
+            "metrics": p["metrics"],
         })
 
     # Problèmes custom
