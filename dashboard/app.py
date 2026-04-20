@@ -166,8 +166,31 @@ def load_baseline():
     return None
 
 
+def _extract_decision(section_text: str) -> str:
+    """Extrait la décision d'une section d'itération.
+
+    Cherche un pattern de type `**Décision** : GARDÉ` ou `**Décision** : ROLLBACK`
+    (insensible à la casse, accents optionnels). Retourne "GARDÉ", "ROLLBACK",
+    ou "EN ATTENTE" si aucune décision claire.
+    """
+    # On tolère : **Décision** : GARDÉ | GARDE | ROLLBACK (avec ou sans espaces/ponctuation)
+    m = re.search(
+        r"\*\*\s*D[ée]cision\s*\*\*\s*[:：]?\s*([A-ZÉ\u00c9]+)",
+        section_text,
+        flags=re.IGNORECASE,
+    )
+    if not m:
+        return "EN ATTENTE"
+    verdict = m.group(1).upper().replace("É", "E")
+    if "GARD" in verdict:
+        return "GARDÉ"
+    if "ROLLBACK" in verdict:
+        return "ROLLBACK"
+    return "EN ATTENTE"
+
+
 def parse_iterations_md():
-    """Parse ITERATIONS.md pour extraire l'historique"""
+    """Parse ITERATIONS.md pour extraire l'historique avec décision réelle."""
     iterations_file = PROJECT_ROOT / "ITERATIONS.md"
     iterations = []
 
@@ -177,20 +200,34 @@ def parse_iterations_md():
     with open(iterations_file, "r", encoding="utf-8") as f:
         content = f.read()
 
-    # Regex pour trouver les sections "## Itération N — date" (avec ou sans crochets)
-    pattern = r"## Itération (\d+) — \[?(.*?)\]?$"
-    for match in re.finditer(pattern, content, re.MULTILINE):
-        iter_num = int(match.group(1))
-        timestamp = match.group(2).strip()
+    # Découper en sections par "## Itération N" — garde le texte de chaque section
+    # pour y chercher la décision.
+    section_pattern = re.compile(
+        r"## Itération (\d+) — \[?(.*?)\]?$",
+        flags=re.MULTILINE,
+    )
+    matches = list(section_pattern.finditer(content))
+    for i, m in enumerate(matches):
+        iter_num = int(m.group(1))
+        timestamp = m.group(2).strip()
+        # Texte de la section : du début de ce match au début du suivant
+        start = m.end()
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(content)
+        section_text = content[start:end]
 
-        # Charger les métriques
+        decision = _extract_decision(section_text)
+        # L'iter 0 n'a pas de décision à prendre : c'est la baseline, elle est
+        # implicitement "GARDÉE" dès qu'elle existe.
+        if iter_num == 0 and decision == "EN ATTENTE":
+            decision = "GARDÉ"
+
         metrics = load_metrics(iter_num)
         if metrics:
             iterations.append({
                 "number": iter_num,
                 "timestamp": timestamp,
                 "metrics": metrics,
-                "decision": "GARDÉ" if iter_num == 0 else "EN ATTENTE"  # À améliorer
+                "decision": decision,
             })
 
     return sorted(iterations, key=lambda x: x["number"])
@@ -527,12 +564,16 @@ def get_iteration_states(max_n: int = 8) -> dict:
     """
     Retourne l'état de chaque itération 0..max_n + itérations custom.
 
-    États possibles :
-    - "never"    : jamais lancée (pas de metrics_N.json, pas de session)
-    - "done"     : terminée (metrics_N.json existe ET pas de session active)
-    - "running"  : Claude est en train d'exécuter
-    - "waiting"  : Claude attend une réponse utilisateur
+    États possibles (ordre de priorité) :
+    - "running"  : Claude exécute activement un tour
     - "starting" : session en cours de démarrage
+    - "done"     : metrics_N.json existe — l'itération a produit un résultat,
+                   même si la session reste ouverte en `waiting_input` (l'user
+                   peut rouvrir la console pour continuer à discuter, mais
+                   visuellement l'itération est terminée).
+    - "waiting"  : session attend une réponse utilisateur ET aucune métrique
+                   n'a encore été produite (pipeline pas lancé / échoué)
+    - "never"    : jamais lancée
     """
     # Étendre max_n pour couvrir les itérations custom (9+)
     custom_iters = [cp.get("iteration") for cp in load_custom_problems()["problems"]]
@@ -550,12 +591,15 @@ def get_iteration_states(max_n: int = 8) -> dict:
 
         if session_status == "running":
             state = "running"
-        elif session_status == "waiting_input":
-            state = "waiting"
         elif session_status == "starting":
             state = "starting"
         elif metrics_exists:
+            # Les métriques sont la vérité terrain : une itération qui a produit
+            # metrics_NNN.json est terminée, peu importe que la conversation
+            # Claude reste ouverte.
             state = "done"
+        elif session_status == "waiting_input":
+            state = "waiting"
         else:
             state = "never"
 
@@ -596,6 +640,19 @@ def index():
 def api_iteration_states():
     """API JSON — retourne l'état de toutes les itérations (pour polling live)."""
     return jsonify(get_iteration_states())
+
+
+@app.route("/api/kept-iterations")
+def api_kept_iterations():
+    """Liste triée des itérations dont la décision est GARDÉ.
+
+    Utilisé par le frontend pour déclencher un rafraîchissement du tableau
+    de bord dès qu'une nouvelle itération GARDÉ est détectée (les KPIs
+    doivent alors refléter les nouvelles métriques).
+    """
+    iters = parse_iterations_md()
+    kept = sorted([it["number"] for it in iters if it.get("decision") == "GARDÉ"])
+    return jsonify({"kept": kept})
 
 
 @app.route("/iterations")

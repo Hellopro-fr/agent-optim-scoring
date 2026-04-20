@@ -347,6 +347,45 @@ function refreshIterationStates() {
 function startStatesPolling() {
     refreshIterationStates();
     setInterval(refreshIterationStates, 5000);  // Toutes les 5 secondes
+    // En parallèle : recharger la page si une nouvelle itération GARDÉ apparaît
+    // (les KPIs sont rendus server-side, il faut reload pour les rafraîchir).
+    startKeptIterationsPolling();
+}
+
+// Liste des itérations GARDÉ connue au chargement de la page. On compare à
+// chaque poll ; si un nouveau numéro apparaît, on recharge pour que les KPIs
+// reflètent les nouvelles métriques. ROLLBACK ne déclenche PAS de reload.
+let knownKeptIterations = null;
+
+function checkKeptIterations() {
+    fetch('/api/kept-iterations')
+        .then(r => r.json())
+        .then(data => {
+            const kept = Array.isArray(data.kept) ? data.kept : [];
+            if (knownKeptIterations === null) {
+                knownKeptIterations = kept;
+                return;
+            }
+            // Détecter un nouveau numéro GARDÉ
+            const hasNew = kept.some(n => !knownKeptIterations.includes(n));
+            if (hasNew) {
+                // Évite de recharger pendant qu'une session est active
+                // (l'utilisateur est en train d'interagir dans la console)
+                const modalOpen = document.querySelector('#consoleModal.show');
+                if (!modalOpen) {
+                    window.location.reload();
+                } else {
+                    // Modal ouvert : on mémorise, on rechargera à la fermeture
+                    knownKeptIterations = kept;
+                }
+            }
+        })
+        .catch(err => console.warn('kept-iterations polling error:', err));
+}
+
+function startKeptIterationsPolling() {
+    checkKeptIterations();
+    setInterval(checkKeptIterations, 5000);
 }
 
 

@@ -39,3 +39,4 @@ results/iteration_000.json
 # Problèmes custom ajoutés depuis le dashboard (état local utilisateur)
 custom_problems.json
 custom_problems.json.tmp
+ITERATIONS.md
