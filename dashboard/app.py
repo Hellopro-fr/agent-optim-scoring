@@ -533,6 +533,12 @@ def get_iteration_states(max_n: int = 8) -> dict:
     - "running"  : Claude est en train d'exécuter
     - "waiting"  : Claude attend une réponse utilisateur
     - "starting" : session en cours de démarrage
+
+    Cas spécial iter 0 (baseline) : le CP1 de CLAUDE.md fait que Claude termine
+    toujours en posant "Accord pour lancer iter 1 ?" (question cosmétique de
+    validation, les metrics sont déjà produites). Pour iter 0 uniquement, si
+    metrics_000.json existe, on force l'état "done" pour ne pas bloquer l'UI.
+    Pour iter 1..8, un "waiting_input" reste bloquant (vraie question Claude).
     """
     # Étendre max_n pour couvrir les itérations custom (9+)
     custom_iters = [cp.get("iteration") for cp in load_custom_problems()["problems"]]
@@ -550,10 +556,13 @@ def get_iteration_states(max_n: int = 8) -> dict:
 
         if session_status == "running":
             state = "running"
-        elif session_status == "waiting_input":
-            state = "waiting"
         elif session_status == "starting":
             state = "starting"
+        elif n == 0 and metrics_exists:
+            # Iter 0 = baseline : CP1 toujours en "waiting" cosmétique, on override
+            state = "done"
+        elif session_status == "waiting_input":
+            state = "waiting"
         elif metrics_exists:
             state = "done"
         else:
