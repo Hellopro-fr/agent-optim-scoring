@@ -30,13 +30,15 @@ Le dashboard est une page web.
 
 > Si la page ne répond pas, contactez l'admin système : le service est peut-être arrêté. Vous n'avez rien à installer de votre côté.
 
-Le dashboard a **3 pages** dans le menu de gauche :
+Le dashboard a **5 pages** dans le menu de gauche :
 
 | Page | À quoi ça sert |
 |---|---|
 | **Tableau de bord** | Vue d'ensemble : métriques actuelles + boutons pour lancer les itérations (originales + personnalisées) |
 | **Iterations** | Historique détaillé de chaque essai (hypothèse, avant/après, décision) |
 | **Problèmes** | Statut des 9 problèmes à résoudre (P1–P9) **+ ajout / modification / suppression de problèmes personnalisés** |
+| **Manuel** | Ce document, accessible directement depuis le dashboard |
+| **Configuration** | Modifier les cibles/seuils d'affichage des métriques (voir §5.7) |
 
 ---
 
@@ -56,6 +58,8 @@ Ces 5 indicateurs mesurent la **qualité de la sélection produits**. Ils sont a
 > Chaque carte a une petite icône **?** : passez la souris dessus pour relire la définition.
 
 **Code couleur** : 🟢 cible atteinte · 🔴 cible non atteinte.
+
+> **Les cibles affichées sont ajustables.** Si vous jugez qu'une cible est trop ambitieuse ou trop laxiste pour la phase actuelle du projet, vous pouvez la modifier depuis la page **Configuration** (voir §5.7). Cela ne change que l'affichage (couleurs 🟢/🔴 et texte "Cible : …") — le calcul du score global reste identique, donc les décisions GARDÉ/ROLLBACK de l'agent ne sont pas faussées.
 
 ---
 
@@ -183,6 +187,34 @@ Exactement comme pour les itérations 1 à 8 (§5.2) :
 3. Il formule une hypothèse, modifie un fichier dans `graphoptim-service/matching`, relance le pipeline, compare les métriques, décide GARDÉ / ROLLBACK.
 4. À la fin, le bouton passe au vert avec le badge "OK".
 
+### 5.7. Modifier les cibles d'une métrique
+
+Les 6 cibles affichées sur le tableau de bord (Conformité ≥80%, Doublons 0, Diversité ≥3, Cohérence ≥0,5, Estimatif ≥90%, Score global ≥80%) peuvent être ajustées depuis la page **Configuration** si vous considérez qu'elles sont trop ambitieuses ou trop faibles pour la phase actuelle.
+
+**Procédure** :
+
+1. Ouvrir la page **Configuration** dans le menu de gauche.
+2. Le formulaire présente les 6 cibles dans un tableau avec : Métrique · Comparateur (≥ ou ≤) · Valeur éditable · Unité.
+3. Modifier la valeur souhaitée (ex. Conformité 80 → 70 si vous voulez une barre plus accessible).
+4. Cliquer **Sauvegarder**.
+5. Un bandeau vert de confirmation apparaît avec le nom du backup créé.
+6. Retour sur le tableau de bord : les pastilles 🟢/🔴 sont recalculées contre les nouvelles cibles immédiatement.
+
+**Ce qui se passe en coulisses** :
+
+- La valeur est sauvegardée dans `config/thresholds.json`.
+- Le fichier `EVAL.md` est mis à jour avec la nouvelle cible.
+- Une copie horodatée de l'ancien `EVAL.md` est placée dans `backup/eval/EVAL_<date>_<heure>.md`.
+- L'historique des backups est listé en bas de la page Configuration, avec un lien **Voir** pour consulter chaque ancienne version.
+
+**Bouton Réinitialiser** : remet les 6 cibles aux valeurs d'origine (80 %, 0, 3, 0,5, 90 %, 80 %). Un backup est créé avant l'écrasement, la sauvegarde est donc réversible.
+
+**Règles de validation** : les valeurs négatives sont refusées, les pourcentages sont plafonnés à 100, la cohérence à 1. Un champ vide bloque la sauvegarde.
+
+> **Important** : modifier les cibles **n'affecte que l'affichage** (couleurs des pastilles, badges OK/Miss). Le **calcul du score global** reste inchangé (moyenne pondérée définie dans le code du pipeline). Les décisions GARDÉ/ROLLBACK de l'agent ne sont donc pas faussées — vous pouvez ajuster les cibles à tout moment sans casser le protocole d'itération.
+
+> **Cas des cibles Doublons et Diversité fournisseurs** : un avertissement orange ⚠️ signale que ces deux cibles ont une logique interne dans le calcul (0 doublon toléré = score parfait ; 3 fournisseurs = plafond du score diversité). Modifier la cible change l'affichage mais pas cette logique interne. En pratique, monter la cible Diversité au-dessus de 3 rend l'affichage plus exigeant sans que le score global en bénéficie.
+
 ---
 
 ## 6. Les checkpoints (paliers de validation)
@@ -245,7 +277,7 @@ Dans la console, quand l'agent "attend une réponse", vous pouvez lui écrire en
 ### Ce que l'agent REFUSERA poliment
 
 - Tout ce qui sort du protocole d'optimisation (poèmes, emails, code sans rapport).
-- Modifier les fichiers protégés (EVAL.md, PROBLEMS.md, CLAUDE.md, BASELINE.json, parcours de test).
+- Modifier les fichiers protégés (EVAL.md, PROBLEMS.md, CLAUDE.md, BASELINE.json, parcours de test). **Vous**, utilisateur humain, pouvez ajuster les cibles de EVAL.md via la page **Configuration** (§5.7) — l'**agent IA** en revanche ne s'y autorise jamais, pour éviter qu'il ne triche sur ses propres scores.
 - Toucher à l'API de production (`graph-service/matching`) — il ne travaille **que** sur l'environnement d'optimisation `graphoptim-service/matching`.
 
 > Les problèmes personnalisés (P10+) que vous créez depuis la page Problèmes sont stockés à part (`custom_problems.json`) et ne touchent donc **pas** au fichier protégé PROBLEMS.md.
@@ -295,7 +327,7 @@ R. Ce sont 13 cas **audités manuellement** par l'équipe produit, choisis pour 
 R. Quand **toutes les cibles** de §3 sont atteintes, ou quand on constate un plateau définitif après plusieurs essais (CP4). À ce moment, l'équipe tech pousse la version optimisée en production.
 
 **Q. Qui a le droit de modifier EVAL.md ou PROBLEMS.md ?**
-R. Personne en cours de protocole. Ces fichiers sont la **source de vérité** : les modifier en cours de route invaliderait toutes les comparaisons. Seul un changement explicite validé avec l'équipe tech (et tracé) y touche.
+R. L'agent IA ne s'y autorise jamais en cours de protocole (garde-fou pour éviter qu'il triche sur ses scores). En revanche, **vous** pouvez ajuster les 6 cibles d'affichage via la page **Configuration** (§5.7) — chaque modification crée automatiquement un backup horodaté de EVAL.md. Cela n'impacte pas le calcul du score global, donc les comparaisons d'itérations restent valides. PROBLEMS.md reste immuable (utilisez les "problèmes personnalisés" §5.4 pour ajouter des problèmes).
 
 **Q. Peut-on ajouter un problème qu'on a découvert en production ?**
 R. Oui, via la page **Problèmes** → bouton **+ Nouveau problème** (§5.4). Ce nouveau problème est stocké à part (il ne modifie pas PROBLEMS.md) et génère automatiquement son propre bouton d'itération sur le tableau de bord.

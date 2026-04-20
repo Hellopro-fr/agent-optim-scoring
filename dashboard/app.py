@@ -567,13 +567,12 @@ def get_iteration_states(max_n: int = 8) -> dict:
     États possibles (ordre de priorité) :
     - "running"  : Claude exécute activement un tour
     - "starting" : session en cours de démarrage
-    - "done"     : metrics_N.json existe — l'itération a produit un résultat,
-                   même si la session reste ouverte en `waiting_input` (l'user
-                   peut rouvrir la console pour continuer à discuter, mais
-                   visuellement l'itération est terminée).
-    - "waiting"  : session attend une réponse utilisateur ET aucune métrique
-                   n'a encore été produite (pipeline pas lancé / échoué)
-    - "never"    : jamais lancée
+
+    Cas spécial iter 0 (baseline) : le CP1 de CLAUDE.md fait que Claude termine
+    toujours en posant "Accord pour lancer iter 1 ?" (question cosmétique de
+    validation, les metrics sont déjà produites). Pour iter 0 uniquement, si
+    metrics_000.json existe, on force l'état "done" pour ne pas bloquer l'UI.
+    Pour iter 1..8, un "waiting_input" reste bloquant (vraie question Claude).
     """
     # Étendre max_n pour couvrir les itérations custom (9+)
     custom_iters = [cp.get("iteration") for cp in load_custom_problems()["problems"]]
@@ -593,6 +592,11 @@ def get_iteration_states(max_n: int = 8) -> dict:
             state = "running"
         elif session_status == "starting":
             state = "starting"
+        elif n == 0 and metrics_exists:
+            # Iter 0 = baseline : CP1 toujours en "waiting" cosmétique, on override
+            state = "done"
+        elif session_status == "waiting_input":
+            state = "waiting"
         elif metrics_exists:
             # Les métriques sont la vérité terrain : une itération qui a produit
             # metrics_NNN.json est terminée, peu importe que la conversation
