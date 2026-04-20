@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block title %}Manuel utilisateur — HelloPro Scoring{% endblock %}
+
+{% block extra_css %}
+.manuel-wrapper {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 2.5rem;
+    align-items: start;
+}
+@media (max-width: 1199px) {
+    .manuel-wrapper { grid-template-columns: 1fr; }
+    .manuel-toc { display: none; }
+}
+
+.manuel-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 3rem 3.25rem;
+    overflow-wrap: break-word;
+}
+@media (max-width: 767px) {
+    .manuel-card { padding: 1.75rem 1.5rem; }
+}
+
+/* ── Typography ── */
+.manuel-content {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--text-primary);
+}
+.manuel-content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin: 0 0 0.5rem;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+.manuel-content h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 2.75rem 0 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-light);
+    color: var(--text-primary);
+    scroll-margin-top: 1.5rem;
+}
+.manuel-content h2:first-of-type { border-top: none; padding-top: 0; margin-top: 2rem; }
+.manuel-content h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 1.75rem 0 0.6rem;
+    color: var(--text-primary);
+    scroll-margin-top: 1.5rem;
+}
+.manuel-content p { margin: 0 0 0.9rem; color: var(--text-primary); }
+.manuel-content strong { font-weight: 600; color: var(--text-primary); }
+.manuel-content em { color: var(--text-secondary); }
+
+/* Links */
+.manuel-content a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color var(--transition);
+}
+.manuel-content a:hover { border-bottom-color: var(--accent); }
+
+/* Lists */
+.manuel-content ul, .manuel-content ol {
+    padding-left: 1.5rem;
+    margin: 0 0 1rem;
+}
+.manuel-content li { margin-bottom: 0.35rem; }
+.manuel-content li > ul, .manuel-content li > ol { margin: 0.35rem 0 0.25rem; }
+
+/* Inline code */
+.manuel-content code {
+    background: var(--accent-light);
+    color: #1a5ba8;
+    padding: 0.12rem 0.4rem;
+    border-radius: 4px;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+/* Blockquote */
+.manuel-content blockquote {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-light);
+    padding: 0.9rem 1.25rem;
+    margin: 1.25rem 0;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    color: #1a5ba8;
+}
+.manuel-content blockquote p { margin-bottom: 0.5rem; color: inherit; }
+.manuel-content blockquote p:last-child { margin-bottom: 0; }
+.manuel-content blockquote strong { color: #1a4785; }
+.manuel-content blockquote code {
+    background: rgba(26, 91, 168, 0.15);
+    color: #1a4785;
+}
+
+/* Tables */
+.manuel-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0 1.5rem;
+    font-size: 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+.manuel-content thead {
+    background: var(--bg);
+}
+.manuel-content thead th {
+    text-align: left;
+    padding: 0.7rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border);
+}
+.manuel-content tbody td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-light);
+    vertical-align: top;
+}
+.manuel-content tbody tr:last-child td { border-bottom: none; }
+.manuel-content tbody tr:hover { background: var(--surface-hover); }
+
+/* Horizontal rule */
+.manuel-content hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+}
+
+/* Preformatted */
+.manuel-content pre {
+    background: #0f0f0f;
+    color: #d4d4d4;
+    padding: 1rem 1.2rem;
+    border-radius: var(--radius-sm);
+    overflow-x: auto;
+    margin: 1rem 0;
+    font-size: 0.85rem;
+    line-height: 1.55;
+}
+.manuel-content pre code {
+    background: none;
+    color: inherit;
+    padding: 0;
+    font-size: inherit;
+}
+
+/* ── Table of contents ── */
+.manuel-toc {
+    position: sticky;
+    top: 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.25rem 1rem;
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+}
+.manuel-toc-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    margin: 0 0 0.75rem;
+}
+.manuel-toc ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.manuel-toc li { margin-bottom: 2px; }
+.manuel-toc a {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.82rem;
+    line-height: 1.35;
+    transition: all var(--transition);
+    border-left: 2px solid transparent;
+}
+.manuel-toc a:hover {
+    background: var(--bg);
+    color: var(--text-primary);
+}
+.manuel-toc a.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    font-weight: 600;
+    border-left-color: var(--accent);
+}
+
+/* Print button */
+.manuel-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+
+@media print {
+    .sidebar, .manuel-toc, .manuel-actions, .page-header { display: none !important; }
+    .main-content { margin-left: 0 !important; padding: 0 !important; }
+    .manuel-card { box-shadow: none !important; border: none !important; padding: 0 !important; }
+}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Manuel utilisateur</h1>
+    <p>Guide pas-à-pas du dashboard d'optimisation scoring HelloPro.</p>
+</div>
+
+<div class="manuel-actions">
+    <button class="btn-ghost" onclick="window.print()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimer / PDF
+    </button>
+    <a class="btn-ghost" href="/" style="text-decoration:none">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 0 0 1 1h3m10-11l2 2m-2-2v10a1 1 0 0 1-1 1h-3m-6 0a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1m-6 0h6"/></svg>
+        Retour au tableau de bord
+    </a>
+</div>
+
+<div class="manuel-wrapper">
+    <article class="manuel-card">
+        <div id="manuel-content" class="manuel-content"></div>
+    </article>
+
+    <aside class="manuel-toc" aria-label="Table des matières">
+        <p class="manuel-toc-title">Sommaire</p>
+        <ul id="manuel-toc-list"></ul>
+    </aside>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const MANUEL_SOURCE = {{ manuel_content | tojson | safe }};
+    (function () {
+        const source = MANUEL_SOURCE;
+        const container = document.getElementById('manuel-content');
+        const tocList = document.getElementById('manuel-toc-list');
+
+        if (!source.trim()) {
+            container.innerHTML = '<div class="empty-state"><h3>Manuel indisponible</h3><p>Le fichier MANUEL_UTILISATEUR.md n\'a pas été trouvé.</p></div>';
+            return;
+        }
+
+        // Slugify for anchors (ASCII-safe, keeps section numbers)
+        function slugify(text) {
+            return text
+                .toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9\s-]/g, '')
+                .trim()
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-');
+        }
+
+        // Parse markdown (version-agnostic)
+        marked.setOptions({ breaks: false, gfm: true });
+        container.innerHTML = marked.parse(source);
+
+        // Inject IDs on h2/h3 and build TOC
+        const toc = [];
+        const seen = new Map();
+        container.querySelectorAll('h2, h3').forEach(h => {
+            const level = h.tagName === 'H2' ? 2 : 3;
+            const text = h.textContent.trim();
+            let id = slugify(text);
+            const count = seen.get(id) || 0;
+            if (count > 0) id = `${id}-${count}`;
+            seen.set(slugify(text), count + 1);
+            h.id = id;
+            toc.push({ level, text, id });
+        });
+
+        tocList.innerHTML = toc.map(item => `
+            <li style="padding-left:${item.level === 3 ? '0.75rem' : '0'}">
+                <a href="#${item.id}" data-target="${item.id}">${item.text.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</a>
+            </li>
+        `).join('');
+
+        // Smooth scroll + active state
+        const tocLinks = tocList.querySelectorAll('a');
+        tocLinks.forEach(link => {
+            link.addEventListener('click', e => {
+                e.preventDefault();
+                const target = document.getElementById(link.dataset.target);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    history.replaceState(null, '', '#' + link.dataset.target);
+                }
+            });
+        });
+
+        // Active section highlighting on scroll
+        const headings = toc
+            .map(t => document.getElementById(t.id))
+            .filter(Boolean);
+
+        function updateActive() {
+            const scrollPos = window.scrollY + 120;
+            let current = headings[0];
+            for (const h of headings) {
+                if (h.offsetTop <= scrollPos) current = h;
+            }
+            tocLinks.forEach(a => a.classList.toggle('active', a.dataset.target === (current && current.id)));
+        }
+        window.addEventListener('scroll', updateActive, { passive: true });
+        updateActive();
+
+        // Jump to hash on load
+        if (window.location.hash) {
+            const el = document.getElementById(window.location.hash.slice(1));
+            if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100);
+        }
+    })();
+</script>
+{% endblock %}

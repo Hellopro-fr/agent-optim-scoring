@@ -377,6 +377,17 @@ def problems():
                           iteration_states=iteration_states)
 
 
+@app.route("/manuel")
+def manuel():
+    """Page — manuel utilisateur (rendu de MANUEL_UTILISATEUR.md)."""
+    manuel_file = PROJECT_ROOT / "MANUEL_UTILISATEUR.md"
+    content = ""
+    if manuel_file.exists():
+        with open(manuel_file, "r", encoding="utf-8") as f:
+            content = f.read()
+    return render_template("manuel.html", manuel_content=content)
+
+
 @app.route("/api/metrics/latest")
 def api_metrics_latest():
     """API — retourne les dernières métriques en JSON (pour polling)"""
