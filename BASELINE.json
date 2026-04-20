@@ -1,6 +1,6 @@
 {
-  "_info": "Baseline de l'itération 0. Recalculée à chaque lancement d'iter 0. Immuable pour toutes les itérations suivantes (garantie par save_baseline). Le champ `observations` est préservé entre les runs.",
-  "_status": "EN ATTENTE — valeurs reinitialisees, relancer iter 0 pour regenerer",
+  "_info": "Baseline de l'itération 0. Sera générée au premier run d'iter 0.",
+  "_status": "NON_GÉNÉRÉ",
   "generated_at": null,
   "parcours_count": null,
   "metrics": {
@@ -10,7 +10,5 @@
     "coherence_score_pertinence": null,
     "presence_estimatif": null,
     "score_global": null
-  },
-  "observations": [],
-  "results_par_parcours": []
+  }
 }
