@@ -25,6 +25,11 @@ services:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - PROJECT_ROOT=/app
       - RAG_HP_PUB_PATH=/rag-hp-pub
+      # Force HOME=/app. Avec user: "${APP_UID}" override, l'UID 1040 n'a pas
+      # d'entree dans /etc/passwd et $HOME serait "/" par defaut. Claude CLI
+      # essaie alors d'ecrire dans /.claude/ (racine, read-only) et exit
+      # silencieusement. Forcer HOME=/app permet /app/.claude/ writable.
+      - HOME=/app
     volumes:
       # Persistance resultats et historique (bind mounts pour debug direct sur la VM)
       - ./results:/app/results
