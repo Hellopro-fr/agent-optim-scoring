@@ -13,11 +13,27 @@ Ton objectif est d'améliorer les 6 métriques définies dans EVAL.md en résolv
   - Log dans ITERATIONS.md
   
 - **RAG-HP-PUB** : API en production. Tu y modifies l'endpoint `graphoptim-service/matching` uniquement.
-  - **Chemin relatif** : `../RAG-HP-PUB`
+  - **Chemin relatif** : `../RAG-HP-PUB` (en local) ou `/rag-hp-pub` (dans le conteneur Docker PROD)
   - NE JAMAIS POSER DE QUESTION sur le chemin — utiliser ce chemin par défaut
   - Jamais toucher `graph-service/matching` (endpoint prod)
   - Fichiers mutables : Cypher de scoring, prompt LLM, logique matching (pour `graphoptim-service/matching` uniquement)
   - API redémarrée après chaque modification
+
+## Environnement technique (ne pas poser de questions dessus)
+
+L'environnement d'exécution est **déjà entièrement configuré**. Ne demande PAS à l'utilisateur de configurer quoi que ce soit. Utilise directement les outils disponibles :
+
+- **Git push via SSH** : configuré automatiquement.
+  - La clé SSH est montée dans `/app/.ssh/id_rsa` (bind mount depuis l'hôte)
+  - La variable `GIT_SSH_COMMAND` est définie avec `StrictHostKeyChecking=accept-new`
+  - Fais simplement `git push` — ça fonctionne sans configuration supplémentaire
+  - Si un push échoue, consulte le message d'erreur **avant** de conclure que SSH n'est pas configuré
+- **API Anthropic** : `ANTHROPIC_API_KEY` est défini dans l'environnement. L'auth Claude est active.
+- **Docker daemon** : accessible via `/var/run/docker.sock` monté en bind mount. Tu peux invoquer `docker compose up -d --build graph-rag-api-recherche-optim-service` directement.
+- **Permissions fichiers** : l'UID 1040 du conteneur matche l'user hôte `claude-agent`. Les écritures dans `results/`, `logs/`, `dashboard/logs/`, `ITERATIONS.md`, `BASELINE.json` fonctionnent.
+- **Claude CLI** : le binaire est monté depuis l'hôte (nvm), version 2.x. Auth via `ANTHROPIC_API_KEY` (pas OAuth).
+
+**Règle** : si une action technique semble échouer, tente-la quand même (1 essai) avant de demander à l'utilisateur. La plupart du temps, l'environnement est OK et l'erreur vient d'ailleurs (chemin, permission applicative, etc.).
 
 ## Fichiers immuables (NEVER modifie)
 1. EVAL.md — définit ce que "mieux" signifie (Sacred)
