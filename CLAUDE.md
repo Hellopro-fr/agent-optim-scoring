@@ -35,6 +35,23 @@ L'environnement d'exécution est **déjà entièrement configuré**. Ne demande 
 
 **Règle** : si une action technique semble échouer, tente-la quand même (1 essai) avant de demander à l'utilisateur. La plupart du temps, l'environnement est OK et l'erreur vient d'ailleurs (chemin, permission applicative, etc.).
 
+## Point de départ PROD — 2026-04-21
+
+**La date de référence PROD est le 2026-04-21** (jour de déploiement initial sur la VM HelloPro).
+
+**Règles strictes pour toute itération** :
+- **Ignore tout l'historique antérieur au 2026-04-21** : commits git dans RAG-HP-PUB, anciennes entrées de ITERATIONS.md, anciens metrics_*.json, anciens logs.
+- **Traite le code actuel comme la nouvelle baseline** : n'essaie pas de raisonner sur des rollbacks ou changements antérieurs au 2026-04-21.
+- Pour l'iter 0 PROD : re-calcule la baseline complète, ignore les anciens BASELINE.json.
+
+**`git log` autorisé uniquement avec filtre par préfixe `iter-`** :
+- **Utilise TOUJOURS** : `git log --oneline --grep="^iter-"` — ne garde que les commits d'itération PROD.
+- **Raison** : tous les commits d'itération suivent le format `iter-N: [Pn] — description` (cf. Protocole d'itération, commande git commit). Les autres commits (setup Dockerfile, docker-compose, fix, refactor, docs...) ne sont **pas** des itérations et doivent être **ignorés**.
+- **Jamais** `git log` sans `--grep="^iter-"`. Le filtre `--since=<date>` n'est PAS suffisant (capture aussi les commits de setup/config du même jour).
+- **ITERATIONS.md reste la source principale** (plus riche : hypothèse, avant/après, décision GARDÉ/ROLLBACK). `git log --grep="^iter-"` est en **complément** pour vérifier l'état réel du dépôt RAG-HP-PUB (commits push OK, branche à jour, pas de divergence).
+
+**Pourquoi cette règle** : éviter que la dette cognitive du dev/test pollue l'optimisation PROD. Chaque itération doit être évaluée sur ses propres mérites vs la baseline PROD, pas vs un historique de décisions expérimentales.
+
 ## Fichiers immuables (NEVER modifie)
 1. EVAL.md — définit ce que "mieux" signifie (Sacred)
    - **Exception** : retrait ponctuel de `aberrations_prix` (2026-04-17) par décision humaine — scope recentré sur l'affichage des produits cohérents. Le fichier redevient immuable après cette modification.

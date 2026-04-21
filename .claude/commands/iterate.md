@@ -17,8 +17,15 @@ Lis dans cet ordre et résume ce que tu comprends :
 
 1. [EVAL.md](EVAL.md) — les 6 métriques cibles (source de vérité des métriques)
 2. [PROBLEMS.md](PROBLEMS.md) — les 9 problèmes P1–P9 (source de vérité des problèmes)
-3. [ITERATIONS.md](ITERATIONS.md) — historique complet des itérations précédentes
-4. [BASELINE.json](BASELINE.json) — valeurs de référence (itération 0 lockée)
+3. [ITERATIONS.md](ITERATIONS.md) — **historique PROD uniquement** (fichier reset au 2026-04-21)
+4. [BASELINE.json](BASELINE.json) — valeurs de référence (itération 0 PROD)
+
+**`git log` uniquement avec filtre `--grep="^iter-"`** : les seuls commits d'itération commencent par `iter-N:`. Tous les autres commits (setup Dockerfile, docker-compose, fix, refactor, docs, etc.) **doivent être ignorés**.
+
+Commande autorisée : `git log --oneline --grep="^iter-"`
+Commande interdite : `git log` (sans filtre) — capturerait les commits de setup/config.
+
+`ITERATIONS.md` reste la source principale (plus riche). Voir CLAUDE.md §"Point de départ PROD — 2026-04-21".
 
 **Si `N == 0`** → c'est la baseline, va directement à l'étape 5 sans modifier RAG-HP-PUB.
 
