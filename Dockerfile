@@ -63,6 +63,10 @@ WORKDIR /app
 
 COPY --chown=app:app . .
 
+# /app lui-meme doit appartenir a app (WORKDIR le cree en root par defaut).
+# Necessaire pour que gunicorn puisse ecrire son fichier de controle /app/.gunicorn
+RUN chown app:app /app
+
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     FLASK_ENV=production \

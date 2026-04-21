@@ -25,8 +25,11 @@ services:
       # Acces au repo RAG-HP-PUB (sibling dir sur la VM)
       - ../RAG-HP-PUB:/rag-hp-pub
       # Claude CLI monte depuis l'hote (binaire + package npm + config user)
-      - /usr/local/bin/claude:/usr/local/bin/claude:ro
-      - /usr/lib/node_modules/@anthropic-ai:/usr/lib/node_modules/@anthropic-ai:ro
+      # Les chemins sur l'hote peuvent varier — verifier avec `which claude` et `npm root -g`
+      # Defaults : /usr/local/bin/claude et /usr/lib/node_modules/@anthropic-ai
+      # Override via .env : CLAUDE_BIN_PATH et CLAUDE_NPM_PATH
+      - ${CLAUDE_BIN_PATH:-/usr/local/bin/claude}:/usr/local/bin/claude:ro
+      - ${CLAUDE_NPM_PATH:-/usr/lib/node_modules/@anthropic-ai}:/usr/lib/node_modules/@anthropic-ai:ro
       # Config Claude user (auth + settings) monte dans le home de l'utilisateur `app`
       - ${HOME}/.claude:/app/.claude
       # Docker socket pour redemarrer graph-rag-api-recherche-optim-service
