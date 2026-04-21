@@ -67,6 +67,20 @@ COPY --chown=app:app . .
 # Necessaire pour que gunicorn puisse ecrire son fichier de controle /app/.gunicorn
 RUN chown app:app /app
 
+# Pre-creer les dossiers de donnees avec permissions world-writable pour
+# supporter l'override `user:` dans docker-compose.yml (UID != 1000).
+# Sans ca, les sous-dossiers (results/backup, dashboard/logs/backup) ne
+# peuvent pas etre crees par un UID different de 1000.
+RUN mkdir -p /app/results /app/logs /app/dashboard/logs \
+    && chmod -R 777 /app/results /app/logs /app/dashboard/logs
+
+# Claude CLI 2.x requiert un /app/.claude.json pour demarrer (meme vide).
+# Sans ce fichier, `claude -p` sort silencieusement sans produire de stdout.
+# chmod 666 permet a n'importe quel UID (override via docker-compose user:)
+# de le lire/modifier.
+RUN echo '{}' > /app/.claude.json \
+    && chmod 666 /app/.claude.json
+
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     FLASK_ENV=production \
