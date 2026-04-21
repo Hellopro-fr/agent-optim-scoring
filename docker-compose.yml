@@ -7,14 +7,11 @@ services:
     # les bind-mounts (dashboard/logs, results, RAG-HP-PUB, etc.).
     # Defaults : UID 1000 (user `app` du Dockerfile). Sur la VM PROD claude-agent
     # possede ses fichiers avec UID 1040 — definir APP_UID/APP_GID dans .env.
-    user: "${APP_UID:-1000}:${APP_GID:-1000}"
+    # user: "${APP_UID:-1000}:${APP_GID:-1000}"
     # Groupes supplementaires pour l'UID ci-dessus :
     # - DOCKER_GID : acces /var/run/docker.sock (obligatoire)
     # - HOST_GID_EXTRA : optionnel, groupe systeme pour acceder aux fichiers
     #   possedes par un autre user (ex: devhp=1034 sur la VM PROD)
-    group_add:
-      - "${DOCKER_GID:-999}"
-      - "${HOST_GID_EXTRA:-999}"
     ports:
       - "5050:5050"
     environment:
