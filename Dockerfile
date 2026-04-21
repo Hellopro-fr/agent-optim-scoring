@@ -39,10 +39,12 @@ FROM python:3.11-slim AS runtime
 # Runtime tools uniquement :
 # - nodejs : execute le wrapper claude CLI monte depuis l'hote
 # - git : operations git dans /rag-hp-pub (Claude commit les iterations)
+# - openssh-client : git push via SSH (cle montee depuis l'hote dans /app/.ssh)
 # - curl : utilise par le healthcheck docker-compose
 RUN apt-get update && apt-get install -y --no-install-recommends \
         nodejs \
         git \
+        openssh-client \
         curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*

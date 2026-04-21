@@ -30,6 +30,9 @@ services:
       # essaie alors d'ecrire dans /.claude/ (racine, read-only) et exit
       # silencieusement. Forcer HOME=/app permet /app/.claude/ writable.
       - HOME=/app
+      # Git SSH : accepter les hosts inconnus (le conteneur n'a pas de known_hosts
+      # persistant). Pointe vers la cle SSH montee en bind mount.
+      - GIT_SSH_COMMAND=ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/tmp/known_hosts -i /app/.ssh/id_rsa
     volumes:
       # Persistance resultats et historique (bind mounts pour debug direct sur la VM)
       - ./results:/app/results
