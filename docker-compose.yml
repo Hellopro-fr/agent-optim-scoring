@@ -53,6 +53,7 @@ services:
       # - ${HOME}/.claude.json:/app/.claude.json
       # Docker socket pour redemarrer graph-rag-api-recherche-optim-service
       - /var/run/docker.sock:/var/run/docker.sock
+      - ${SSH_DIR:-/home/claude-agent/.ssh}:/app/.ssh:ro
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:5050/health"]
       interval: 30s
