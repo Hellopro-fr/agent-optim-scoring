@@ -35,8 +35,12 @@ services:
       # Override via .env : CLAUDE_BIN_PATH et CLAUDE_NPM_PATH
       - ${CLAUDE_BIN_PATH:-/usr/local/bin/claude}:/usr/local/bin/claude:ro
       - ${CLAUDE_NPM_PATH:-/usr/lib/node_modules/@anthropic-ai}:/usr/lib/node_modules/@anthropic-ai:ro
-      # Config Claude user (auth + settings) monte dans le home de l'utilisateur `app`
-      - ${HOME}/.claude:/app/.claude
+      # Note : pas de bind mount de ~/.claude ni ~/.claude.json
+      # L'authentification se fait via ANTHROPIC_API_KEY (env var ci-dessus).
+      # Claude CLI cree son propre .claude.json a la volee dans /app (ephemere).
+      # Si besoin d'auth OAuth (claude login), decommenter :
+      # - ${HOME}/.claude:/app/.claude
+      # - ${HOME}/.claude.json:/app/.claude.json
       # Docker socket pour redemarrer graph-rag-api-recherche-optim-service
       - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
