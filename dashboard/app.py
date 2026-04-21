@@ -1206,14 +1206,29 @@ def session_info(n):
 def build_iterate_prompt(n: int) -> str:
     """Construit le prompt envoyé à Claude CLI pour l'itération N.
 
-    Pour les itérations 0-8 (originales) → prompt minimal `/iterate N`, Claude
-    lit PROBLEMS.md pour identifier le Pn correspondant.
+    Claude CLI 2.x en mode `-p` ne résout pas les slash commands projet
+    (`.claude/commands/*.md`) — Claude renvoie `"Unknown command: /iterate"`.
+    On lit donc le contenu de `.claude/commands/iterate.md` et on l'injecte
+    comme prompt brut. Le fichier reste la source de vérité du skill.
 
-    Pour les itérations custom (N >= 9) → prompt enrichi avec le libellé, la
-    sévérité, la description et les métriques affectées lus depuis
-    `custom_problems.json`, car ces problèmes ne figurent pas dans PROBLEMS.md.
+    Pour les itérations custom (N >= 9) → on ajoute en suffixe le libellé,
+    la sévérité, la description et les métriques affectées lus depuis
+    `custom_problems.json`.
     """
-    base = f"/iterate {n}"
+    # Charger le corps du skill depuis .claude/commands/iterate.md
+    skill_file = PROJECT_ROOT / ".claude" / "commands" / "iterate.md"
+    if skill_file.exists():
+        content = skill_file.read_text(encoding="utf-8")
+        # Retirer le frontmatter YAML (entre `---` et `---`) s'il est présent
+        if content.lstrip().startswith("---"):
+            parts = content.split("---", 2)
+            if len(parts) >= 3:
+                content = parts[2].lstrip()
+        # Substituer $ARGUMENTS par le numéro d'itération
+        base = content.replace("$ARGUMENTS", str(n))
+    else:
+        # Fallback si le skill manque (ne devrait pas arriver)
+        base = f"Exécute l'itération {n} du protocole décrit dans CLAUDE.md"
 
     if n <= 8:
         return base
