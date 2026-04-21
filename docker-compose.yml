@@ -12,9 +12,11 @@ services:
     # - DOCKER_GID : acces /var/run/docker.sock (obligatoire)
     # - HOST_GID_EXTRA : optionnel, groupe systeme pour acceder aux fichiers
     #   possedes par un autre user (ex: devhp=1034 sur la VM PROD)
+    # Default HOST_GID_EXTRA=0 (groupe root, inoffensif) pour eviter une
+    # collision avec DOCKER_GID=999 que Docker refuserait ("items are equal").
     group_add:
       - "${DOCKER_GID:-999}"
-      - "${HOST_GID_EXTRA:-999}"
+      - "${HOST_GID_EXTRA:-0}"
     ports:
       - "5050:5050"
     environment:
