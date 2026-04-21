@@ -113,7 +113,17 @@ def _launch_turn(n, prompt, is_first=False):
     session = _sessions[n]
     claude_cmd = shutil.which("claude")
 
-    cmd = [claude_cmd, "-p", prompt, "--output-format", "stream-json", "--verbose"]
+    # --permission-mode bypassPermissions : Claude n'interrompt pas pour
+    # demander confirmation a chaque action. Les regles `allow`/`deny` de
+    # .claude/settings.json restent appliquees — seuls les prompts interactifs
+    # sont skippes. Indispensable en mode serveur (pas de TTY).
+    cmd = [
+        claude_cmd,
+        "-p", prompt,
+        "--output-format", "stream-json",
+        "--verbose",
+        "--permission-mode", "bypassPermissions",
+    ]
     if not is_first and session.get("session_id"):
         cmd.extend(["--resume", session["session_id"]])
     elif not is_first:
