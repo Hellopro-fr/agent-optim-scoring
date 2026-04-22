@@ -14,6 +14,20 @@
     <h1>Iteration #{{ iteration_num }}</h1>
 </div>
 
+{% if iteration_meta and iteration_meta.get('timestamp') %}
+<div class="card" style="padding: 0.85rem 1rem; margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: center; font-size: 0.8rem; color: var(--text-tertiary);">
+    <div><span style="font-weight: 600; color: var(--text-secondary);">Exécuté le :</span> {{ iteration_meta.get('timestamp') }}</div>
+    {% if iteration_meta.get('parcours_count') is not none %}
+    <div><span style="font-weight: 600; color: var(--text-secondary);">Parcours :</span> {{ iteration_meta.get('parcours_count') }}</div>
+    {% endif %}
+    {% if iteration_meta.get('endpoint') %}
+    <div style="flex: 1; min-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ iteration_meta.get('endpoint') }}">
+        <span style="font-weight: 600; color: var(--text-secondary);">Endpoint :</span> <code style="font-size: 0.75rem;">{{ iteration_meta.get('endpoint') }}</code>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
 {% if metrics %}
 <!-- Score global highlight -->
 <div class="card" style="text-align: center; padding: 2.5rem 1rem;">
@@ -115,31 +129,181 @@
 {% if parcours_results %}
 <!-- Results per parcours -->
 <div class="card">
-    <div class="card-header">Resultats par parcours</div>
+    <div class="card-header">Résultats par parcours <span style="font-weight: 400; color: var(--text-tertiary); font-size: 0.8rem;">· cliquer pour déplier</span></div>
     <div class="card-body">
-        {% for parcours_id, produits in parcours_results.items() %}
-        <div style="margin-bottom: 1.5rem; {% if not loop.last %}padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-light);{% endif %}">
-            <h4 style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.75rem;">{{ parcours_id }}</h4>
-            {% if produits %}
-            <div style="display: flex; flex-direction: column; gap: 0.5rem; padding-left: 0.75rem; border-left: 2px solid var(--border-light);">
-                {% for produit in produits %}
-                <div style="font-size: 0.85rem;">
-                    <span style="font-weight: 500;">{{ produit.get('titre_produit', 'Sans titre') }}</span>
-                    <br>
-                    <span style="font-size: 0.78rem; color: var(--text-tertiary);">
-                        {{ produit.get('fournisseur', '—') }}
-                        {% if produit.get('prix_produit') %} · {{ produit.get('prix_produit') }}{% endif %}
-                    </span>
+        {% for parcours_id, info in parcours_results.items() %}
+        <details class="parcours-accordion" data-parcours-id="{{ parcours_id }}" style="margin-bottom: 0.5rem; border: 1px solid var(--border-light); border-radius: 6px; background: var(--bg-primary);">
+            <summary style="padding: 0.75rem 1rem; cursor: pointer; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; list-style: none;">
+                <span style="font-weight: 600; font-size: 0.85rem; color: var(--text-primary); flex: 1;">{{ parcours_id }}</span>
+                {% if info.error %}
+                <span class="badge-status badge-danger" title="{{ info.error }}">Erreur</span>
+                {% else %}
+                <span class="badge-status" style="background: var(--bg-secondary); color: var(--text-secondary);">Top {{ info.nb_top }}</span>
+                {% if info.nb_ecarts %}
+                <span class="badge-status" style="background: var(--bg-secondary); color: var(--text-tertiary);">{{ info.nb_ecarts }} écarts</span>
+                {% endif %}
+                {% if info.temps_ms is not none %}
+                <span style="font-size: 0.75rem; color: var(--text-tertiary);">{{ "%.0f"|format(info.temps_ms) }} ms</span>
+                {% endif %}
+                {% endif %}
+            </summary>
+            <div style="padding: 0.5rem 1rem 1rem 1rem; border-top: 1px solid var(--border-light);">
+                {% if info.error %}
+                <div style="padding: 0.75rem; background: var(--bg-secondary); border-radius: 4px; font-size: 0.8rem; color: var(--text-secondary); font-family: monospace; white-space: pre-wrap;">{{ info.error }}</div>
+                {% elif info.produits %}
+                <div style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); margin: 0.5rem 0 0.5rem 0; letter-spacing: 0.05em;">Produits retournés ({{ info.nb_top }})</div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; padding-left: 0.75rem; border-left: 2px solid var(--border-light); max-height: 480px; overflow-y: auto;">
+                    {% for produit in info.produits %}
+                    <div style="font-size: 0.85rem;">
+                        <span style="display: inline-block; min-width: 1.75rem; font-size: 0.72rem; font-weight: 600; color: var(--text-tertiary);">#{{ produit.get('rang') if produit.get('rang') is not none else loop.index }}</span>
+                        <span style="font-weight: 500;">{{ produit.get('titre_produit') or (produit.get('llm_response') or {}).get('nom') or 'Sans titre' }}</span>
+                        {% if produit.get('score') is not none %}
+                        <span style="font-size: 0.75rem; color: var(--text-tertiary); margin-left: 0.5rem;">score {{ "%.3f"|format(produit.get('score')) }}</span>
+                        {% endif %}
+                        <br>
+                        <span style="font-size: 0.78rem; color: var(--text-tertiary); padding-left: 1.75rem;">
+                            {{ produit.get('fournisseur') or (produit.get('info_produit') or {}).get('id_fournisseur') or '—' }}
+                            {% if produit.get('prix_produit') %} · {{ produit.get('prix_produit') }}{% endif %}
+                        </span>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+                {% else %}
+                <p style="color: var(--text-tertiary); font-size: 0.85rem; margin: 0.5rem 0;">Aucun produit retourné</p>
+                {% endif %}
+
+                <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px dashed var(--border-light);">
+                    <button type="button" class="btn-details-complets" data-iter="{{ iteration_num }}" data-pid="{{ parcours_id }}">
+                        <span class="btn-icon">🔍</span>
+                        <span class="btn-label">Voir détails complets</span>
+                        <span class="btn-sub">payload + réponse API brute</span>
+                    </button>
+                    <div class="details-complets-container" style="margin-top: 1rem; display: none;"></div>
+                </div>
             </div>
-            {% else %}
-            <p style="color: var(--text-tertiary); font-size: 0.85rem; margin: 0; padding-left: 0.75rem;">Aucun produit retourne</p>
-            {% endif %}
-        </div>
+        </details>
         {% endfor %}
     </div>
 </div>
+
+<style>
+.parcours-accordion summary::-webkit-details-marker { display: none; }
+.parcours-accordion summary::before {
+    content: "▸"; color: var(--text-tertiary); font-size: 0.75rem; margin-right: 0.25rem; transition: transform 0.15s;
+}
+.parcours-accordion[open] > summary::before { content: "▾"; }
+.parcours-accordion:hover { border-color: var(--border-medium, #d0d5dd); }
+.details-section { margin-bottom: 1rem; }
+.details-section-title {
+    font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+    color: var(--text-tertiary); letter-spacing: 0.05em; margin-bottom: 0.35rem;
+}
+.details-section pre {
+    background: var(--bg-secondary); border: 1px solid var(--border-light);
+    border-radius: 4px; padding: 0.75rem; font-size: 0.72rem;
+    max-height: 400px; overflow: auto; margin: 0;
+    white-space: pre-wrap; word-break: break-word;
+}
+.btn-details-complets {
+    display: inline-flex; align-items: center; gap: 0.6rem;
+    background: linear-gradient(135deg, var(--accent, #3b82f6) 0%, var(--accent-dark, #2563eb) 100%);
+    color: #fff; border: none;
+    padding: 0.65rem 1.2rem; border-radius: 6px;
+    font-size: 0.85rem; font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    transition: transform 0.1s, box-shadow 0.15s, opacity 0.15s;
+}
+.btn-details-complets:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(59,130,246,0.25), 0 2px 4px rgba(0,0,0,0.06);
+}
+.btn-details-complets:active:not(:disabled) { transform: translateY(0); }
+.btn-details-complets:disabled { opacity: 0.6; cursor: wait; }
+.btn-details-complets .btn-icon { font-size: 1rem; }
+.btn-details-complets .btn-sub {
+    font-size: 0.72rem; font-weight: 400; opacity: 0.85;
+    padding-left: 0.5rem; margin-left: 0.35rem;
+    border-left: 1px solid rgba(255,255,255,0.3);
+}
+</style>
+
+<script>
+(function() {
+    function esc(s) { return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+    function section(title, obj) {
+        if (obj === undefined || obj === null) return '';
+        const json = JSON.stringify(obj, null, 2);
+        return `<div class="details-section"><div class="details-section-title">${esc(title)}</div><pre>${esc(json)}</pre></div>`;
+    }
+    function setLabel(btn, text, sub) {
+        const lab = btn.querySelector('.btn-label');
+        const s = btn.querySelector('.btn-sub');
+        if (lab) lab.textContent = text;
+        if (s) s.textContent = sub || '';
+        if (s) s.style.display = sub ? '' : 'none';
+    }
+    document.querySelectorAll('.btn-details-complets').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const container = this.parentElement.querySelector('.details-complets-container');
+            if (container.dataset.loaded === '1') {
+                const willHide = container.style.display !== 'none';
+                container.style.display = willHide ? 'none' : 'block';
+                setLabel(this,
+                    willHide ? 'Voir détails complets' : 'Masquer détails complets',
+                    willHide ? 'payload + réponse API brute' : '');
+                return;
+            }
+            const iter = this.dataset.iter;
+            const pid = this.dataset.pid;
+            this.disabled = true;
+            setLabel(this, 'Chargement…', '');
+            try {
+                const resp = await fetch(`/api/iteration/${iter}/parcours/${encodeURIComponent(pid)}`);
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({error: 'Erreur HTTP ' + resp.status}));
+                    container.innerHTML = `<div style="color: var(--text-tertiary); font-size: 0.8rem;">Erreur : ${esc(err.error || 'inconnue')}</div>`;
+                } else {
+                    const data = await resp.json();
+                    const parcours = data.parcours || {};
+                    const apiResp = data.api_response || {};
+                    const payload = {
+                        id_categorie: parcours.id_categorie,
+                        liste_caracteristique: parcours.liste_caracteristique,
+                        metadonnee_utilisateurs: parcours.metadonnee_utilisateurs,
+                        questions_reponses: parcours.questions_reponses,
+                    };
+                    const meta = {
+                        timestamp: (data.iteration_meta || {}).timestamp,
+                        endpoint: (data.iteration_meta || {}).endpoint,
+                        temps_de_traitement: apiResp.temps_de_traitement,
+                    };
+                    let html = '';
+                    html += section('Payload envoyé', payload);
+                    html += section('Top produits complets (' + (apiResp.top_produit || []).length + ')', apiResp.top_produit);
+                    if (apiResp.ecarts && apiResp.ecarts.length) {
+                        html += section('Écarts / rejetés (' + apiResp.ecarts.length + ')', apiResp.ecarts);
+                    }
+                    html += section('Méta', meta);
+                    if (data.error) {
+                        html = `<div style="padding: 0.75rem; background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: 4px; color: var(--text-secondary); margin-bottom: 1rem;">Erreur : ${esc(data.error)}</div>` + html;
+                    }
+                    container.innerHTML = html;
+                }
+                container.dataset.loaded = '1';
+                container.style.display = 'block';
+                setLabel(this, 'Masquer détails complets', '');
+            } catch (e) {
+                container.innerHTML = `<div style="color: var(--text-tertiary); font-size: 0.8rem;">Erreur réseau : ${esc(e.message)}</div>`;
+                container.style.display = 'block';
+                setLabel(this, 'Réessayer', '');
+            } finally {
+                this.disabled = false;
+            }
+        });
+    });
+})();
+</script>
 {% endif %}
 
 {% else %}
