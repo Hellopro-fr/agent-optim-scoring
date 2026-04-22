@@ -30,13 +30,14 @@ Le dashboard est une page web.
 
 > Si la page ne répond pas, contactez l'admin système : le service est peut-être arrêté. Vous n'avez rien à installer de votre côté.
 
-Le dashboard a **5 pages** dans le menu de gauche :
+Le dashboard a **6 pages** dans le menu de gauche :
 
 | Page | À quoi ça sert |
 |---|---|
 | **Tableau de bord** | Vue d'ensemble : métriques actuelles + boutons pour lancer les itérations (originales + personnalisées) |
 | **Iterations** | Historique détaillé de chaque essai (hypothèse, avant/après, décision) |
 | **Problèmes** | Statut des 9 problèmes à résoudre (P1–P9) **+ ajout / modification / suppression de problèmes personnalisés** |
+| **Parcours** | Les 13 parcours de test officiels (immuables) **+ ajout / modification / suppression de parcours personnalisés** (voir §5.8) |
 | **Manuel** | Ce document, accessible directement depuis le dashboard |
 | **Configuration** | Modifier les cibles/seuils d'affichage des métriques (voir §5.7) |
 
@@ -215,6 +216,57 @@ Les 6 cibles affichées sur le tableau de bord (Conformité ≥80%, Doublons 0, 
 
 > **Cas des cibles Doublons et Diversité fournisseurs** : un avertissement orange ⚠️ signale que ces deux cibles ont une logique interne dans le calcul (0 doublon toléré = score parfait ; 3 fournisseurs = plafond du score diversité). Modifier la cible change l'affichage mais pas cette logique interne. En pratique, monter la cible Diversité au-dessus de 3 rend l'affichage plus exigeant sans que le score global en bénéficie.
 
+### 5.8. Gérer les parcours de test
+
+La page **Parcours** liste tous les parcours de test utilisés par l'agent (ceux qu'il rejoue à chaque itération pour mesurer les métriques).
+
+**Deux catégories** :
+
+- **Parcours officiels (13)** — les cas audités manuellement par l'équipe produit, stockés dans `test_data/parcours.json`. Ils sont **immuables** (badge "officiel" affiché à la place des boutons d'action) : ni le dashboard ni l'agent ne peuvent les modifier.
+- **Parcours personnalisés** — ceux que vous ajoutez depuis cette page, stockés à part dans `custom_parcours.json`. Ils sont éditables et participent aux itérations **au même titre que les officiels**.
+
+**Lire un parcours** : cliquer sur la ligne pour la déplier. On y voit :
+- Les métadonnées (ID catégorie, pays, code postal).
+- Les **questions / réponses** du parcours acheteur.
+- Les **caractéristiques déduites** (ce que le moteur doit comprendre du besoin).
+- La **liste des caractéristiques** envoyée à l'API.
+- L'**évaluation humaine** : produits conformes ✓ / hors sujet ✗ / anomalies ⚠.
+
+#### Créer un parcours personnalisé
+
+1. Aller sur la page **Parcours**.
+2. Cliquer sur **+ Nouveau parcours** en haut à droite.
+3. Remplir le formulaire :
+
+   | Champ | Obligatoire | Description |
+   |---|---|---|
+   | **Parcours ID** | ✅ | Identifiant unique (ex. `2001065_P14_test_dashboard`). **Non modifiable après création.** |
+   | **ID catégorie** | ✅ | Entier (ex. 2001065). |
+   | **Catégorie** | ✅ | Libellé (ex. "Tracteur agricole"). |
+   | **Sous-type** | ✅ | Libellé (ex. "Standard - Fenaison"). |
+   | **Questions / Réponses** | Facultatif | Liste JSON `[{"question": "...", "reponse": "..."}]`. |
+   | **Caractéristiques déduites** | Recommandé | Objet JSON `{"type": "...", "usage": "..."}`. Requis par le pipeline pour que le parcours tourne. |
+   | **Liste caractéristiques** | Facultatif | Liste JSON envoyée telle quelle à l'API (id_caracteristique, poids, valeurs cibles…). |
+   | **Métadonnées utilisateur** | (pré-rempli) | Pays, id_pays, cp — défaut France. |
+   | **Évaluation humaine** | Facultatif | Objet JSON `{"produits_conformes": [...], "produits_hors_sujet": [...], "anomalies": [...]}`. Utilisée pour mesurer la conformité. Sans elle, le parcours tourne mais ne contribue pas au score de conformité. |
+
+4. Cliquer **Enregistrer**. Les zones JSON sont validées (un message rouge s'affiche si la syntaxe est invalide).
+
+> Les champs JSON suivent le même format que les parcours officiels : ouvrez un officiel en lecture pour vous inspirer de la structure attendue.
+
+#### Modifier ou supprimer un parcours personnalisé
+
+Sur la ligne d'un parcours personnalisé, deux boutons :
+
+- **Modifier** → rouvre le formulaire pré-rempli. Le **Parcours ID** reste figé ; tout le reste est éditable.
+- **Supprimer** → après confirmation, retire définitivement le parcours.
+
+> **Les 13 parcours officiels n'ont pas ces boutons** (badge "officiel"). Toute tentative de suppression/modification côté API est rejetée (erreur 403).
+
+#### Impact sur les itérations
+
+Un parcours ajouté est automatiquement inclus dans le prochain lancement d'itération (ou baseline). **Relancer la baseline (Iter 0) après ajout** est recommandé pour que la référence tienne compte du nouveau jeu de tests. Sinon, les comparaisons avant/après peuvent être biaisées (nombre de parcours différent entre baseline et itération).
+
 ---
 
 ## 6. Les checkpoints (paliers de validation)
@@ -241,6 +293,33 @@ Affiche le journal complet (`ITERATIONS.md`) avec pour chaque essai :
 - Le **fichier modifié** et un extrait avant / après.
 - Le **tableau comparatif** des métriques (avant / après / différence).
 - La **décision** (GARDÉ / ROLLBACK) et la raison.
+
+> **Titre cliquable** : chaque en-tête "Itération N" est transformé en lien (pastille bleue **"Voir détails ›"**). Cliquer ouvre la page détail de l'itération décrite ci-dessous.
+
+### Page détail d'une itération (`/iterations/<N>`)
+
+Accessible en cliquant sur le titre d'une itération dans le journal, ou directement en tapant l'URL. Elle affiche ce que l'itération a réellement produit, au-delà de ce que résume ITERATIONS.md.
+
+**Ce qu'on y voit** :
+
+- **Bandeau de contexte** : date d'exécution, nombre de parcours joués, endpoint API ciblé.
+- **Score global** mis en valeur avec la cible et un badge (Atteint / écart en points).
+- **Tableau des 5 métriques** : valeur, cible, statut OK / Miss — calé sur les cibles actuelles de la page Configuration (§5.7).
+- **Résultats par parcours** (accordéon, un pli par parcours joué) :
+  - Badge "Top N" = nombre de produits retournés.
+  - Badge "N écarts" = nombre de produits rejetés par l'API.
+  - Temps de traitement en ms.
+  - Badge rouge **Erreur** si le parcours a échoué (message au survol).
+  - Dépliage : liste numérotée des produits retournés (titre, fournisseur, prix, score).
+- **Bouton "Voir détails complets"** (sous chaque parcours) : charge à la demande :
+  - le **payload envoyé** à l'API (id_categorie, liste_caracteristique, questions_reponses, métadonnées) ;
+  - les **produits top complets** (toute la structure renvoyée par l'API, pas seulement les champs résumés) ;
+  - les **écarts / produits rejetés** s'il y en a ;
+  - la **méta** (timestamp, endpoint, temps de traitement).
+
+> Cette page est utile pour **comprendre pourquoi une métrique a bougé** : en dépliant un parcours dont la conformité a chuté, on voit directement quels produits ont été retournés et ce que l'API a calculé. Les "détails complets" servent au debug poussé quand on discute avec l'équipe tech.
+
+> Si une itération n'a pas encore été exécutée, la page affiche "Itération non exécutée".
 
 ### Page Problèmes
 
@@ -321,7 +400,7 @@ R. Non. L'agent est cadré : il ne touche **ni** aux fichiers de configuration i
 R. L'agent déclenche un **ROLLBACK immédiat** : la modification est annulée. Le score revient à son niveau précédent. C'est le comportement normal, on apprend et on essaye autre chose.
 
 **Q. Pourquoi seulement 13 parcours de test ?**
-R. Ce sont 13 cas **audités manuellement** par l'équipe produit, choisis pour couvrir les cas typiques. C'est suffisant pour mesurer de manière fiable les 5 métriques.
+R. Ce sont 13 cas **audités manuellement** par l'équipe produit, choisis pour couvrir les cas typiques. C'est suffisant pour mesurer de manière fiable les 5 métriques. Vous pouvez **compléter ce jeu** avec vos propres parcours via la page **Parcours** (§5.8) — ils s'ajoutent aux 13 officiels sans jamais les modifier.
 
 **Q. Quand s'arrête-t-on ?**
 R. Quand **toutes les cibles** de §3 sont atteintes, ou quand on constate un plateau définitif après plusieurs essais (CP4). À ce moment, l'équipe tech pousse la version optimisée en production.
