@@ -9,6 +9,7 @@ import os
 import re
 import subprocess
 import shutil
+import sys
 import threading
 import time
 from pathlib import Path
@@ -18,6 +19,11 @@ from flask import Flask, render_template, jsonify, request, Response, redirect, 
 PROJECT_ROOT = Path(os.environ.get("PROJECT_ROOT", Path(__file__).parent.parent))
 RESULTS_DIR = PROJECT_ROOT / "results"
 TEMPLATES_DIR = Path(__file__).parent / "templates"
+
+sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
+from evaluate import fetch_characteristics_map  # noqa: E402
+
+_carac_map_cache = {}  # {id_categorie: {id_carac: {nom, unite, type, valeurs: {id_val: label}}}}
 
 # Config des cibles / seuils (modifiables via /config par un utilisateur humain)
 CONFIG_DIR = PROJECT_ROOT / "config"
@@ -181,6 +187,49 @@ def load_metrics(iteration_num):
         with open(metrics_file, "r", encoding="utf-8") as f:
             return json.load(f)
     return None
+
+
+def get_carac_map(id_categorie):
+    """
+    Retourne la map {id_carac: {nom, unite, type, valeurs: {id_val: label}}} pour une catégorie.
+    Cache in-memory par id_categorie. Fallback {} si token absent ou erreur API.
+    """
+    if id_categorie in _carac_map_cache:
+        return _carac_map_cache[id_categorie]
+    if not os.environ.get("NEXT_TOKEN_API_QUESTION", "").strip():
+        _carac_map_cache[id_categorie] = {}
+        return {}
+    try:
+        result = fetch_characteristics_map(id_categorie, {"timeout_seconds": 10}) or {}
+        for info in result.values():
+            if not isinstance(info.get("valeurs"), dict):
+                info["valeurs"] = {}
+        _carac_map_cache[id_categorie] = result
+        return result
+    except Exception as e:
+        print(f"[carac_map] échec cat={id_categorie}: {e}")
+        _carac_map_cache[id_categorie] = {}
+        return {}
+
+
+def enrich_caracs_with_labels(caracs, carac_map):
+    """Mutation in-place : ajoute `label` + `value_label` à chaque carac."""
+    for c in caracs or []:
+        cid = c.get("id_caracteristique")
+        info = carac_map.get(cid) or {}
+        c["label"] = info.get("nom") or (f"c{cid}" if cid is not None else "")
+        t = c.get("type_caracteristique")
+        if t == 2:  # textuelle
+            idvals = c.get("id_valeur") or []
+            valmap = info.get("valeurs") or {}
+            labels = [valmap.get(v) or str(v) for v in idvals]
+            c["value_label"] = ", ".join(labels) if labels else ""
+        elif t == 1:  # numérique
+            v = c.get("valeur")
+            u = c.get("unite") or info.get("unite") or ""
+            c["value_label"] = f"{v} {u}".strip() if v not in (None, "") else ""
+        else:
+            c["value_label"] = ""
 
 
 def load_latest_metrics():
@@ -750,6 +799,19 @@ def iteration_detail(n):
                     "error": result.get("error"),
                     "temps_ms": api_resp.get("temps_de_traitement") if isinstance(api_resp, dict) else None,
                 }
+
+            # Résolution id_caracteristique → nom humain (fallback c{id} en LOCAL sans token)
+            for pid, info_p in parcours_results.items():
+                parcours_obj = (data["resultats"][pid].get("parcours") or {})
+                id_cat = parcours_obj.get("id_categorie")
+                if id_cat is None:
+                    continue
+                try:
+                    carac_map = get_carac_map(int(id_cat))
+                except (TypeError, ValueError):
+                    carac_map = {}
+                for prod in info_p.get("produits") or []:
+                    enrich_caracs_with_labels(prod.get("caracteristique") or [], carac_map)
 
     return render_template("iteration_detail.html",
                           iteration_num=n,

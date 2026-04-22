@@ -165,6 +165,26 @@
                             {{ produit.get('fournisseur') or (produit.get('info_produit') or {}).get('id_fournisseur') or '—' }}
                             {% if produit.get('prix_produit') %} · {{ produit.get('prix_produit') }}{% endif %}
                         </span>
+                        {% set caracs = produit.get('caracteristique') or [] %}
+                        {% if caracs %}
+                        <div class="carac-row">
+                            {% for c in caracs %}
+                                {% set statut = c.get('statut_matching') %}
+                                {% set bareme = c.get('bareme') %}
+                                {% set is_num = c.get('type_caracteristique') == 1 %}
+                                {% set idvals = c.get('id_valeur') or [] %}
+                                {% set cid = c.get('id_caracteristique') %}
+                                {% set label = c.get('label') or ('c' ~ cid) %}
+                                {% set vlabel = c.get('value_label') %}
+                                {% set tooltip = label ~ ' · statut=' ~ statut ~ ' · type=' ~ ('num' if is_num else 'text') ~ ' · poids=' ~ c.get('poids') ~ ' · poids_q=' ~ c.get('poids_question') ~ ' · id=' ~ cid ~ ((' · id_valeur=' ~ idvals|join(',')) if idvals else '') %}
+                                {% if statut == -1 %}{% set klass = 'carac-bloquant' %}
+                                {% elif statut == 1 and bareme is not none and bareme >= 0.5 %}{% set klass = 'carac-ok' %}
+                                {% elif statut == 1 %}{% set klass = 'carac-partial' %}
+                                {% else %}{% set klass = 'carac-neutre' %}{% endif %}
+                                <span class="carac-badge {{ klass }}" title="{{ tooltip }}">{{ label }}{% if vlabel %}: {{ vlabel }}{% endif %}{% if bareme is not none %} ({{ "%.1f"|format(bareme) }}){% endif %}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                     </div>
                     {% endfor %}
                 </div>
@@ -226,6 +246,19 @@
     padding-left: 0.5rem; margin-left: 0.35rem;
     border-left: 1px solid rgba(255,255,255,0.3);
 }
+.carac-row {
+    margin-top: 0.3rem; padding-left: 1.75rem;
+    display: flex; flex-wrap: wrap; gap: 0.3rem;
+    font-size: 0.7rem;
+}
+.carac-badge {
+    padding: 0.1rem 0.45rem; border-radius: 3px; font-family: monospace;
+    border: 1px solid transparent; white-space: nowrap; cursor: help;
+}
+.carac-badge.carac-ok        { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+.carac-badge.carac-partial   { background: #fed7aa; color: #9a3412; border-color: #fdba74; }
+.carac-badge.carac-bloquant  { background: #fecaca; color: #991b1b; border-color: #fca5a5; }
+.carac-badge.carac-neutre    { background: var(--bg-secondary); color: var(--text-tertiary); border-color: var(--border-light); }
 </style>
 
 <script>
