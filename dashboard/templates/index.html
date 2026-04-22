@@ -604,6 +604,17 @@ function connectStream(iterationNum) {
     let mdBuffer = '';
     let mdBlock = null;
     let renderTimer = null;
+    let lastToolDiv = null;       // Reference du dernier bloc tool_use pour y
+                                  // attacher le tool_input en sous-ligne.
+    let thinkingBlock = null;     // Bloc courant d'accumulation du thinking.
+    let thinkingText = '';
+
+    function resetInlineBlocks() {
+        mdBlock = null;
+        lastToolDiv = null;
+        thinkingBlock = null;
+        thinkingText = '';
+    }
 
     function flushMarkdown() {
         if (!mdBuffer) return;
@@ -641,10 +652,68 @@ function connectStream(iterationNum) {
                 mdBuffer += data.line + '\n';
                 scheduleRender();
 
-            } else if (data.user) {
+            } else if (data.tool_use) {
+                flushMarkdown();
+                mdBuffer = '';
+                resetInlineBlocks();
+
+                // data.tool_use peut etre {name, input} (nouveau) ou string (fallback)
+                const toolName = (typeof data.tool_use === 'object') ? data.tool_use.name : data.tool_use;
+                const div = document.createElement('div');
+                div.style.cssText = 'color:#f5c2e7; font-family:ui-monospace,monospace; margin:0.25rem 0; font-size:0.8rem; opacity:0.85;';
+                div.textContent = '\u25b8 ' + toolName;
+                consoleOutput.appendChild(div);
+                lastToolDiv = div;
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+
+            } else if (data.tool_input) {
+                // Sous-ligne attachee au dernier tool_use pour montrer l'input.
+                if (lastToolDiv) {
+                    const sub = document.createElement('div');
+                    sub.style.cssText = 'color:#8e8eb6; font-family:ui-monospace,monospace; margin:0 0 0.25rem 1rem; font-size:0.75rem; opacity:0.85; white-space:pre-wrap; word-break:break-all;';
+                    sub.textContent = '\u2514\u2500 ' + data.tool_input.summary;
+                    lastToolDiv.insertAdjacentElement('afterend', sub);
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                }
+
+            } else if (data.tool_result) {
+                // Marqueur succes/echec du tool precedent.
+                const ok = !data.tool_result.is_error;
+                const mark = document.createElement('div');
+                mark.style.cssText = 'font-family:ui-monospace,monospace; margin:0 0 0.5rem 1rem; font-size:0.75rem; color:' + (ok ? '#a6e3a1' : '#f38ba8') + ';';
+                const symbol = ok ? '\u2713' : '\u2717';
+                const snippet = (data.tool_result.content || '').split('\n')[0].slice(0, 120);
+                mark.textContent = symbol + (snippet ? '  ' + snippet : '');
+                consoleOutput.appendChild(mark);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+
+            } else if (data.thinking) {
+                // Accumule le thinking dans un bloc italique gris.
                 flushMarkdown();
                 mdBuffer = '';
                 mdBlock = null;
+                if (!thinkingBlock) {
+                    thinkingBlock = document.createElement('div');
+                    thinkingBlock.style.cssText = 'color:#6e6e8a; font-style:italic; font-size:0.78rem; margin:0.5rem 0; padding-left:0.75rem; border-left:2px solid #313244; white-space:pre-wrap;';
+                    const header = document.createElement('div');
+                    header.style.cssText = 'color:#6e6e8a; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.15rem;';
+                    header.textContent = 'reflexion';
+                    thinkingBlock.appendChild(header);
+                    consoleOutput.appendChild(thinkingBlock);
+                }
+                thinkingText += data.thinking;
+                // Preserve le header, remplace juste le corps
+                while (thinkingBlock.childNodes.length > 1) {
+                    thinkingBlock.removeChild(thinkingBlock.lastChild);
+                }
+                const body = document.createTextNode(thinkingText);
+                thinkingBlock.appendChild(body);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+
+            } else if (data.user) {
+                flushMarkdown();
+                mdBuffer = '';
+                resetInlineBlocks();
 
                 const div = document.createElement('div');
                 div.style.cssText = 'color:#89b4fa; font-weight:600; margin:1.25rem 0 0.5rem; padding-top:0.75rem; border-top:1px solid #1e1e2e; font-size:0.85rem;';
@@ -655,7 +724,7 @@ function connectStream(iterationNum) {
             } else if (data.waiting_input) {
                 flushMarkdown();
                 mdBuffer = '';
-                mdBlock = null;
+                resetInlineBlocks();
                 loaderArea.style.display = 'none'; stopLoaderRotation();
 
                 const p = document.createElement('p');

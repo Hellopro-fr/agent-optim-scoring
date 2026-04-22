@@ -9,16 +9,23 @@
         border-spacing: 0;
         font-size: 0.85rem;
     }
-    .parcours-table thead th {
-        text-align: left;
+    .parcours-grid {
+        display: grid;
+        grid-template-columns: 2.2fr 1.3fr 1.5fr 0.7fr 150px 24px;
+        gap: 1rem;
+        align-items: center;
+    }
+    .parcours-head {
+        padding: 0.6rem 1rem;
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+    }
+    .parcours-head > div {
         font-size: 0.7rem;
         font-weight: 600;
         color: var(--text-tertiary);
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        padding: 0.6rem 0.85rem;
-        border-bottom: 1px solid var(--border);
-        background: var(--bg);
     }
     .parcours-row {
         border-bottom: 1px solid var(--border-light);
@@ -28,10 +35,6 @@
         background: var(--surface-hover);
     }
     .parcours-summary {
-        display: grid;
-        grid-template-columns: 2.4fr 1.4fr 1.6fr 0.7fr 28px;
-        gap: 1rem;
-        align-items: center;
         padding: 0.85rem 1rem;
         cursor: pointer;
         list-style: none;
@@ -64,6 +67,23 @@
         border-radius: 10px;
         border: 1px solid var(--border-light);
         white-space: nowrap;
+    }
+    .parcours-actions {
+        display: flex;
+        gap: 0.3rem;
+        justify-content: flex-end;
+    }
+    .parcours-actions .btn {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.72rem;
+    }
+    .parcours-badge-immutable {
+        display: inline-block;
+        font-size: 0.68rem;
+        color: var(--text-tertiary);
+        font-style: italic;
+        text-align: right;
+        width: 100%;
     }
     .parcours-chevron {
         width: 16px;
@@ -170,43 +190,98 @@
         color: var(--text-primary);
         font-weight: 500;
     }
+    .pf-field {
+        margin-bottom: 0.85rem;
+    }
+    .pf-field label {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 0.3rem;
+    }
+    .pf-field input,
+    .pf-field textarea {
+        width: 100%;
+        padding: 0.55rem 0.8rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-size: 0.85rem;
+        background: var(--bg);
+        color: var(--text-primary);
+        font-family: inherit;
+    }
+    .pf-field textarea.json-input {
+        font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+        font-size: 0.78rem;
+        line-height: 1.5;
+        resize: vertical;
+        min-height: 90px;
+    }
+    .pf-required {
+        color: #ef4444;
+    }
+    .pf-hint {
+        display: block;
+        margin-top: 0.25rem;
+        font-size: 0.7rem;
+        color: var(--text-tertiary);
+    }
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1>Parcours</h1>
-    <p>{{ parcours|length }} parcours audités utilisés comme jeu d'évaluation (lecture seule)</p>
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1>Parcours</h1>
+        <p>{{ parcours|length }} parcours ({{ parcours|selectattr('immutable','equalto',true)|list|length }} officiels, {{ parcours|selectattr('immutable','equalto',false)|list|length }} custom)</p>
+    </div>
+    <button type="button" class="btn btn-primary" id="btnNewParcours" style="white-space: nowrap;">
+        + Nouveau parcours
+    </button>
 </div>
 
 <div class="alert-banner info" style="margin-bottom: 1.25rem;">
     <div>
-        <strong>Fichier immuable.</strong> Ces parcours sont définis dans <code>test_data/parcours.json</code> et ne peuvent pas être modifiés depuis le dashboard. Ils servent de référence stable pour comparer les itérations entre elles.
+        <strong>Parcours officiels immuables.</strong> Les parcours audités de <code>test_data/parcours.json</code> sont en lecture seule. Les parcours ajoutés via ce dashboard sont stockés dans <code>custom_parcours.json</code> et participent aux itérations au même titre que les originaux.
     </div>
 </div>
 
 {% if parcours %}
 <div class="card" style="padding: 0;">
     <div class="parcours-table">
-        <div style="display: grid; grid-template-columns: 2.4fr 1.4fr 1.6fr 0.7fr 28px; gap: 1rem; padding: 0.6rem 1rem; background: var(--bg); border-bottom: 1px solid var(--border);">
-            <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Parcours ID</div>
-            <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Catégorie</div>
-            <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Sous-type</div>
-            <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Questions</div>
+        <div class="parcours-grid parcours-head">
+            <div>Parcours ID</div>
+            <div>Catégorie</div>
+            <div>Sous-type</div>
+            <div>Questions</div>
+            <div style="text-align: right;">Actions</div>
             <div></div>
         </div>
 
         {% for p in parcours %}
         <details class="parcours-row">
-            <summary class="parcours-summary">
+            <summary class="parcours-summary parcours-grid">
                 <span class="parcours-id">{{ p.parcours_id|default('—') }}</span>
                 <span class="parcours-cat">{{ p.categorie|default('—') }}</span>
                 <span class="parcours-sub">{{ p.sous_type|default('—') }}</span>
                 <span><span class="parcours-count">{{ (p.questions_reponses|default([]))|length }}</span></span>
+                {% if p.immutable %}
+                <span class="parcours-badge-immutable">officiel</span>
+                {% else %}
+                <span class="parcours-actions">
+                    <button type="button" class="btn btn-ghost btn-edit-parcours"
+                            data-pid="{{ p.parcours_id }}"
+                            onclick="event.stopPropagation(); event.preventDefault(); openEditParcours(this.dataset.pid);">Modifier</button>
+                    <button type="button" class="btn btn-ghost btn-delete-parcours"
+                            data-pid="{{ p.parcours_id }}"
+                            style="color: #ef4444;"
+                            onclick="event.stopPropagation(); event.preventDefault(); deleteParcours(this.dataset.pid);">Supprimer</button>
+                </span>
+                {% endif %}
                 <svg class="parcours-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
             </summary>
 
             <div class="parcours-details">
-                {# Métadonnées compactes #}
                 {% if p.id_categorie or p.metadonnee_utilisateurs %}
                 <div class="parcours-section">
                     <h4>Métadonnées</h4>
@@ -234,7 +309,6 @@
                 </div>
                 {% endif %}
 
-                {# Questions / Réponses #}
                 {% if p.questions_reponses %}
                 <div class="parcours-section">
                     <h4>Questions / Réponses ({{ p.questions_reponses|length }})</h4>
@@ -249,7 +323,6 @@
                 </div>
                 {% endif %}
 
-                {# Caractéristiques déduites #}
                 {% if p.caracteristiques_deduites %}
                 <div class="parcours-section">
                     <h4>Caractéristiques déduites</h4>
@@ -257,7 +330,6 @@
                 </div>
                 {% endif %}
 
-                {# Liste caractéristiques #}
                 {% if p.liste_caracteristique %}
                 <div class="parcours-section">
                     <h4>Liste caractéristiques ({{ p.liste_caracteristique|length }})</h4>
@@ -265,7 +337,6 @@
                 </div>
                 {% endif %}
 
-                {# Évaluation humaine #}
                 {% if p.evaluation_humaine %}
                 {% set ev = p.evaluation_humaine %}
                 <div class="parcours-section">
@@ -316,4 +387,213 @@
     <p>Le fichier <code>test_data/parcours.json</code> est introuvable ou vide.</p>
 </div>
 {% endif %}
+
+<!-- Modal formulaire créer / modifier -->
+<div class="modal fade" id="parcoursFormModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg" style="max-width: 780px;">
+        <div class="modal-content" style="border: none; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);">
+            <div class="modal-header">
+                <h5 class="modal-title" id="parcoursFormTitle">Nouveau parcours</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <form id="parcoursForm" onsubmit="event.preventDefault(); submitParcoursForm();">
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.75rem;">
+                        <div class="pf-field">
+                            <label for="pcf-id">Parcours ID <span class="pf-required">*</span></label>
+                            <input type="text" id="pcf-id" name="parcours_id" required
+                                   placeholder="ex: 2001065_P14_test_dashboard">
+                            <small class="pf-hint">Non modifiable après création. Doit être unique.</small>
+                        </div>
+                        <div class="pf-field">
+                            <label for="pcf-idcat">ID catégorie <span class="pf-required">*</span></label>
+                            <input type="number" id="pcf-idcat" name="id_categorie" required placeholder="ex: 2001065">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                        <div class="pf-field">
+                            <label for="pcf-cat">Catégorie <span class="pf-required">*</span></label>
+                            <input type="text" id="pcf-cat" name="categorie" required placeholder="ex: Tracteur agricole">
+                        </div>
+                        <div class="pf-field">
+                            <label for="pcf-sub">Sous-type <span class="pf-required">*</span></label>
+                            <input type="text" id="pcf-sub" name="sous_type" required placeholder="ex: Standard - Fenaison">
+                        </div>
+                    </div>
+
+                    <div class="pf-field">
+                        <label for="pcf-qr">Questions / Réponses (JSON)</label>
+                        <textarea id="pcf-qr" class="json-input" rows="5" placeholder='[{"question": "...", "reponse": "..."}]'></textarea>
+                        <small class="pf-hint">Liste JSON d'objets {question, reponse}.</small>
+                    </div>
+
+                    <div class="pf-field">
+                        <label for="pcf-cd">Caractéristiques déduites (JSON)</label>
+                        <textarea id="pcf-cd" class="json-input" rows="3" placeholder='{"type": "standard", "usage": "fenaison"}'></textarea>
+                        <small class="pf-hint">Objet JSON. Requis par le pipeline pour être exécuté.</small>
+                    </div>
+
+                    <div class="pf-field">
+                        <label for="pcf-lc">Liste caractéristiques (JSON)</label>
+                        <textarea id="pcf-lc" class="json-input" rows="5" placeholder='[{"id_caracteristique": 316, "type_caracteristique": "textuelle", "poids_question": 8, "poids_caracteristique": "critique", "valeurs_cibles": [1724], "valeurs_bloquantes": []}]'></textarea>
+                        <small class="pf-hint">Liste JSON. Envoyée telle quelle à l'API.</small>
+                    </div>
+
+                    <div class="pf-field">
+                        <label for="pcf-meta">Métadonnées utilisateur (JSON)</label>
+                        <textarea id="pcf-meta" class="json-input" rows="3">{"pays": "France", "id_pays": 1, "cp": "75001"}</textarea>
+                    </div>
+
+                    <div class="pf-field">
+                        <label for="pcf-eval">Évaluation humaine (JSON, facultatif)</label>
+                        <textarea id="pcf-eval" class="json-input" rows="4" placeholder='{"produits_conformes": [], "produits_hors_sujet": [], "anomalies": []}'></textarea>
+                        <small class="pf-hint">Utilisée par le scoring pour mesurer la conformité.</small>
+                    </div>
+
+                    <div id="pcf-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 0.5rem; display: none; padding: 0.5rem 0.7rem; background: #fff0f0; border-radius: var(--radius-sm); border: 1px solid #fcc;"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="pcf-submit" onclick="submitParcoursForm()">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Parcours custom pré-chargés (pour pré-remplir le formulaire en édition).
+const CUSTOM_PARCOURS = {{ parcours | selectattr('immutable', 'equalto', false) | list | tojson }};
+let parcoursFormMode = 'create';  // 'create' | 'edit'
+let editingPid = null;
+
+function showPcfError(msg) {
+    const el = document.getElementById('pcf-error');
+    el.textContent = msg;
+    el.style.display = msg ? 'block' : 'none';
+}
+
+function resetParcoursForm() {
+    document.getElementById('parcoursForm').reset();
+    document.getElementById('pcf-meta').value = '{"pays": "France", "id_pays": 1, "cp": "75001"}';
+    document.getElementById('pcf-qr').value = '';
+    document.getElementById('pcf-cd').value = '';
+    document.getElementById('pcf-lc').value = '';
+    document.getElementById('pcf-eval').value = '';
+    showPcfError('');
+}
+
+function openCreateParcours() {
+    parcoursFormMode = 'create';
+    editingPid = null;
+    document.getElementById('parcoursFormTitle').textContent = 'Nouveau parcours';
+    resetParcoursForm();
+    document.getElementById('pcf-id').readOnly = false;
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('parcoursFormModal'));
+    modal.show();
+}
+
+function openEditParcours(pid) {
+    const p = CUSTOM_PARCOURS.find(x => x.parcours_id === pid);
+    if (!p) {
+        alert('Parcours introuvable : ' + pid);
+        return;
+    }
+    parcoursFormMode = 'edit';
+    editingPid = pid;
+    document.getElementById('parcoursFormTitle').textContent = 'Modifier le parcours';
+    resetParcoursForm();
+    document.getElementById('pcf-id').value = p.parcours_id || '';
+    document.getElementById('pcf-id').readOnly = true;
+    document.getElementById('pcf-idcat').value = p.id_categorie || '';
+    document.getElementById('pcf-cat').value = p.categorie || '';
+    document.getElementById('pcf-sub').value = p.sous_type || '';
+    document.getElementById('pcf-qr').value = JSON.stringify(p.questions_reponses || [], null, 2);
+    document.getElementById('pcf-cd').value = JSON.stringify(p.caracteristiques_deduites || {}, null, 2);
+    document.getElementById('pcf-lc').value = JSON.stringify(p.liste_caracteristique || [], null, 2);
+    document.getElementById('pcf-meta').value = JSON.stringify(p.metadonnee_utilisateurs || {}, null, 2);
+    document.getElementById('pcf-eval').value = p.evaluation_humaine && Object.keys(p.evaluation_humaine).length
+        ? JSON.stringify(p.evaluation_humaine, null, 2)
+        : '';
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('parcoursFormModal'));
+    modal.show();
+}
+
+function submitParcoursForm() {
+    const pid = document.getElementById('pcf-id').value.trim();
+    const idCat = document.getElementById('pcf-idcat').value.trim();
+    const cat = document.getElementById('pcf-cat').value.trim();
+    const sub = document.getElementById('pcf-sub').value.trim();
+
+    if (!pid) return showPcfError('parcours_id obligatoire');
+    if (!idCat) return showPcfError('id_categorie obligatoire');
+    if (!cat) return showPcfError('categorie obligatoire');
+    if (!sub) return showPcfError('sous_type obligatoire');
+
+    // Le backend parse aussi le JSON, mais on valide côté client pour feedback immédiat.
+    const jsonFields = {
+        'questions_reponses': 'pcf-qr',
+        'caracteristiques_deduites': 'pcf-cd',
+        'liste_caracteristique': 'pcf-lc',
+        'metadonnee_utilisateurs': 'pcf-meta',
+        'evaluation_humaine': 'pcf-eval',
+    };
+    const body = {
+        parcours_id: pid,
+        id_categorie: parseInt(idCat, 10),
+        categorie: cat,
+        sous_type: sub,
+    };
+    for (const [key, elId] of Object.entries(jsonFields)) {
+        const raw = document.getElementById(elId).value.trim();
+        if (!raw) continue;
+        try {
+            body[key] = JSON.parse(raw);
+        } catch (e) {
+            return showPcfError(key + ' : JSON invalide — ' + e.message);
+        }
+    }
+
+    const url = parcoursFormMode === 'create'
+        ? '/api/parcours'
+        : '/api/parcours/' + encodeURIComponent(editingPid);
+    const method = parcoursFormMode === 'create' ? 'POST' : 'PATCH';
+
+    document.getElementById('pcf-submit').disabled = true;
+    fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    })
+    .then(async r => {
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.error || ('Erreur ' + r.status));
+        window.location.reload();
+    })
+    .catch(err => {
+        showPcfError(err.message || 'Erreur inconnue');
+        document.getElementById('pcf-submit').disabled = false;
+    });
+}
+
+function deleteParcours(pid) {
+    if (!confirm('Supprimer le parcours "' + pid + '" ?\n\nCette action est irréversible.')) return;
+    fetch('/api/parcours/' + encodeURIComponent(pid), { method: 'DELETE' })
+        .then(async r => {
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(data.error || ('Erreur ' + r.status));
+            window.location.reload();
+        })
+        .catch(err => alert('Suppression impossible : ' + (err.message || 'erreur inconnue')));
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('btnNewParcours');
+    if (btn) btn.addEventListener('click', openCreateParcours);
+});
+</script>
 {% endblock %}

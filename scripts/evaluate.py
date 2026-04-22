@@ -302,10 +302,19 @@ def fetch_product_details(
 
 
 def load_evaluation_data() -> dict:
-    """Charge les données d'évaluation (parcours avec evaluation_humaine)"""
+    """Charge les données d'évaluation : officiels + customs (ajoutés via dashboard)."""
     parcours_file = TEST_DATA_DIR / "parcours.json"
     with open(parcours_file, "r") as f:
         data = json.load(f)
+
+    # Fusion avec custom_parcours.json (optionnel, ajouté via dashboard)
+    custom_path = PROJECT_ROOT / "custom_parcours.json"
+    if custom_path.exists():
+        try:
+            with open(custom_path, "r") as f:
+                data.extend(json.load(f).get("parcours", []))
+        except (json.JSONDecodeError, OSError):
+            pass
 
     # Indexer par parcours_id
     evaluation_index = {}

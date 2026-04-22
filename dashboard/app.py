@@ -25,6 +25,7 @@ THRESHOLDS_FILE = CONFIG_DIR / "thresholds.json"
 EVAL_FILE = PROJECT_ROOT / "EVAL.md"
 EVAL_BACKUP_DIR = PROJECT_ROOT / "backup" / "eval"
 PARCOURS_FILE = PROJECT_ROOT / "test_data" / "parcours.json"
+CUSTOM_PARCOURS_FILE = PROJECT_ROOT / "custom_parcours.json"
 
 DEFAULT_THRESHOLDS = {
     "taux_conformite":        {"target": 80,  "type": "min", "unit": "%", "label": "Taux de conformité",     "comparator": "≥"},
@@ -43,40 +44,134 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "hellopro-scoring-dashboard-
 _sessions = {}  # {n: {"proc", "events", "new_event", "status", "log_file"}}
 
 
+_TOOL_INPUT_KEY = {
+    "Bash": "command",
+    "Read": "file_path",
+    "Write": "file_path",
+    "Edit": "file_path",
+    "NotebookEdit": "notebook_path",
+    "Glob": "pattern",
+    "Grep": "pattern",
+    "WebFetch": "url",
+    "WebSearch": "query",
+    "Agent": "description",
+    "Task": "description",
+    "TodoWrite": None,  # pas de champ simple → on n'affiche pas d'input
+}
+
+
+def _summarize_tool_input(tool_name, input_json):
+    """Extrait un resume court de l'input d'un outil.
+    Retourne chaine vide si parsing echoue ou pas de champ interessant."""
+    if not input_json:
+        return ""
+    try:
+        data = json.loads(input_json)
+    except (json.JSONDecodeError, TypeError):
+        return ""
+
+    key = _TOOL_INPUT_KEY.get(tool_name, None)
+    if key is False or key is None:
+        # Fallback : premier champ string non vide
+        for k, v in (data.items() if isinstance(data, dict) else []):
+            if isinstance(v, str) and v.strip():
+                return v[:120]
+        return ""
+    val = data.get(key, "") if isinstance(data, dict) else ""
+    if isinstance(val, str):
+        return val[:120]
+    return ""
+
+
 def _parse_stream_event(raw_line):
     """Parse une ligne stream-json Claude CLI.
-    Retourne (texte_affichable, session_id|None, is_result) — is_result marque
-    la fin du tour (utilisé pour signaler waiting_input sans attendre l'exit)."""
+    Retourne un dict avec les fields extraits. Les fields non pertinents sont
+    laisses a leur default (None / "" / False). Le caller gere l'accumulation
+    d'etat (inputs tool, etc.)."""
+    result = {
+        "text": "",
+        "thinking": "",
+        "session_id": None,
+        "is_result": False,
+        "is_error": False,
+        "api_error_status": None,
+        "tool_block_start": None,   # {"index": int, "name": str} si tool_use
+        "tool_input_delta": None,   # {"index": int, "partial": str}
+        "tool_block_stop": None,    # int (index) si content_block_stop
+        "tool_result": None,        # {"is_error": bool, "content": str}
+    }
     try:
         event = json.loads(raw_line)
     except (json.JSONDecodeError, TypeError):
-        # Pas du JSON → traiter comme texte brut
-        return (raw_line, None, False)
+        result["text"] = raw_line
+        return result
 
-    session_id = event.get("session_id")
-    text = ""
+    result["session_id"] = event.get("session_id")
     etype = event.get("type", "")
 
-    # content_block_delta → token de texte en streaming
-    if etype == "content_block_delta":
-        text = event.get("delta", {}).get("text", "")
+    if etype == "stream_event":
+        inner = event.get("event", {})
+        itype = inner.get("type", "")
 
-    # assistant message (certaines versions CLI)
-    elif etype == "assistant":
-        msg = event.get("message", event)
-        content = msg.get("content", "")
+        if itype == "content_block_start":
+            block = inner.get("content_block", {})
+            if block.get("type") == "tool_use":
+                result["tool_block_start"] = {
+                    "index": inner.get("index", 0),
+                    "name": block.get("name", "tool"),
+                }
+
+        elif itype == "content_block_delta":
+            delta = inner.get("delta", {})
+            dtype = delta.get("type")
+            if dtype == "text_delta":
+                result["text"] = delta.get("text", "") or ""
+            elif dtype == "input_json_delta":
+                result["tool_input_delta"] = {
+                    "index": inner.get("index", 0),
+                    "partial": delta.get("partial_json", "") or "",
+                }
+            elif dtype == "thinking_delta":
+                result["thinking"] = delta.get("thinking", "") or ""
+
+        elif itype == "content_block_stop":
+            result["tool_block_stop"] = inner.get("index", 0)
+
+    elif etype == "content_block_delta":
+        # format sans wrapper stream_event (compat anciennes versions)
+        result["text"] = event.get("delta", {}).get("text", "") or ""
+
+    elif etype == "user":
+        # tool_result : l'outil a execute, on a son resultat
+        msg = event.get("message", {})
+        content = msg.get("content", [])
         if isinstance(content, list):
             for block in content:
-                if isinstance(block, dict) and block.get("type") == "text":
-                    text += block.get("text", "")
-        elif isinstance(content, str):
-            text = content
+                if isinstance(block, dict) and block.get("type") == "tool_result":
+                    raw_content = block.get("content", "")
+                    if isinstance(raw_content, list):
+                        parts = []
+                        for c in raw_content:
+                            if isinstance(c, dict) and c.get("type") == "text":
+                                parts.append(c.get("text", ""))
+                        raw_content = "\n".join(parts)
+                    result["tool_result"] = {
+                        "is_error": bool(block.get("is_error", False)),
+                        "content": str(raw_content)[:200],
+                    }
+                    break
 
-    # result → fin de réponse, contient session_id
+    elif etype == "assistant":
+        # Message assemble complet : skip, deja streame via deltas.
+        pass
+
     elif etype == "result":
-        session_id = event.get("session_id", session_id)
+        result["is_result"] = True
+        result["session_id"] = event.get("session_id", result["session_id"])
+        result["is_error"] = bool(event.get("is_error", False))
+        result["api_error_status"] = event.get("api_error_status")
 
-    return (text, session_id, etype == "result")
+    return result
 
 
 def _stdout_reader(proc, session):
@@ -89,6 +184,9 @@ def _stdout_reader(proc, session):
     """
     log_path = session["log_file"]
     waiting_signaled = False
+    # Etat par bloc (tool_use) : accumule le JSON d'input fragmente et le nom
+    # pour pouvoir emettre un event enrichi a la fermeture du bloc.
+    tool_blocks = {}  # {index: {"name": str, "input": str}}
     try:
         with open(log_path, "a", encoding="utf-8") as logf:
             for raw_line in iter(proc.stdout.readline, ""):
@@ -96,15 +194,63 @@ def _stdout_reader(proc, session):
                 if not raw_line:
                     continue
 
-                text, sid, is_result = _parse_stream_event(raw_line)
-
+                parsed = _parse_stream_event(raw_line)
+                sid = parsed["session_id"]
                 if sid:
                     session["session_id"] = sid
 
+                text = parsed["text"]
                 if text:
                     logf.write(text + "\n")
                     logf.flush()
                     session["events"].append({"type": "text", "data": text})
+                    session["new_event"].set()
+
+                thinking = parsed["thinking"]
+                if thinking:
+                    session["events"].append({"type": "thinking", "data": thinking})
+                    session["new_event"].set()
+
+                tbs = parsed["tool_block_start"]
+                if tbs:
+                    tool_blocks[tbs["index"]] = {"name": tbs["name"], "input": ""}
+                    # Emission immediate du nom (retour visuel rapide),
+                    # l'input suivra au content_block_stop.
+                    logf.write(f"[tool: {tbs['name']}]\n")
+                    logf.flush()
+                    session["events"].append({
+                        "type": "tool_use",
+                        "data": {"name": tbs["name"], "input": ""},
+                    })
+                    session["new_event"].set()
+
+                tid = parsed["tool_input_delta"]
+                if tid and tid["index"] in tool_blocks:
+                    tool_blocks[tid["index"]]["input"] += tid["partial"]
+
+                tbstop = parsed["tool_block_stop"]
+                if tbstop is not None and tbstop in tool_blocks:
+                    block = tool_blocks.pop(tbstop)
+                    summary = _summarize_tool_input(block["name"], block["input"])
+                    if summary:
+                        logf.write(f"  -> {summary}\n")
+                        logf.flush()
+                        session["events"].append({
+                            "type": "tool_input",
+                            "data": {"name": block["name"], "summary": summary},
+                        })
+                        session["new_event"].set()
+
+                tr = parsed["tool_result"]
+                if tr:
+                    session["events"].append({"type": "tool_result", "data": tr})
+                    session["new_event"].set()
+
+                is_result = parsed["is_result"]
+                # Erreur API remontee par le `result` final
+                if is_result and parsed["is_error"]:
+                    err_msg = parsed["api_error_status"] or "Erreur API"
+                    session["events"].append({"type": "error", "data": err_msg})
                     session["new_event"].set()
 
                 # Fin du tour : debloquer l'UI immediatement, sans attendre exit.
@@ -146,6 +292,7 @@ def _launch_turn(n, prompt, is_first=False):
         claude_cmd,
         "-p", prompt,
         "--output-format", "stream-json",
+        "--include-partial-messages",
         "--verbose",
         "--permission-mode", "bypassPermissions",
     ]
@@ -201,8 +348,8 @@ def load_baseline():
     return None
 
 
-def load_parcours():
-    """Charge la liste des parcours audités depuis test_data/parcours.json."""
+def _load_official_parcours():
+    """Lit test_data/parcours.json sans annotation (brut)."""
     if not PARCOURS_FILE.exists():
         return []
     try:
@@ -210,6 +357,43 @@ def load_parcours():
             return json.load(f)
     except (json.JSONDecodeError, OSError):
         return []
+
+
+def load_custom_parcours():
+    """Charge les parcours custom depuis custom_parcours.json (dict avec clé 'parcours')."""
+    default = {"parcours": []}
+    if not CUSTOM_PARCOURS_FILE.exists():
+        return default
+    try:
+        with open(CUSTOM_PARCOURS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return default
+    data.setdefault("parcours", [])
+    return data
+
+
+def save_custom_parcours(data):
+    """Sauvegarde atomique : .tmp puis rename (même pattern que save_custom_problems)."""
+    tmp = CUSTOM_PARCOURS_FILE.with_suffix(".json.tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    tmp.replace(CUSTOM_PARCOURS_FILE)
+
+
+def load_parcours():
+    """Charge officiels (immuables, depuis test_data/parcours.json) + customs.
+
+    Chaque parcours retourné est annoté avec `immutable: True|False` pour que
+    l'UI puisse masquer les boutons edit/delete sur les 13 originaux.
+    """
+    official = _load_official_parcours()
+    for p in official:
+        p["immutable"] = True
+    customs = load_custom_parcours()["parcours"]
+    for p in customs:
+        p["immutable"] = False
+    return official + customs
 
 
 def _extract_decision(section_text: str) -> str:
@@ -907,8 +1091,132 @@ def api_problems_delete(number):
 
 @app.route("/parcours")
 def parcours():
-    """Page — liste des parcours de test (lecture seule)."""
+    """Page — liste des parcours (officiels immuables + customs editables)."""
     return render_template("parcours.html", parcours=load_parcours())
+
+
+def _validate_parcours_payload(body, existing_ids, current_id=None):
+    """Valide + normalise le payload d'un parcours.
+
+    Retourne (clean_dict, error_msg). error_msg None = succès.
+    Accepte les champs structurés sous forme d'objet JSON OU de chaîne JSON.
+    """
+    pid = (body.get("parcours_id") or "").strip()
+    if not pid:
+        return None, "parcours_id obligatoire"
+    if pid != current_id and pid in existing_ids:
+        return None, f"parcours_id '{pid}' déjà utilisé"
+
+    categorie = (body.get("categorie") or "").strip()
+    if not categorie:
+        return None, "categorie obligatoire"
+    sous_type = (body.get("sous_type") or "").strip()
+    if not sous_type:
+        return None, "sous_type obligatoire"
+
+    try:
+        id_cat = int(body.get("id_categorie") or 0)
+    except (ValueError, TypeError):
+        return None, "id_categorie doit être un entier"
+
+    _SENTINEL = object()
+
+    def _as_json(name, default):
+        val = body.get(name, default)
+        if isinstance(val, str):
+            if not val.strip():
+                return default
+            try:
+                return json.loads(val)
+            except json.JSONDecodeError:
+                return _SENTINEL
+        return val
+
+    qr = _as_json("questions_reponses", [])
+    if qr is _SENTINEL or not isinstance(qr, list):
+        return None, "questions_reponses doit être une liste JSON valide"
+    car_deduites = _as_json("caracteristiques_deduites", {})
+    if car_deduites is _SENTINEL or not isinstance(car_deduites, dict):
+        return None, "caracteristiques_deduites doit être un objet JSON valide"
+    liste_car = _as_json("liste_caracteristique", [])
+    if liste_car is _SENTINEL or not isinstance(liste_car, list):
+        return None, "liste_caracteristique doit être une liste JSON valide"
+    meta = _as_json("metadonnee_utilisateurs", {"pays": "France", "id_pays": 1})
+    if meta is _SENTINEL or not isinstance(meta, dict):
+        return None, "metadonnee_utilisateurs doit être un objet JSON valide"
+    eval_hum = _as_json("evaluation_humaine", {})
+    if eval_hum is _SENTINEL or not isinstance(eval_hum, dict):
+        return None, "evaluation_humaine doit être un objet JSON valide"
+
+    return {
+        "parcours_id": pid,
+        "id_categorie": id_cat,
+        "categorie": categorie,
+        "sous_type": sous_type,
+        "questions_reponses": qr,
+        "caracteristiques_deduites": car_deduites,
+        "liste_caracteristique": liste_car,
+        "metadonnee_utilisateurs": meta,
+        "evaluation_humaine": eval_hum,
+    }, None
+
+
+@app.route("/api/parcours", methods=["GET"])
+def api_parcours_list():
+    """Liste complète des parcours (officiels + customs) avec flag immutable."""
+    return jsonify({"parcours": load_parcours()})
+
+
+@app.route("/api/parcours", methods=["POST"])
+def api_parcours_create():
+    """Crée un parcours custom dans custom_parcours.json."""
+    body = request.get_json(silent=True) or {}
+    data = load_custom_parcours()
+    existing_ids = {p.get("parcours_id") for p in _load_official_parcours()}
+    existing_ids |= {p.get("parcours_id") for p in data["parcours"]}
+    clean, err = _validate_parcours_payload(body, existing_ids)
+    if err:
+        return jsonify({"error": err}), 400
+    clean["created_at"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+    data["parcours"].append(clean)
+    save_custom_parcours(data)
+    return jsonify({"status": "created", "parcours": clean}), 201
+
+
+@app.route("/api/parcours/<path:pid>", methods=["PATCH"])
+def api_parcours_update(pid):
+    """Met à jour un parcours custom. 403 si officiel."""
+    official_ids = {p.get("parcours_id") for p in _load_official_parcours()}
+    if pid in official_ids:
+        return jsonify({"error": "Parcours officiel immuable (test_data/parcours.json)"}), 403
+    body = request.get_json(silent=True) or {}
+    data = load_custom_parcours()
+    target = next((p for p in data["parcours"] if p.get("parcours_id") == pid), None)
+    if target is None:
+        return jsonify({"error": "Parcours introuvable"}), 404
+    existing_ids = official_ids | {p.get("parcours_id") for p in data["parcours"]}
+    clean, err = _validate_parcours_payload(body, existing_ids, current_id=pid)
+    if err:
+        return jsonify({"error": err}), 400
+    clean["created_at"] = target.get("created_at")
+    data["parcours"] = [clean if p.get("parcours_id") == pid else p for p in data["parcours"]]
+    save_custom_parcours(data)
+    return jsonify({"status": "updated", "parcours": clean})
+
+
+@app.route("/api/parcours/<path:pid>", methods=["DELETE"])
+def api_parcours_delete(pid):
+    """Supprime un parcours custom. 403 si officiel."""
+    official_ids = {p.get("parcours_id") for p in _load_official_parcours()}
+    if pid in official_ids:
+        return jsonify({"error": "Parcours officiel immuable (test_data/parcours.json)"}), 403
+    data = load_custom_parcours()
+    before = len(data["parcours"])
+    data["parcours"] = [p for p in data["parcours"] if p.get("parcours_id") != pid]
+    if len(data["parcours"]) == before:
+        return jsonify({"error": "Parcours introuvable"}), 404
+    save_custom_parcours(data)
+    return jsonify({"status": "deleted", "parcours_id": pid})
 
 
 @app.route("/manuel")
@@ -1425,6 +1733,14 @@ def stream_iteration(n):
                 etype = event.get("type")
                 if etype == "text":
                     yield f"data: {json.dumps({'line': event['data']})}\n\n"
+                elif etype == "tool_use":
+                    yield f"data: {json.dumps({'tool_use': event['data']})}\n\n"
+                elif etype == "tool_input":
+                    yield f"data: {json.dumps({'tool_input': event['data']})}\n\n"
+                elif etype == "tool_result":
+                    yield f"data: {json.dumps({'tool_result': event['data']})}\n\n"
+                elif etype == "thinking":
+                    yield f"data: {json.dumps({'thinking': event['data']})}\n\n"
                 elif etype == "user":
                     yield f"data: {json.dumps({'user': event['data']})}\n\n"
                 elif etype == "waiting_input":
