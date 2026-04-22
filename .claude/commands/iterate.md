@@ -59,7 +59,7 @@ Ces itérations correspondent à des problèmes **ajoutés par l'utilisateur via
 Si ce bloc est absent (cas rare : problème supprimé entre l'ajout et le lancement), demande à l'utilisateur les détails ou lis `custom_problems.json` directement.
 
 Règles spécifiques pour les itérations custom :
-- Les checkpoints CP2/CP3/CP4 s'appliquent toujours, mais calculés sur les itérations **effectivement exécutées** (pas sur la numérotation absolue). Ne te bloque pas parce que "iter 9 CP2 non validé" si des iter 1-8 n'ont jamais tourné — signale-le à l'utilisateur mais continue si il insiste.
+- Le checkpoint CP4 s'applique toujours (cibles atteintes ou plateau définitif déclaré par l'humain). Les itérations custom suivent la même logique que les iter originales, sans contrainte supplémentaire de numérotation.
 - Les trous dans ITERATIONS.md (iter originales non exécutées) ne sont pas un blocage pour une itération custom : ce sont deux pistes indépendantes.
 - Les règles de modification de RAG-HP-PUB (jamais `graph-service/matching`) restent identiques.
 
@@ -271,11 +271,10 @@ Cocher les cases `Actions` au fur et à mesure (commit, API redémarrée).
 ## Checkpoints (STOP obligatoire)
 
 - **CP1** — après itération `0` → STOP, attendre validation humaine sur BASELINE.json
-- **CP2** — après `N ∈ {3, 6, 9, …}` → STOP, résumé 3 iters + demander direction
-- **CP3** — si 5 iters sans amélioration → STOP, proposer nouvelle approche
-- **CP4** — si cibles EVAL.md atteintes OU plateau définitif → STOP, préparer merge `graphoptim-service/matching` → `graph-service/matching`
+- **CP-Hypothèse** — à chaque itération N > 0, après l'Étape 2c → STOP, attendre `GO` / `NO` / commentaire humain (voir §"Étape 2c — Checkpoint humain")
+- **CP4** — si cibles EVAL.md atteintes OU plateau définitif (déclaré par l'humain) → STOP, préparer merge `graphoptim-service/matching` → `graph-service/matching`
 
-À chaque CP : **ne lance pas l'itération suivante automatiquement**. Affiche le résumé et attends.
+À CP1 et CP4 : **ne lance pas l'itération suivante automatiquement**. Affiche le résumé et attends.
 
 ---
 
