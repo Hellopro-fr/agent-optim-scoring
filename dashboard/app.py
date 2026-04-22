@@ -744,7 +744,7 @@ def iteration_detail(n):
                 top_produit = api_resp.get("top_produit", []) if isinstance(api_resp, dict) else []
                 ecarts = api_resp.get("ecarts", []) if isinstance(api_resp, dict) else []
                 parcours_results[pid] = {
-                    "top3": top_produit[:3],
+                    "produits": top_produit,
                     "nb_top": len(top_produit),
                     "nb_ecarts": len(ecarts),
                     "error": result.get("error"),
