@@ -1721,6 +1721,142 @@ def dismiss_iteration(n):
     return jsonify({"status": "dismissed", "iteration": n})
 
 
+def _reset_iteration(n: int) -> dict:
+    """Reset ciblé d'une itération : archive + supprime tous ses artefacts.
+
+    Étapes :
+      1. Purge la session active (kill subprocess + libère threads SSE)
+      2. Retire les sections `## Itération N` (et bis/ter/quater/quinquies)
+         de ITERATIONS.md, archivées dans backup/iterations-reset/<ts>/iter_N/
+      3. Déplace metrics_NNN.json + iteration_NNN.json vers l'archive
+      4. Déplace dashboard/logs/iteration_N.log + logs/api_iteration_NNN.log
+
+    Retourne un dict récapitulatif pour la réponse HTTP.
+    """
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    archive_dir = PROJECT_ROOT / "backup" / "iterations-reset" / timestamp / f"iter_{n}"
+    archived = {
+        "iterations_md_sections": 0,
+        "metrics_file": False,
+        "iteration_file": False,
+        "dashboard_log": False,
+        "api_log": False,
+    }
+
+    # 1. Purger la session active (pattern dismiss_iteration)
+    session = _sessions.get(n)
+    if session:
+        proc = session.get("proc")
+        if proc:
+            try:
+                proc.terminate()
+            except Exception:
+                pass
+        flag = session.get("new_event")
+        if flag:
+            flag.set()
+        _sessions.pop(n, None)
+
+    # 2. Retirer les sections ITERATIONS.md
+    iterations_file = PROJECT_ROOT / "ITERATIONS.md"
+    if iterations_file.exists():
+        try:
+            content = iterations_file.read_text(encoding="utf-8")
+            # Match "## Itération N" ou "## Itération Nbis/ter/..." suivi de " —"
+            # Le (?=\n## Itération |\Z) garantit qu'on s'arrête au prochain
+            # "## Itération" (peu importe le numéro) ou à la fin du fichier.
+            pattern = re.compile(
+                rf"^## Itération {n}(bis|ter|quater|quinquies)?\s+—.*?(?=\n## Itération |\Z)",
+                re.MULTILINE | re.DOTALL,
+            )
+            # finditer pour récupérer le texte complet de chaque section matchée
+            matches_full = list(pattern.finditer(content))
+            archived["iterations_md_sections"] = len(matches_full)
+
+            if matches_full:
+                # Archiver les sections trouvées
+                archive_dir.mkdir(parents=True, exist_ok=True)
+                archive_md = archive_dir / f"iter_{n}_sections.md"
+                with open(archive_md, "w", encoding="utf-8") as af:
+                    af.write(f"# Archive — sections ITERATIONS.md iter {n}\n")
+                    af.write(f"Reset du : {timestamp}\n\n")
+                    for m in matches_full:
+                        af.write(m.group(0).rstrip() + "\n\n")
+
+                # Réécrire ITERATIONS.md sans ces sections
+                new_content = pattern.sub("", content)
+                # Nettoyer les doubles sauts de ligne éventuels
+                new_content = re.sub(r"\n{3,}", "\n\n", new_content)
+                iterations_file.write_text(new_content, encoding="utf-8")
+        except Exception:
+            pass  # best-effort
+
+    # 3. Déplacer metrics_NNN.json + iteration_NNN.json
+    for filename in (f"metrics_{n:03d}.json", f"iteration_{n:03d}.json"):
+        src = RESULTS_DIR / filename
+        if src.exists():
+            try:
+                archive_dir.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(src), str(archive_dir / filename))
+                if filename.startswith("metrics_"):
+                    archived["metrics_file"] = True
+                else:
+                    archived["iteration_file"] = True
+            except Exception:
+                pass
+
+    # 4. Déplacer les logs
+    dashboard_log = PROJECT_ROOT / "dashboard" / "logs" / f"iteration_{n}.log"
+    if dashboard_log.exists():
+        try:
+            archive_dir.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(dashboard_log), str(archive_dir / dashboard_log.name))
+            archived["dashboard_log"] = True
+        except Exception:
+            pass
+
+    api_log = PROJECT_ROOT / "logs" / f"api_iteration_{n:03d}.log"
+    if api_log.exists():
+        try:
+            archive_dir.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(api_log), str(archive_dir / api_log.name))
+            archived["api_log"] = True
+        except Exception:
+            pass
+
+    return {
+        "status": "reset",
+        "iteration": n,
+        "archive_dir": str(archive_dir.relative_to(PROJECT_ROOT)) if archive_dir.exists() else None,
+        "archived": archived,
+    }
+
+
+@app.route("/iterate/<int:n>/reset", methods=["POST"])
+def reset_iteration(n):
+    """Reset ciblé d'une itération : archive + supprime tous ses artefacts.
+
+    Retire les sections `## Itération N...` de ITERATIONS.md, déplace
+    metrics_NNN.json + iteration_NNN.json + logs vers backup/iterations-reset/
+    <timestamp>/iter_N/, et purge la session en cours si présente. Après
+    appel, le bouton repasse à `never`.
+
+    Protection : refuse n=0 (baseline). Pour reset complet de l'état du
+    projet, utiliser /reset-all qui touche aussi BASELINE.json et
+    custom_problems.json.
+    """
+    if n == 0:
+        return jsonify({
+            "error": "iter 0 (baseline) ne peut pas être reset par cet endpoint. Utilisez /reset-all pour réinitialiser toute la baseline."
+        }), 400
+
+    try:
+        result = _reset_iteration(n)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": f"Reset échoué: {e}"}), 500
+
+
 @app.route("/iterate/<int:n>/send", methods=["POST"])
 def send_message(n):
     """Envoie un message utilisateur pour continuer la conversation Claude."""

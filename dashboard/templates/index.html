@@ -103,35 +103,69 @@
         <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
             {% for i in range(0, 9) %}
             {% set state = iteration_states.get(i, 'never') %}
-            <button class="btn btn-iterate btn-iter-state btn-iter-{{ state }}" data-iteration="{{ i }}" data-state="{{ state }}" data-bs-toggle="modal" data-bs-target="#consoleModal">
-                <span class="iter-dot iter-dot-{{ state }}"></span>
-                <span class="iter-label">Iter {{ i }} — {{ labels[i] }}</span>
-                {% if state == 'done' %}<span class="iter-badge">OK</span>{% endif %}
-                {% if state == 'running' or state == 'starting' %}<span class="iter-badge iter-badge-running">...</span>{% endif %}
-                {% if state == 'waiting' %}<span class="iter-badge iter-badge-waiting">?</span>{% endif %}
-                <span class="iter-help-wrap" onclick="event.stopPropagation();">
-                    <svg class="iter-help-icon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                    <span class="iter-tooltip">{{ tooltips[i] }}</span>
-                </span>
-            </button>
+            <div class="iter-btn-wrapper">
+                <button class="btn btn-iterate btn-iter-state btn-iter-{{ state }}" data-iteration="{{ i }}" data-state="{{ state }}" data-bs-toggle="modal" data-bs-target="#consoleModal">
+                    <span class="iter-dot iter-dot-{{ state }}"></span>
+                    <span class="iter-label">Iter {{ i }} — {{ labels[i] }}</span>
+                    {% if state == 'done' %}<span class="iter-badge">OK</span>{% endif %}
+                    {% if state == 'running' or state == 'starting' %}<span class="iter-badge iter-badge-running">...</span>{% endif %}
+                    {% if state == 'waiting' %}<span class="iter-badge iter-badge-waiting">?</span>{% endif %}
+                    <span class="iter-help-wrap" onclick="event.stopPropagation();">
+                        <svg class="iter-help-icon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <span class="iter-tooltip">{{ tooltips[i] }}</span>
+                    </span>
+                </button>
+                {% if i > 0 and state != 'never' %}
+                <button class="btn-iter-reset" data-iteration="{{ i }}" title="Reset iter {{ i }} (archive puis purge)">🗑️</button>
+                {% endif %}
+            </div>
             {% endfor %}
             {# Boutons generes pour chaque probleme custom (iterations 9+) #}
             {% for cp in custom_problems %}
             {% set state = iteration_states.get(cp.iteration, 'never') %}
-            <button class="btn btn-iterate btn-iter-state btn-iter-{{ state }}" data-iteration="{{ cp.iteration }}" data-state="{{ state }}" data-bs-toggle="modal" data-bs-target="#consoleModal">
-                <span class="iter-dot iter-dot-{{ state }}"></span>
-                <span class="iter-label">Iter {{ cp.iteration }} — P{{ cp.number }}</span>
-                {% if state == 'done' %}<span class="iter-badge">OK</span>{% endif %}
-                {% if state == 'running' or state == 'starting' %}<span class="iter-badge iter-badge-running">...</span>{% endif %}
-                {% if state == 'waiting' %}<span class="iter-badge iter-badge-waiting">?</span>{% endif %}
-                <span class="iter-help-wrap" onclick="event.stopPropagation();">
-                    <svg class="iter-help-icon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                    <span class="iter-tooltip">P{{ cp.number }} — {{ cp.name }}{% if cp.severity %} ({{ cp.severity }}){% endif %}</span>
-                </span>
-            </button>
+            <div class="iter-btn-wrapper">
+                <button class="btn btn-iterate btn-iter-state btn-iter-{{ state }}" data-iteration="{{ cp.iteration }}" data-state="{{ state }}" data-bs-toggle="modal" data-bs-target="#consoleModal">
+                    <span class="iter-dot iter-dot-{{ state }}"></span>
+                    <span class="iter-label">Iter {{ cp.iteration }} — P{{ cp.number }}</span>
+                    {% if state == 'done' %}<span class="iter-badge">OK</span>{% endif %}
+                    {% if state == 'running' or state == 'starting' %}<span class="iter-badge iter-badge-running">...</span>{% endif %}
+                    {% if state == 'waiting' %}<span class="iter-badge iter-badge-waiting">?</span>{% endif %}
+                    <span class="iter-help-wrap" onclick="event.stopPropagation();">
+                        <svg class="iter-help-icon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <span class="iter-tooltip">P{{ cp.number }} — {{ cp.name }}{% if cp.severity %} ({{ cp.severity }}){% endif %}</span>
+                    </span>
+                </button>
+                {% if state != 'never' %}
+                <button class="btn-iter-reset" data-iteration="{{ cp.iteration }}" title="Reset iter {{ cp.iteration }} (archive puis purge)">🗑️</button>
+                {% endif %}
+            </div>
             {% endfor %}
         </div>
         <style>
+            .iter-btn-wrapper {
+                display: inline-flex;
+                align-items: stretch;
+            }
+            .iter-btn-wrapper .btn-iterate {
+                border-top-right-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+            .btn-iter-reset {
+                background: rgba(239,68,68,0.15);
+                border: 1px solid rgba(239,68,68,0.35);
+                border-left: none;
+                color: rgba(239,68,68,0.9);
+                border-top-right-radius: 8px;
+                border-bottom-right-radius: 8px;
+                padding: 0 0.55rem;
+                font-size: 0.85rem;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            .btn-iter-reset:hover {
+                background: rgba(239,68,68,0.3);
+                color: #fff;
+            }
             .iter-help-wrap {
                 position: relative;
                 display: inline-block;
@@ -293,6 +327,38 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.btn-iterate').forEach(btn => {
         btn.addEventListener('click', function() {
             startIteration(this.dataset.iteration);
+        });
+    });
+
+    // Bouton 🗑️ : reset cible d'une iteration (archive + purge)
+    document.querySelectorAll('.btn-iter-reset').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            const n = this.dataset.iteration;
+            const nnn = String(n).padStart(3, '0');
+            const confirmMsg =
+                "Reset iteration " + n + " ?\n\n" +
+                "Cela va :\n" +
+                "  - Retirer les sections 'Iteration " + n + "' (et bis/ter) de ITERATIONS.md\n" +
+                "  - Archiver results/metrics_" + nnn + ".json\n" +
+                "  - Archiver results/iteration_" + nnn + ".json\n" +
+                "  - Archiver les logs de cette iteration\n\n" +
+                "Destination : backup/iterations-reset/<timestamp>/iter_" + n + "/\n" +
+                "(non-destructif, recuperables manuellement).\n\n" +
+                "Le bouton passera a 'never'. Continuer ?";
+            if (!window.confirm(confirmMsg)) return;
+
+            fetch('/iterate/' + n + '/reset', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        alert("Erreur: " + data.error);
+                    } else {
+                        location.reload();
+                    }
+                })
+                .catch(err => alert("Erreur reseau: " + err.message));
         });
     });
 
