@@ -24,6 +24,7 @@ CONFIG_DIR = PROJECT_ROOT / "config"
 THRESHOLDS_FILE = CONFIG_DIR / "thresholds.json"
 EVAL_FILE = PROJECT_ROOT / "EVAL.md"
 EVAL_BACKUP_DIR = PROJECT_ROOT / "backup" / "eval"
+PARCOURS_FILE = PROJECT_ROOT / "test_data" / "parcours.json"
 
 DEFAULT_THRESHOLDS = {
     "taux_conformite":        {"target": 80,  "type": "min", "unit": "%", "label": "Taux de conformité",     "comparator": "≥"},
@@ -174,6 +175,17 @@ def load_baseline():
         with open(baseline_file, "r", encoding="utf-8") as f:
             return json.load(f)
     return None
+
+
+def load_parcours():
+    """Charge la liste des parcours audités depuis test_data/parcours.json."""
+    if not PARCOURS_FILE.exists():
+        return []
+    try:
+        with open(PARCOURS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return []
 
 
 def _extract_decision(section_text: str) -> str:
@@ -867,6 +879,12 @@ def api_problems_delete(number):
 
     save_custom_problems(data)
     return jsonify({"status": "deleted", "number": number})
+
+
+@app.route("/parcours")
+def parcours():
+    """Page — liste des parcours de test (lecture seule)."""
+    return render_template("parcours.html", parcours=load_parcours())
 
 
 @app.route("/manuel")

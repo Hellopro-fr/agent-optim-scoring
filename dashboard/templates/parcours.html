@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}Parcours — HelloPro Scoring{% endblock %}
+
+{% block extra_css %}
+    .parcours-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.85rem;
+    }
+    .parcours-table thead th {
+        text-align: left;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 0.6rem 0.85rem;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg);
+    }
+    .parcours-row {
+        border-bottom: 1px solid var(--border-light);
+        transition: background var(--transition);
+    }
+    .parcours-row[open] {
+        background: var(--surface-hover);
+    }
+    .parcours-summary {
+        display: grid;
+        grid-template-columns: 2.4fr 1.4fr 1.6fr 0.7fr 28px;
+        gap: 1rem;
+        align-items: center;
+        padding: 0.85rem 1rem;
+        cursor: pointer;
+        list-style: none;
+        user-select: none;
+    }
+    .parcours-summary::-webkit-details-marker { display: none; }
+    .parcours-summary:hover { background: var(--bg); }
+    .parcours-id {
+        font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--accent);
+        word-break: break-all;
+    }
+    .parcours-cat {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    .parcours-sub {
+        color: var(--text-secondary);
+        font-size: 0.82rem;
+    }
+    .parcours-count {
+        display: inline-block;
+        background: var(--bg);
+        color: var(--text-secondary);
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 0.2rem 0.55rem;
+        border-radius: 10px;
+        border: 1px solid var(--border-light);
+        white-space: nowrap;
+    }
+    .parcours-chevron {
+        width: 16px;
+        height: 16px;
+        color: var(--text-tertiary);
+        transition: transform var(--transition);
+    }
+    .parcours-row[open] .parcours-chevron {
+        transform: rotate(90deg);
+    }
+    .parcours-details {
+        padding: 0.25rem 1.5rem 1.5rem;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+    .parcours-section h4 {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin: 0 0 0.55rem;
+    }
+    .qa-list { margin: 0; padding: 0; list-style: none; }
+    .qa-item {
+        padding: 0.55rem 0.85rem;
+        border-left: 2px solid var(--border);
+        margin-bottom: 0.4rem;
+        background: var(--surface);
+        border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    }
+    .qa-q {
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.2rem;
+    }
+    .qa-r {
+        font-size: 0.88rem;
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+    .json-block {
+        background: #0f0f0f;
+        color: #d4d4d4;
+        font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+        font-size: 0.78rem;
+        padding: 0.85rem 1rem;
+        border-radius: var(--radius-sm);
+        overflow-x: auto;
+        margin: 0;
+        line-height: 1.5;
+        white-space: pre;
+    }
+    .eval-lists {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+    .eval-col h5 {
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin: 0 0 0.5rem;
+        padding-bottom: 0.35rem;
+        border-bottom: 1px solid var(--border-light);
+    }
+    .eval-col.conforme h5 { color: var(--green-text); }
+    .eval-col.hors h5 { color: var(--red-text); }
+    .eval-col.anomalie h5 { color: var(--amber-text); }
+    .eval-col ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        font-size: 0.82rem;
+    }
+    .eval-col li {
+        padding: 0.3rem 0;
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--border-light);
+    }
+    .eval-col li:last-child { border-bottom: none; }
+    .eval-col .empty {
+        color: var(--text-tertiary);
+        font-style: italic;
+        font-size: 0.78rem;
+    }
+    .metadata-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 0.5rem 1.25rem;
+        font-size: 0.82rem;
+    }
+    .metadata-grid dt {
+        font-size: 0.7rem;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.15rem;
+    }
+    .metadata-grid dd {
+        margin: 0 0 0.5rem;
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Parcours</h1>
+    <p>{{ parcours|length }} parcours audités utilisés comme jeu d'évaluation (lecture seule)</p>
+</div>
+
+<div class="alert-banner info" style="margin-bottom: 1.25rem;">
+    <div>
+        <strong>Fichier immuable.</strong> Ces parcours sont définis dans <code>test_data/parcours.json</code> et ne peuvent pas être modifiés depuis le dashboard. Ils servent de référence stable pour comparer les itérations entre elles.
+    </div>
+</div>
+
+{% if parcours %}
+<div class="card" style="padding: 0;">
+    <div class="parcours-table">
+        <div style="display: grid; grid-template-columns: 2.4fr 1.4fr 1.6fr 0.7fr 28px; gap: 1rem; padding: 0.6rem 1rem; background: var(--bg); border-bottom: 1px solid var(--border);">
+            <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Parcours ID</div>
+            <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Catégorie</div>
+            <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Sous-type</div>
+            <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Questions</div>
+            <div></div>
+        </div>
+
+        {% for p in parcours %}
+        <details class="parcours-row">
+            <summary class="parcours-summary">
+                <span class="parcours-id">{{ p.parcours_id|default('—') }}</span>
+                <span class="parcours-cat">{{ p.categorie|default('—') }}</span>
+                <span class="parcours-sub">{{ p.sous_type|default('—') }}</span>
+                <span><span class="parcours-count">{{ (p.questions_reponses|default([]))|length }}</span></span>
+                <svg class="parcours-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </summary>
+
+            <div class="parcours-details">
+                {# Métadonnées compactes #}
+                {% if p.id_categorie or p.metadonnee_utilisateurs %}
+                <div class="parcours-section">
+                    <h4>Métadonnées</h4>
+                    <dl class="metadata-grid">
+                        {% if p.id_categorie is defined %}
+                        <div>
+                            <dt>ID catégorie</dt>
+                            <dd>{{ p.id_categorie }}</dd>
+                        </div>
+                        {% endif %}
+                        {% set meta = p.metadonnee_utilisateurs|default({}) %}
+                        {% if meta.pays %}
+                        <div>
+                            <dt>Pays</dt>
+                            <dd>{{ meta.pays }}{% if meta.id_pays %} ({{ meta.id_pays }}){% endif %}</dd>
+                        </div>
+                        {% endif %}
+                        {% if meta.cp %}
+                        <div>
+                            <dt>Code postal</dt>
+                            <dd>{{ meta.cp }}</dd>
+                        </div>
+                        {% endif %}
+                    </dl>
+                </div>
+                {% endif %}
+
+                {# Questions / Réponses #}
+                {% if p.questions_reponses %}
+                <div class="parcours-section">
+                    <h4>Questions / Réponses ({{ p.questions_reponses|length }})</h4>
+                    <ul class="qa-list">
+                        {% for qr in p.questions_reponses %}
+                        <li class="qa-item">
+                            <div class="qa-q">{{ qr.question|default('—') }}</div>
+                            <div class="qa-r">{{ qr.reponse|default('—') }}</div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {# Caractéristiques déduites #}
+                {% if p.caracteristiques_deduites %}
+                <div class="parcours-section">
+                    <h4>Caractéristiques déduites</h4>
+                    <pre class="json-block">{{ p.caracteristiques_deduites|tojson(indent=2) }}</pre>
+                </div>
+                {% endif %}
+
+                {# Liste caractéristiques #}
+                {% if p.liste_caracteristique %}
+                <div class="parcours-section">
+                    <h4>Liste caractéristiques ({{ p.liste_caracteristique|length }})</h4>
+                    <pre class="json-block">{{ p.liste_caracteristique|tojson(indent=2) }}</pre>
+                </div>
+                {% endif %}
+
+                {# Évaluation humaine #}
+                {% if p.evaluation_humaine %}
+                {% set ev = p.evaluation_humaine %}
+                <div class="parcours-section">
+                    <h4>Évaluation humaine</h4>
+                    <div class="eval-lists">
+                        <div class="eval-col conforme">
+                            <h5>✓ Conformes ({{ (ev.produits_conformes|default([]))|length }})</h5>
+                            {% if ev.produits_conformes %}
+                            <ul>
+                                {% for item in ev.produits_conformes %}<li>{{ item }}</li>{% endfor %}
+                            </ul>
+                            {% else %}
+                            <div class="empty">Aucun</div>
+                            {% endif %}
+                        </div>
+                        <div class="eval-col hors">
+                            <h5>✗ Hors sujet ({{ (ev.produits_hors_sujet|default([]))|length }})</h5>
+                            {% if ev.produits_hors_sujet %}
+                            <ul>
+                                {% for item in ev.produits_hors_sujet %}<li>{{ item }}</li>{% endfor %}
+                            </ul>
+                            {% else %}
+                            <div class="empty">Aucun</div>
+                            {% endif %}
+                        </div>
+                        <div class="eval-col anomalie">
+                            <h5>⚠ Anomalies ({{ (ev.anomalies|default([]))|length }})</h5>
+                            {% if ev.anomalies %}
+                            <ul>
+                                {% for item in ev.anomalies %}<li>{{ item }}</li>{% endfor %}
+                            </ul>
+                            {% else %}
+                            <div class="empty">Aucune</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </details>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <h3>Aucun parcours</h3>
+    <p>Le fichier <code>test_data/parcours.json</code> est introuvable ou vide.</p>
+</div>
+{% endif %}
+{% endblock %}
