@@ -201,7 +201,9 @@ def _stdout_reader(proc, session):
 
                 text = parsed["text"]
                 if text:
-                    logf.write(text + "\n")
+                    # Pas de \n ajoute : les deltas sont fragmentes en tokens,
+                    # ajouter \n casserait les mots ("éli" + "minatoire").
+                    logf.write(text)
                     logf.flush()
                     session["events"].append({"type": "text", "data": text})
                     session["new_event"].set()
