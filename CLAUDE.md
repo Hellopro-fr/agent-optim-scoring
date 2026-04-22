@@ -114,6 +114,15 @@ L'environnement d'exécution est **déjà entièrement configuré**. Ne demande 
 - 🔄 **Si plateau après 3 itérations** → analyser les métriques, proposer une hypothèse différente
 - 🛑 **Si plateau après 5+ itérations** → STOP, demander validation humaine (CP3)
 
+### Checkpoints pendant l'itération
+
+- **CP-Hypothèse** : après l'Étape 2 de `/iterate N`, STOP obligatoire. Claude présente son hypothèse puis attend une validation humaine (`GO` / `NO` / commentaire) avant toute modification dans RAG-HP-PUB.
+  - Précédé d'un **self-challenge automatique** (Étape 2b, max 2 cycles) : Claude confronte son hypothèse au code réel (Read/Glob/Grep sur le fichier cible) et au problème PROBLEMS.md. Il valide (`✅ HYPOTHÈSE VALIDÉE`) ou reformule (`🔄 À REFORMULER`). Après 2 cycles non concluants, avertissement "validation humaine critique".
+  - Évite les modifs sur une mauvaise piste, réduit les allers-retours de reformulation humains.
+  - Si `NO` : aucune modif faite, itération abandonnée proprement.
+  - Si commentaire libre : Claude reformule et **relance un nouveau self-challenge** (compteur de cycles remis à zéro).
+  - Détail du comportement : voir `.claude/commands/iterate.md` §"Étape 2b — Self-challenge" et §"Étape 2c — Checkpoint humain"
+
 ---
 
 ## Format ITERATIONS.md

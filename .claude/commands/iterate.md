@@ -61,11 +61,11 @@ Si ce bloc est absent (cas rare : problème supprimé entre l'ajout et le lancem
 Règles spécifiques pour les itérations custom :
 - Les checkpoints CP2/CP3/CP4 s'appliquent toujours, mais calculés sur les itérations **effectivement exécutées** (pas sur la numérotation absolue). Ne te bloque pas parce que "iter 9 CP2 non validé" si des iter 1-8 n'ont jamais tourné — signale-le à l'utilisateur mais continue si il insiste.
 - Les trous dans ITERATIONS.md (iter originales non exécutées) ne sont pas un blocage pour une itération custom : ce sont deux pistes indépendantes.
-- Les règles de modification de RAG-HP-PUB (un seul fichier, jamais `graph-service/matching`) restent identiques.
+- Les règles de modification de RAG-HP-PUB (jamais `graph-service/matching`) restent identiques.
 
 ---
 
-## Étape 2 — Formuler l'hypothèse
+## Étape 2a — Formuler l'hypothèse initiale
 
 Rédige une phrase du type :
 > « Je résous **[Pn]** en modifiant **[chemin exact dans RAG-HP-PUB]** car **[raison basée sur PROBLEMS.md + métriques de l'itération N-1]** »
@@ -76,8 +76,96 @@ Identifie **UN SEUL** fichier à modifier parmi :
 - Logique de matching liée à `graphoptim-service/matching`
 
 🚫 **INTERDIT** : toucher `graph-service/matching` (endpoint prod).
-🚫 **INTERDIT** : modifier plus d'un fichier.
 🚫 **INTERDIT** : modifier ce repo `agent-optim-scoring` (c'est le harness).
+
+---
+
+## Étape 2b — Self-challenge de l'hypothèse (max 2 cycles)
+
+Avant de présenter l'hypothèse au user, **challenge-toi toi-même**. Objectif : confronter ton hypothèse au **code réel** et au **problème exact** pour valider ou reformuler.
+
+**Tools autorisés pendant 2b** : `Read`, `Glob`, `Grep` uniquement (pour lire et explorer le code dans RAG-HP-PUB).
+🚫 **Interdits pendant 2b** : `Edit`, `Write`, `Bash`, `NotebookEdit` (pas encore d'action sur le code).
+
+### Procédure pour CHAQUE cycle de self-challenge
+
+Écris explicitement dans ta réponse l'en-tête du cycle :
+```
+=== SELF-CHALLENGE CYCLE X/2 ===
+```
+
+Puis effectue l'analyse structurée en liste ✓/⚠️ :
+
+**1. Lecture du fichier cible**
+- `Read` du fichier que tu as identifié dans l'hypothèse
+- Si `Read` échoue (fichier inexistant, permission, mauvais chemin) → **hypothèse invalide par défaut** → `🔄 À REFORMULER` (mauvais ciblage, retrouve le bon chemin via `Glob`/`Grep`)
+- Si le fichier existe mais le code actuel contient déjà ta modif proposée → `🔄 À REFORMULER`
+
+**2. Confrontation au code réel**
+- ✓ ou ⚠️ : le fichier existe bien au chemin indiqué
+- ✓ ou ⚠️ : le code actuel n'a pas déjà la modif proposée
+- ✓ ou ⚠️ : la modification est structurellement cohérente (pas un copier-coller hors contexte, pas une rupture de convention)
+- ✓ ou ⚠️ : les coefficients/paramètres sont alignés avec la convention existante (pas une valeur arbitraire qui clasherait)
+
+**3. Confrontation au problème PROBLEMS.md**
+- ✓ ou ⚠️ : l'hypothèse adresse la cause racine (pas juste un symptôme)
+- ✓ ou ⚠️ : tu n'as pas confondu avec un autre Pn voisin
+- ✓ ou ⚠️ : l'impact attendu sur les métriques EVAL.md est plausible
+
+**4. Questions challengeantes**
+- ✓ ou ⚠️ : "Y a-t-il une approche plus simple/ciblée que celle-ci ?"
+- ✓ ou ⚠️ : "Est-ce que cette modif peut casser un autre comportement (side-effect) ?"
+
+**5. Décision explicite** — écris une de ces 2 lignes :
+- `✅ HYPOTHÈSE VALIDÉE PAR SELF-CHALLENGE` → passe à l'Étape 2c (checkpoint humain)
+- `🔄 HYPOTHÈSE À REFORMULER` → reformule ci-dessous avec une phrase type "Je résous [Pn] en modifiant..." puis relance un nouveau cycle (2/2)
+
+### Règle stricte : maximum 2 cycles
+
+- Cycle 1 validé → passe directement à 2c
+- Cycle 1 à reformuler → Cycle 2
+- Cycle 2 validé → passe à 2c
+- Cycle 2 toujours à reformuler → **STOP au 2e cycle**. Présente la meilleure formulation trouvée avec un avertissement :
+  > ⚠️ **SELF-CHALLENGE NON CONCLUANT (2 cycles épuisés)**
+  > L'hypothèse ci-dessus reste la meilleure formulation trouvée, mais mon auto-critique n'est pas complètement satisfaite. Validation humaine particulièrement critique ici.
+  
+  Puis passe quand même à 2c (le user décidera en connaissance de cause).
+
+---
+
+## Étape 2c — Checkpoint humain (Validation de l'hypothèse, OBLIGATOIRE)
+
+Après le self-challenge (2b), **ARRÊTE IMMÉDIATEMENT**. Ne passe PAS à l'étape 3.
+
+🚫 **RÈGLE ABSOLUE** : à partir d'ici, n'utilise **AUCUN tool** (ni Edit, ni Write, ni Bash, ni Read, ni Grep, ni Glob, ni NotebookEdit). Termine ta réponse après le message ci-dessous.
+
+Écris ce message final, puis termine ta réponse :
+
+> ⏸️ **Hypothèse proposée — J'attends ta validation**
+>
+> Réponds :
+> - **`GO`** (ou `ok`, `oui`, `valide`, `continue`, `proceed`) → je passe à l'étape 3 (documentation + modification + pipeline)
+> - **`NO`** (ou `stop`, `rejette`, `non`, `abort`) → j'abandonne cette hypothèse, aucune modification faite
+> - **Commentaire libre** (ex: « essaye plutôt X », « change le coefficient », « attaque un autre problème ») → je reformule l'hypothèse selon ton feedback
+
+### Traitement de la réponse utilisateur (au tour suivant)
+
+Quand l'utilisateur répond via le chat du dashboard :
+
+1. **Si la réponse contient un mot de validation** (`GO`, `ok`, `oui`, `valide`, `continue`, `proceed`, `yes`, etc.) :
+   - Continue avec l'Étape 3 (documentation dans ITERATIONS.md + modification dans RAG-HP-PUB + pipeline).
+   - Ne repose pas la question, passe à l'action directement.
+
+2. **Si la réponse contient un mot de rejet** (`NO`, `stop`, `rejette`, `non`, `abort`, `abandonne`, etc.) :
+   - Écris : « Itération N abandonnée par l'utilisateur. Aucune modification effectuée dans RAG-HP-PUB. »
+   - Termine l'itération sans rien toucher (pas de commit, pas de modif fichier, pas de pipeline).
+   - Ne passe pas à l'Étape 3.
+
+3. **Sinon (commentaire libre)** :
+   - Interprète le commentaire comme un feedback sur l'hypothèse.
+   - **Reformule** une nouvelle hypothèse qui tient compte du feedback (retour à l'Étape 2a).
+   - **Relance un nouveau self-challenge (2b)** avec le compteur de cycles **remis à zéro** (2 nouveaux cycles possibles). Chaque feedback utilisateur = nouveau contexte = nouvelle fenêtre d'auto-critique.
+   - Re-applique le checkpoint (2c) avec l'hypothèse post-challenge — autant de cycles user que nécessaire jusqu'à `GO` ou `NO`.
 
 ---
 
