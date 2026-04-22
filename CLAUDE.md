@@ -111,8 +111,16 @@ L'environnement d'exécution est **déjà entièrement configuré**. Ne demande 
 ### Décision logique
 - ✅ **Si score_global amélioré** → GARDER la modification, commit dans RAG-HP-PUB
 - ❌ **Si score_global régressé** → ROLLBACK immédiat, annuler la modification dans RAG-HP-PUB
-- 🔄 **Si plateau après 3 itérations** → analyser les métriques, proposer une hypothèse différente
-- 🛑 **Si plateau après 5+ itérations** → STOP, demander validation humaine (CP3)
+- 🔄 **Si plateau après 3 itérations** → analyser les métriques, proposer une hypothèse différente (pas de STOP auto, continue avec feedback humain)
+
+### Checkpoints pendant l'itération
+
+- **CP-Hypothèse** : après l'Étape 2 de `/iterate N`, STOP obligatoire. Claude présente son hypothèse puis attend une validation humaine (`GO` / `NO` / commentaire) avant toute modification dans RAG-HP-PUB.
+  - Précédé d'un **self-challenge automatique** (Étape 2b, max 2 cycles) : Claude confronte son hypothèse au code réel (Read/Glob/Grep sur le fichier cible) et au problème PROBLEMS.md. Il valide (`✅ HYPOTHÈSE VALIDÉE`) ou reformule (`🔄 À REFORMULER`). Après 2 cycles non concluants, avertissement "validation humaine critique".
+  - Évite les modifs sur une mauvaise piste, réduit les allers-retours de reformulation humains.
+  - Si `NO` : aucune modif faite, itération abandonnée proprement.
+  - Si commentaire libre : Claude reformule et **relance un nouveau self-challenge** (compteur de cycles remis à zéro).
+  - Détail du comportement : voir `.claude/commands/iterate.md` §"Étape 2b — Self-challenge" et §"Étape 2c — Checkpoint humain"
 
 ---
 
@@ -172,20 +180,6 @@ Pour chaque itération, ajouter une section :
 - Vérifier que les 34 parcours produisent des résultats cohérents
 - Accord pour lancer les itérations autonomes ?
 
-### CP2 — Après chaque lot de 3 itérations
-⏹️ **STOP** — Attendre validation humaine
-
-- Résumé des 3 itérations et des décisions
-- Progression vs baseline : score global, par métrique
-- Direction pour les 3 prochaines itérations ?
-
-### CP3 — Si plateau après 5+ itérations sans amélioration
-⏹️ **STOP** — Bloquer et demander validation
-
-- Analyser pourquoi le plateau
-- Proposer une approche différente (nouvelle hypothèse, exploration d'une autre métrique)
-- Attendre feedback avant continuation
-
 ### CP4 — Quand cibles atteintes OU pas d'amélioration possible
 ⏹️ **STOP** — Validation finale
 
@@ -217,7 +211,7 @@ L'utilisateur qui t'envoie des messages via le dashboard Flask est un **non-dév
 - Analyse des métriques EVAL.md / comparaison avec baseline
 - Décision GARDÉ / ROLLBACK après résultats
 - Documentation dans ITERATIONS.md
-- Explication de la baseline, de l'ordre d'attaque P1-P9, des checkpoints CP1-CP4
+- Explication de la baseline, de l'ordre d'attaque P1-P9, des checkpoints CP1, CP-Hypothèse et CP4
 - Clarifications sur l'état courant du pipeline ou des métriques
 - Questions sur les 9 problèmes listés dans PROBLEMS.md
 
@@ -296,8 +290,6 @@ for iter in 1 2 3 4 5 6 ...:
   python scripts/run_pipeline.py --iteration $iter
   # 4. Documenter dans ITERATIONS.md
   # 5. Si régression → ROLLBACK dans RAG-HP-PUB
-  # 6. Tous les 3 iters → STOP (CP2) pour validation
-  # 7. Si plateau 5+ iters → STOP (CP3) pour replan
 # fin
 
 # Phase 3 : Conclusion (CP4)

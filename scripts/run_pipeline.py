@@ -40,10 +40,24 @@ def load_config():
 
 
 def load_parcours():
-    """Charge tous les parcours depuis test_data/parcours.json"""
+    """Charge les parcours : officiels (test_data/parcours.json) + customs (custom_parcours.json).
+
+    Les parcours custom sont ajoutés via le dashboard et stockés à la racine
+    du projet. Ils participent aux itérations au même titre que les 13 originaux.
+    """
     parcours_path = TEST_DATA_DIR / "parcours.json"
     with open(parcours_path, "r") as f:
         data = json.load(f)
+
+    # Fusion avec custom_parcours.json (optionnel, ajouté via dashboard)
+    custom_path = PROJECT_ROOT / "custom_parcours.json"
+    if custom_path.exists():
+        try:
+            with open(custom_path, "r") as f:
+                custom = json.load(f).get("parcours", [])
+            data.extend(custom)
+        except (json.JSONDecodeError, OSError):
+            pass
 
     # Filtrer les parcours valides (exclure les placeholders/stubs)
     parcours_list = []

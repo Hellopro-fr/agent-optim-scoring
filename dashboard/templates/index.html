@@ -103,35 +103,69 @@
         <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
             {% for i in range(0, 9) %}
             {% set state = iteration_states.get(i, 'never') %}
-            <button class="btn btn-iterate btn-iter-state btn-iter-{{ state }}" data-iteration="{{ i }}" data-state="{{ state }}" data-bs-toggle="modal" data-bs-target="#consoleModal">
-                <span class="iter-dot iter-dot-{{ state }}"></span>
-                <span class="iter-label">Iter {{ i }} — {{ labels[i] }}</span>
-                {% if state == 'done' %}<span class="iter-badge">OK</span>{% endif %}
-                {% if state == 'running' or state == 'starting' %}<span class="iter-badge iter-badge-running">...</span>{% endif %}
-                {% if state == 'waiting' %}<span class="iter-badge iter-badge-waiting">?</span>{% endif %}
-                <span class="iter-help-wrap" onclick="event.stopPropagation();">
-                    <svg class="iter-help-icon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                    <span class="iter-tooltip">{{ tooltips[i] }}</span>
-                </span>
-            </button>
+            <div class="iter-btn-wrapper">
+                <button class="btn btn-iterate btn-iter-state btn-iter-{{ state }}" data-iteration="{{ i }}" data-state="{{ state }}" data-bs-toggle="modal" data-bs-target="#consoleModal">
+                    <span class="iter-dot iter-dot-{{ state }}"></span>
+                    <span class="iter-label">Iter {{ i }} — {{ labels[i] }}</span>
+                    {% if state == 'done' %}<span class="iter-badge">OK</span>{% endif %}
+                    {% if state == 'running' or state == 'starting' %}<span class="iter-badge iter-badge-running">...</span>{% endif %}
+                    {% if state == 'waiting' %}<span class="iter-badge iter-badge-waiting">?</span>{% endif %}
+                    <span class="iter-help-wrap" onclick="event.stopPropagation();">
+                        <svg class="iter-help-icon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <span class="iter-tooltip">{{ tooltips[i] }}</span>
+                    </span>
+                </button>
+                {% if i > 0 and state != 'never' %}
+                <button class="btn-iter-reset" data-iteration="{{ i }}" title="Reset iter {{ i }} (archive puis purge)">🗑️</button>
+                {% endif %}
+            </div>
             {% endfor %}
             {# Boutons generes pour chaque probleme custom (iterations 9+) #}
             {% for cp in custom_problems %}
             {% set state = iteration_states.get(cp.iteration, 'never') %}
-            <button class="btn btn-iterate btn-iter-state btn-iter-{{ state }}" data-iteration="{{ cp.iteration }}" data-state="{{ state }}" data-bs-toggle="modal" data-bs-target="#consoleModal">
-                <span class="iter-dot iter-dot-{{ state }}"></span>
-                <span class="iter-label">Iter {{ cp.iteration }} — P{{ cp.number }}</span>
-                {% if state == 'done' %}<span class="iter-badge">OK</span>{% endif %}
-                {% if state == 'running' or state == 'starting' %}<span class="iter-badge iter-badge-running">...</span>{% endif %}
-                {% if state == 'waiting' %}<span class="iter-badge iter-badge-waiting">?</span>{% endif %}
-                <span class="iter-help-wrap" onclick="event.stopPropagation();">
-                    <svg class="iter-help-icon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                    <span class="iter-tooltip">P{{ cp.number }} — {{ cp.name }}{% if cp.severity %} ({{ cp.severity }}){% endif %}</span>
-                </span>
-            </button>
+            <div class="iter-btn-wrapper">
+                <button class="btn btn-iterate btn-iter-state btn-iter-{{ state }}" data-iteration="{{ cp.iteration }}" data-state="{{ state }}" data-bs-toggle="modal" data-bs-target="#consoleModal">
+                    <span class="iter-dot iter-dot-{{ state }}"></span>
+                    <span class="iter-label">Iter {{ cp.iteration }} — P{{ cp.number }}</span>
+                    {% if state == 'done' %}<span class="iter-badge">OK</span>{% endif %}
+                    {% if state == 'running' or state == 'starting' %}<span class="iter-badge iter-badge-running">...</span>{% endif %}
+                    {% if state == 'waiting' %}<span class="iter-badge iter-badge-waiting">?</span>{% endif %}
+                    <span class="iter-help-wrap" onclick="event.stopPropagation();">
+                        <svg class="iter-help-icon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <span class="iter-tooltip">P{{ cp.number }} — {{ cp.name }}{% if cp.severity %} ({{ cp.severity }}){% endif %}</span>
+                    </span>
+                </button>
+                {% if state != 'never' %}
+                <button class="btn-iter-reset" data-iteration="{{ cp.iteration }}" title="Reset iter {{ cp.iteration }} (archive puis purge)">🗑️</button>
+                {% endif %}
+            </div>
             {% endfor %}
         </div>
         <style>
+            .iter-btn-wrapper {
+                display: inline-flex;
+                align-items: stretch;
+            }
+            .iter-btn-wrapper .btn-iterate {
+                border-top-right-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+            .btn-iter-reset {
+                background: rgba(239,68,68,0.15);
+                border: 1px solid rgba(239,68,68,0.35);
+                border-left: none;
+                color: rgba(239,68,68,0.9);
+                border-top-right-radius: 8px;
+                border-bottom-right-radius: 8px;
+                padding: 0 0.55rem;
+                font-size: 0.85rem;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            .btn-iter-reset:hover {
+                background: rgba(239,68,68,0.3);
+                color: #fff;
+            }
             .iter-help-wrap {
                 position: relative;
                 display: inline-block;
@@ -293,6 +327,38 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.btn-iterate').forEach(btn => {
         btn.addEventListener('click', function() {
             startIteration(this.dataset.iteration);
+        });
+    });
+
+    // Bouton 🗑️ : reset cible d'une iteration (archive + purge)
+    document.querySelectorAll('.btn-iter-reset').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            const n = this.dataset.iteration;
+            const nnn = String(n).padStart(3, '0');
+            const confirmMsg =
+                "Reset iteration " + n + " ?\n\n" +
+                "Cela va :\n" +
+                "  - Retirer les sections 'Iteration " + n + "' (et bis/ter) de ITERATIONS.md\n" +
+                "  - Archiver results/metrics_" + nnn + ".json\n" +
+                "  - Archiver results/iteration_" + nnn + ".json\n" +
+                "  - Archiver les logs de cette iteration\n\n" +
+                "Destination : backup/iterations-reset/<timestamp>/iter_" + n + "/\n" +
+                "(non-destructif, recuperables manuellement).\n\n" +
+                "Le bouton passera a 'never'. Continuer ?";
+            if (!window.confirm(confirmMsg)) return;
+
+            fetch('/iterate/' + n + '/reset', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        alert("Erreur: " + data.error);
+                    } else {
+                        location.reload();
+                    }
+                })
+                .catch(err => alert("Erreur reseau: " + err.message));
         });
     });
 
@@ -604,6 +670,17 @@ function connectStream(iterationNum) {
     let mdBuffer = '';
     let mdBlock = null;
     let renderTimer = null;
+    let lastToolDiv = null;       // Reference du dernier bloc tool_use pour y
+                                  // attacher le tool_input en sous-ligne.
+    let thinkingBlock = null;     // Bloc courant d'accumulation du thinking.
+    let thinkingText = '';
+
+    function resetInlineBlocks() {
+        mdBlock = null;
+        lastToolDiv = null;
+        thinkingBlock = null;
+        thinkingText = '';
+    }
 
     function flushMarkdown() {
         if (!mdBuffer) return;
@@ -638,13 +715,75 @@ function connectStream(iterationNum) {
                 return;
 
             } else if (data.line) {
-                mdBuffer += data.line + '\n';
+                // Concatenation brute : les text_delta sont deja fragmentes en
+                // tokens ; ajouter \n a chaque chunk casserait les mots et le
+                // markdown (tables, listes). Les retours-ligne naturels sont
+                // presents dans le contenu meme des deltas.
+                mdBuffer += data.line;
                 scheduleRender();
+
+            } else if (data.tool_use) {
+                flushMarkdown();
+                mdBuffer = '';
+                resetInlineBlocks();
+
+                // data.tool_use peut etre {name, input} (nouveau) ou string (fallback)
+                const toolName = (typeof data.tool_use === 'object') ? data.tool_use.name : data.tool_use;
+                const div = document.createElement('div');
+                div.style.cssText = 'color:#f5c2e7; font-family:ui-monospace,monospace; margin:0.25rem 0; font-size:0.8rem; opacity:0.85;';
+                div.textContent = '\u25b8 ' + toolName;
+                consoleOutput.appendChild(div);
+                lastToolDiv = div;
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+
+            } else if (data.tool_input) {
+                // Sous-ligne attachee au dernier tool_use pour montrer l'input.
+                if (lastToolDiv) {
+                    const sub = document.createElement('div');
+                    sub.style.cssText = 'color:#8e8eb6; font-family:ui-monospace,monospace; margin:0 0 0.25rem 1rem; font-size:0.75rem; opacity:0.85; white-space:pre-wrap; word-break:break-all;';
+                    sub.textContent = '\u2514\u2500 ' + data.tool_input.summary;
+                    lastToolDiv.insertAdjacentElement('afterend', sub);
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                }
+
+            } else if (data.tool_result) {
+                // Marqueur succes/echec du tool precedent.
+                const ok = !data.tool_result.is_error;
+                const mark = document.createElement('div');
+                mark.style.cssText = 'font-family:ui-monospace,monospace; margin:0 0 0.5rem 1rem; font-size:0.75rem; color:' + (ok ? '#a6e3a1' : '#f38ba8') + ';';
+                const symbol = ok ? '\u2713' : '\u2717';
+                const snippet = (data.tool_result.content || '').split('\n')[0].slice(0, 120);
+                mark.textContent = symbol + (snippet ? '  ' + snippet : '');
+                consoleOutput.appendChild(mark);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+
+            } else if (data.thinking) {
+                // Accumule le thinking dans un bloc italique gris.
+                flushMarkdown();
+                mdBuffer = '';
+                mdBlock = null;
+                if (!thinkingBlock) {
+                    thinkingBlock = document.createElement('div');
+                    thinkingBlock.style.cssText = 'color:#6e6e8a; font-style:italic; font-size:0.78rem; margin:0.5rem 0; padding-left:0.75rem; border-left:2px solid #313244; white-space:pre-wrap;';
+                    const header = document.createElement('div');
+                    header.style.cssText = 'color:#6e6e8a; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.15rem;';
+                    header.textContent = 'reflexion';
+                    thinkingBlock.appendChild(header);
+                    consoleOutput.appendChild(thinkingBlock);
+                }
+                thinkingText += data.thinking;
+                // Preserve le header, remplace juste le corps
+                while (thinkingBlock.childNodes.length > 1) {
+                    thinkingBlock.removeChild(thinkingBlock.lastChild);
+                }
+                const body = document.createTextNode(thinkingText);
+                thinkingBlock.appendChild(body);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
 
             } else if (data.user) {
                 flushMarkdown();
                 mdBuffer = '';
-                mdBlock = null;
+                resetInlineBlocks();
 
                 const div = document.createElement('div');
                 div.style.cssText = 'color:#89b4fa; font-weight:600; margin:1.25rem 0 0.5rem; padding-top:0.75rem; border-top:1px solid #1e1e2e; font-size:0.85rem;';
@@ -655,7 +794,7 @@ function connectStream(iterationNum) {
             } else if (data.waiting_input) {
                 flushMarkdown();
                 mdBuffer = '';
-                mdBlock = null;
+                resetInlineBlocks();
                 loaderArea.style.display = 'none'; stopLoaderRotation();
 
                 const p = document.createElement('p');
