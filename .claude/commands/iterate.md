@@ -33,7 +33,7 @@ Commande interdite : `git log` (sans filtre) — capturerait les commits de setu
 
 ---
 
-## Étape 1 — Choisir le problème à attaquer
+## Étape 1 — Identifier et déclarer le problème à attaquer
 
 ### Cas A : itérations originales (N ∈ [1, 8])
 
@@ -63,12 +63,40 @@ Règles spécifiques pour les itérations custom :
 - Les trous dans ITERATIONS.md (iter originales non exécutées) ne sont pas un blocage pour une itération custom : ce sont deux pistes indépendantes.
 - Les règles de modification de RAG-HP-PUB (jamais `graph-service/matching`) restent identiques.
 
+### Déclaration obligatoire du problème (avant de passer à l'Étape 2)
+
+**Avant de commencer l'Étape 2**, écris explicitement dans ta réponse un bloc de déclaration au format suivant, encadré par un séparateur visuel :
+
+```
+═══════════════════════════════════════════════════════
+ÉTAPE 1 — PROBLÈME IDENTIFIÉ
+═══════════════════════════════════════════════════════
+Itération       : N
+Problème        : P<num> — <libellé court>
+Sévérité        : <élevée | modérée | faible>
+Justification   : <1-2 phrases — pourquoi ce Pn à cette itération>
+═══════════════════════════════════════════════════════
+```
+
+🚫 **Interdit** : passer à l'Étape 2 sans avoir écrit ce bloc. Le bloc rend le problème lisible pour l'humain qui supervise et sert d'ancrage pour le self-challenge de l'Étape 2b.
+
 ---
 
 ## Étape 2a — Formuler l'hypothèse initiale
 
-Rédige une phrase du type :
-> « Je résous **[Pn]** en modifiant **[chemin exact dans RAG-HP-PUB]** car **[raison basée sur PROBLEMS.md + métriques de l'itération N-1]** »
+Après avoir écrit le bloc "ÉTAPE 1 — PROBLÈME IDENTIFIÉ", écris le bloc "ÉTAPE 2a — HYPOTHÈSE INITIALE" avec le même séparateur visuel :
+
+```
+═══════════════════════════════════════════════════════
+ÉTAPE 2a — HYPOTHÈSE INITIALE
+═══════════════════════════════════════════════════════
+Hypothèse       : Je résous P<num> en modifiant <chemin exact dans RAG-HP-PUB>
+                  car <raison basée sur PROBLEMS.md + métriques de l'iter N-1>.
+Fichier cible   : <chemin absolu dans RAG-HP-PUB/apps-microservices/graph-rag-api-recherche-optim-service/>
+Type de modif   : <Cypher scoring | Prompt LLM cleanup | Logique matching | Config>
+Impact attendu  : <+X% conformité | -Y doublons | etc. (estimation chiffrée)>
+═══════════════════════════════════════════════════════
+```
 
 Identifie **UN SEUL** fichier à modifier parmi :
 - Cypher de scoring lié à `graphoptim-service/matching`
