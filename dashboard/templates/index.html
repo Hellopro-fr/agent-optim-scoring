@@ -649,7 +649,11 @@ function connectStream(iterationNum) {
                 return;
 
             } else if (data.line) {
-                mdBuffer += data.line + '\n';
+                // Concatenation brute : les text_delta sont deja fragmentes en
+                // tokens ; ajouter \n a chaque chunk casserait les mots et le
+                // markdown (tables, listes). Les retours-ligne naturels sont
+                // presents dans le contenu meme des deltas.
+                mdBuffer += data.line;
                 scheduleRender();
 
             } else if (data.tool_use) {

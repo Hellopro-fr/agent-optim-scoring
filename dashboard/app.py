@@ -201,7 +201,9 @@ def _stdout_reader(proc, session):
 
                 text = parsed["text"]
                 if text:
-                    logf.write(text + "\n")
+                    # Pas de \n ajoute : les deltas sont fragmentes en tokens,
+                    # ajouter \n casserait les mots ("éli" + "minatoire").
+                    logf.write(text)
                     logf.flush()
                     session["events"].append({"type": "text", "data": text})
                     session["new_event"].set()
@@ -914,19 +916,56 @@ def iteration_detail(n):
     iteration_file = RESULTS_DIR / f"iteration_{n:03d}.json"
 
     parcours_results = {}
+    iteration_meta = {}
     if iteration_file.exists():
         with open(iteration_file, "r", encoding="utf-8") as f:
             data = json.load(f)
-            # Extraire les résultats par parcours
-            if "resultats" in data:
-                parcours_results = {pid: result.get("api_response", {}).get("top_produit", [])[:3]
-                                    for pid, result in data["resultats"].items()}
+            iteration_meta = {
+                "timestamp": data.get("timestamp"),
+                "endpoint": data.get("api_endpoint_matching"),
+                "parcours_count": data.get("parcours_count"),
+            }
+            for pid, result in data.get("resultats", {}).items():
+                api_resp = result.get("api_response") or {}
+                top_produit = api_resp.get("top_produit", []) if isinstance(api_resp, dict) else []
+                ecarts = api_resp.get("ecarts", []) if isinstance(api_resp, dict) else []
+                parcours_results[pid] = {
+                    "produits": top_produit,
+                    "nb_top": len(top_produit),
+                    "nb_ecarts": len(ecarts),
+                    "error": result.get("error"),
+                    "temps_ms": api_resp.get("temps_de_traitement") if isinstance(api_resp, dict) else None,
+                }
 
     return render_template("iteration_detail.html",
                           iteration_num=n,
                           metrics=metrics,
                           parcours_results=parcours_results,
+                          iteration_meta=iteration_meta,
                           format_metric=format_metric_value)
+
+
+@app.route("/api/iteration/<int:n>/parcours/<path:parcours_id>")
+def api_parcours_detail(n, parcours_id):
+    """Retourne payload + api_response complets pour un parcours d'une itération."""
+    iteration_file = RESULTS_DIR / f"iteration_{n:03d}.json"
+    if not iteration_file.exists():
+        return jsonify({"error": "Itération non exécutée"}), 404
+    with open(iteration_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    entry = data.get("resultats", {}).get(parcours_id)
+    if entry is None:
+        return jsonify({"error": "Parcours introuvable"}), 404
+    return jsonify({
+        "parcours_id": parcours_id,
+        "iteration_meta": {
+            "timestamp": data.get("timestamp"),
+            "endpoint": data.get("api_endpoint_matching"),
+        },
+        "parcours": entry.get("parcours"),
+        "api_response": entry.get("api_response"),
+        "error": entry.get("error"),
+    })
 
 
 @app.route("/problems")
