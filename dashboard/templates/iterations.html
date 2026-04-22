@@ -35,9 +35,39 @@
     #iterationsContent hr { border: none; border-top: 1px solid var(--border-light); margin: 1.5rem 0; }
     #iterationsContent a { color: var(--accent); }
     #iterationsContent p { margin: 0.4rem 0; }
+    #iterationsContent h2 a.iter-link {
+        color: inherit; text-decoration: none;
+        display: inline-flex; align-items: center; gap: 0.6rem;
+        transition: color 0.15s;
+    }
+    #iterationsContent h2 a.iter-link:hover { color: var(--accent); }
+    .iter-arrow {
+        display: inline-flex; align-items: center; gap: 0.3rem;
+        font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+        color: #fff; background: var(--accent, #3b82f6);
+        padding: 0.2rem 0.6rem; border-radius: 999px;
+        transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    }
+    #iterationsContent h2 a.iter-link:hover .iter-arrow {
+        transform: translateX(3px);
+        background: var(--accent-dark, #2563eb);
+        box-shadow: 0 2px 6px rgba(59,130,246,0.3);
+    }
 </style>
 <script>
-    document.getElementById('iterationsContent').innerHTML = marked.parse({{ iterations_raw | tojson }});
+    (function() {
+        const el = document.getElementById('iterationsContent');
+        el.innerHTML = marked.parse({{ iterations_raw | tojson }});
+        // Rend chaque titre "Itération N" / "Iteration N" cliquable vers /iterations/N
+        el.querySelectorAll('h2').forEach(h => {
+            const m = h.textContent.match(/^\s*It[eé]ration\s+(\d+)/i);
+            if (!m) return;
+            const n = m[1];
+            const html = h.innerHTML;
+            h.innerHTML = `<a href="/iterations/${n}" class="iter-link" title="Voir les détails de l'itération ${n}">${html} <span class="iter-arrow">Voir détails <span style="font-size:0.9rem;line-height:1;">›</span></span></a>`;
+        });
+    })();
 </script>
 {% endif %}
 {% endblock %}
