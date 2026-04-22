@@ -24,6 +24,7 @@ CONFIG_DIR = PROJECT_ROOT / "config"
 THRESHOLDS_FILE = CONFIG_DIR / "thresholds.json"
 EVAL_FILE = PROJECT_ROOT / "EVAL.md"
 EVAL_BACKUP_DIR = PROJECT_ROOT / "backup" / "eval"
+PARCOURS_FILE = PROJECT_ROOT / "test_data" / "parcours.json"
 
 DEFAULT_THRESHOLDS = {
     "taux_conformite":        {"target": 80,  "type": "min", "unit": "%", "label": "Taux de conformité",     "comparator": "≥"},
@@ -43,12 +44,14 @@ _sessions = {}  # {n: {"proc", "events", "new_event", "status", "log_file"}}
 
 
 def _parse_stream_event(raw_line):
-    """Parse une ligne stream-json Claude CLI. Retourne (texte_affichable, session_id|None)."""
+    """Parse une ligne stream-json Claude CLI.
+    Retourne (texte_affichable, session_id|None, is_result) — is_result marque
+    la fin du tour (utilisé pour signaler waiting_input sans attendre l'exit)."""
     try:
         event = json.loads(raw_line)
     except (json.JSONDecodeError, TypeError):
         # Pas du JSON → traiter comme texte brut
-        return (raw_line, None)
+        return (raw_line, None, False)
 
     session_id = event.get("session_id")
     text = ""
@@ -73,12 +76,19 @@ def _parse_stream_event(raw_line):
     elif etype == "result":
         session_id = event.get("session_id", session_id)
 
-    return (text, session_id)
+    return (text, session_id, etype == "result")
 
 
 def _stdout_reader(proc, session):
-    """Thread de lecture : parse le stream-json de Claude, pousse le texte dans events."""
+    """Thread de lecture : parse le stream-json de Claude, pousse le texte dans events.
+
+    Signale waiting_input dès reception de l'event `result` (fin du tour) plutot
+    qu'apres proc.wait() : la CLI Claude peut mettre plusieurs minutes a fermer
+    stdout / exit (cleanup MCP, telemetry...) alors que la reponse est deja
+    complete. Attendre l'exit bloque inutilement le textarea cote UI.
+    """
     log_path = session["log_file"]
+    waiting_signaled = False
     try:
         with open(log_path, "a", encoding="utf-8") as logf:
             for raw_line in iter(proc.stdout.readline, ""):
@@ -86,7 +96,7 @@ def _stdout_reader(proc, session):
                 if not raw_line:
                     continue
 
-                text, sid = _parse_stream_event(raw_line)
+                text, sid, is_result = _parse_stream_event(raw_line)
 
                 if sid:
                     session["session_id"] = sid
@@ -96,16 +106,31 @@ def _stdout_reader(proc, session):
                     logf.flush()
                     session["events"].append({"type": "text", "data": text})
                     session["new_event"].set()
+
+                # Fin du tour : debloquer l'UI immediatement, sans attendre exit.
+                if is_result and not waiting_signaled:
+                    waiting_signaled = True
+                    session["status"] = "waiting_input"
+                    session["events"].append({"type": "waiting_input"})
+                    session["new_event"].set()
     except Exception as e:
         session["events"].append({"type": "error", "data": str(e)})
         session["new_event"].set()
     finally:
-        proc.stdout.close()
+        try:
+            proc.stdout.close()
+        except Exception:
+            pass
         proc.wait()
-        session["proc"] = None
-        session["status"] = "waiting_input"
-        session["events"].append({"type": "waiting_input"})
-        session["new_event"].set()
+        # Ne reinitialise proc/status que si ce reader est encore le reader
+        # courant : si l'utilisateur a deja repondu, _launch_turn a demarre un
+        # nouveau proc et il ne faut pas ecraser son etat.
+        if session.get("proc") is proc:
+            session["proc"] = None
+            if not waiting_signaled:
+                session["status"] = "waiting_input"
+                session["events"].append({"type": "waiting_input"})
+                session["new_event"].set()
 
 
 def _launch_turn(n, prompt, is_first=False):
@@ -174,6 +199,17 @@ def load_baseline():
         with open(baseline_file, "r", encoding="utf-8") as f:
             return json.load(f)
     return None
+
+
+def load_parcours():
+    """Charge la liste des parcours audités depuis test_data/parcours.json."""
+    if not PARCOURS_FILE.exists():
+        return []
+    try:
+        with open(PARCOURS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return []
 
 
 def _extract_decision(section_text: str) -> str:
@@ -867,6 +903,12 @@ def api_problems_delete(number):
 
     save_custom_problems(data)
     return jsonify({"status": "deleted", "number": number})
+
+
+@app.route("/parcours")
+def parcours():
+    """Page — liste des parcours de test (lecture seule)."""
+    return render_template("parcours.html", parcours=load_parcours())
 
 
 @app.route("/manuel")
