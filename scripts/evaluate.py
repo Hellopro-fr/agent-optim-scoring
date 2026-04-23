@@ -22,6 +22,11 @@ from typing import Optional
 import requests
 from dotenv import load_dotenv
 
+# Juge LLM — remplace le matching mots-clés pour le taux de conformité
+sys.path.insert(0, str(Path(__file__).parent))
+from judge import judge_product, load_cache, save_cache, get_client, SCORE_MAP
+from coherence import compute_parcours_coherence
+
 
 # Chemins du projet
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -67,9 +72,11 @@ class Metrics:
     iteration: int
     taux_conformite: float  # % de produits conformes
     doublons: int           # Nombre de doublons détectés
-    diversite_fournisseurs: int  # Nombre de fournisseurs uniques
-    coherence_score: float  # Corrélation score/pertinence (0-1)
+    diversite_fournisseurs: float  # Moyenne de fournisseurs uniques par parcours (cible ≥ 3)
+    coherence_score: float  # moyenne(NDCG@10, Precision@5) sur les 13 parcours ∈ [0, 1]
     presence_estimatif: float  # % de cas avec estimatif présent
+    coherence_ndcg: float = 0.0  # Composante NDCG@10 de coherence_score (debug)
+    coherence_precision: float = 0.0  # Composante Precision@5 de coherence_score (debug)
 
     def score_global(self) -> float:
         """Calcule le score global pondéré selon EVAL.md"""
@@ -104,6 +111,8 @@ class Metrics:
             'doublons': self.doublons,
             'diversite_fournisseurs': self.diversite_fournisseurs,
             'coherence_score': self.coherence_score,
+            'coherence_ndcg': self.coherence_ndcg,
+            'coherence_precision': self.coherence_precision,
             'presence_estimatif': self.presence_estimatif,
             'score_global': self.score_global()
         }
@@ -381,63 +390,83 @@ def extract_api_results(api_response: dict) -> dict:
     return results
 
 
-def calculate_parcours_metrics(api_results: dict, evaluation: Optional[dict], product_details: dict = None, caract_map: dict = None) -> dict:
+def calculate_parcours_metrics(
+    api_results: dict,
+    evaluation: Optional[dict],
+    product_details: dict = None,
+    caract_map: dict = None,
+    parcours: Optional[dict] = None,
+    judge_client=None,
+    judge_cache: Optional[dict] = None,
+    verdicts_log: Optional[list] = None,
+) -> dict:
     """
     Calcule les métriques pour un parcours spécifique
 
     evaluation est optionnel car on peut avoir des parcours sans evaluation_humaine
     product_details : dict indexé par product_id avec détails (prix, nom, etc.)
     caract_map : dict des définitions de caractéristiques {id_caract: {nom, type, valeurs, ...}}
+    parcours : parcours complet (catégorie, sous-type, questions/réponses, caract déduites)
+    judge_client : client Anthropic pour LLM juge (None = fallback score neutre)
+    judge_cache : cache partagé entre parcours (mutable, clé = "{pid}:{id_produit}")
+    verdicts_log : liste mutable où on ajoute chaque verdict (pour debug/audit)
     """
     if product_details is None:
         product_details = {}
     if caract_map is None:
         caract_map = {}
+    if judge_cache is None:
+        judge_cache = {}
 
     metrics = {
-        "conformes": 0,
+        "conformes": 0.0,
         "total_evalues": 0,
         "doublons": 0,
         "fournisseurs_count": len(api_results["fournisseurs"]),
-        "coherence": 0.5,  # Sera calculé réellement ci-dessous
-        "estimatif_present": False  # Sera calculé réellement ci-dessous
+        "coherence_ndcg": 0.5,
+        "coherence_precision": 0.5,
+        "coherence_detail": None,  # {ndcg, precision, ranking} pour coherence_detail_NNN.json
+        "estimatif_present": False
     }
 
-    if not evaluation:
-        # Pas d'évaluation humaine, retourner des valeurs par défaut
-        return metrics
+    # Conformité via LLM juge (Option B — score gradué)
+    # + collecte des verdicts par id_produit pour le calcul NDCG/Precision
+    produits_acceptes = api_results.get("produits_acceptes", [])
+    caract_par_produit = api_results.get("caracteristiques_par_produit", {})
+    verdicts_by_id: dict = {}
+    if produits_acceptes and parcours is not None:
+        score_total = 0.0
+        for prod_id in produits_acceptes:
+            detail = product_details.get(prod_id)
+            if not detail:
+                continue
+            caract_api = caract_par_produit.get(prod_id, [])
+            verdict = judge_product(detail, caract_api, parcours, judge_cache, judge_client)
+            verdicts_by_id[prod_id] = verdict
+            score_total += verdict.get("score", 0.0)
+            if verdicts_log is not None:
+                verdicts_log.append({
+                    "parcours_id": parcours.get("parcours_id"),
+                    "id_produit": prod_id,
+                    "correspondance": verdict.get("correspondance"),
+                    "raison": verdict.get("raison"),
+                    "score": verdict.get("score"),
+                })
+        metrics["conformes"] = score_total
+        metrics["total_evalues"] = len(produits_acceptes)
 
-    # Comparer avec l'évaluation humaine via matching partiel sur les noms
-    noms_acceptes = api_results.get("noms_acceptes", [])
-    hors_sujet_ref = [n.lower() for n in evaluation.get("produits_hors_sujet", [])]
-
-    def _nom_matches(nom_api: str, ref_list: list) -> bool:
-        """True si au moins un mot-clé significatif (>4 chars) du nom de référence apparaît dans nom_api."""
-        nom_lower = nom_api.lower()
-        stopwords = {"pour", "avec", "dans", "votre", "notre", "cette", "type", "sans", "plus"}
-        for ref in ref_list:
-            keywords = [w for w in ref.split() if len(w) > 4 and w not in stopwords]
-            if keywords and any(kw in nom_lower for kw in keywords):
-                return True
-        return False
-
-    if noms_acceptes:
-        hors_sujet_count = sum(1 for n in noms_acceptes if _nom_matches(n, hors_sujet_ref))
-        total = len(noms_acceptes)
-        # Produits non identifiés comme hors sujet → comptés conformes
-        metrics["conformes"] = total - hors_sujet_count
-        metrics["total_evalues"] = total if total > 0 else 1
-
-    # Calcul de coherence_score réel : moyenne des barèmes de caractéristiques
-    caract_data = api_results.get("caracteristiques_par_produit", {})
-    if caract_data:
-        all_baremes = [
-            c.get("bareme", 0)
-            for caracts in caract_data.values()
-            for c in caracts
-        ]
-        if all_baremes:
-            metrics["coherence"] = sum(all_baremes) / len(all_baremes)
+    # Cohérence score/pertinence : NDCG@10 + Precision@5 via juge LLM
+    scores_by_id = api_results.get("scores", {})
+    if verdicts_by_id and scores_by_id:
+        detail = compute_parcours_coherence(scores_by_id, verdicts_by_id)
+        metrics["coherence_ndcg"] = detail["ndcg"]
+        metrics["coherence_precision"] = detail["precision"]
+        metrics["coherence_detail"] = {
+            "parcours_id": parcours.get("parcours_id") if parcours else None,
+            "ndcg_at_10": detail["ndcg"],
+            "precision_at_5": detail["precision"],
+            "ranking": detail["ranking"],
+        }
 
     # Calcul estimatif_present et détection doublons via les détails produits
     if product_details:
@@ -468,7 +497,7 @@ def calculate_parcours_metrics(api_results: dict, evaluation: Optional[dict], pr
                     metrics["doublons"] += 1
 
     # Anomalies documentées dans l'évaluation (doublons uniquement)
-    if "anomalies" in evaluation:
+    if evaluation and "anomalies" in evaluation:
         anomalies = evaluation["anomalies"]
         if isinstance(anomalies, list):
             for a in anomalies:
@@ -489,10 +518,19 @@ def evaluate_iteration(iteration_num: int) -> Metrics:
     total_conformite = 0.0
     total_parcours = 0
     total_doublons = 0
-    fournisseurs_global = set()
-    coherence_scores = []
+    fournisseurs_par_parcours = []  # liste des nb fournisseurs uniques par parcours (moyenne in fine)
+    ndcg_scores = []
+    precision_scores = []
+    coherence_details = []  # détail du classement par parcours (NDCG/Precision + ranking)
     estimatif_present_count = 0
     characteristics_cache = {}  # Cache {id_categorie: caract_map}
+
+    # LLM juge : client + cache partagé + log de verdicts
+    judge_client = get_client()
+    judge_cache = load_cache()
+    verdicts_log: list = []
+    if judge_client is None:
+        print("  ⚠ LLM juge indisponible (ANTHROPIC_API_KEY manquant ou SDK non installé) — scores neutres")
 
     # Évaluer chaque parcours
     for parcours_id, result in iteration_results.get("resultats", {}).items():
@@ -532,40 +570,76 @@ def evaluate_iteration(iteration_num: int) -> Metrics:
                     characteristics_cache[id_categorie] = {}
             caract_map = characteristics_cache[id_categorie]
 
-        # Calculer les métriques du parcours
-        parcours_metrics = calculate_parcours_metrics(api_results, evaluation, product_details, caract_map)
+        # Calculer les métriques du parcours (inclut LLM juge pour conformité)
+        parcours_complet = result.get("parcours", {})
+        parcours_metrics = calculate_parcours_metrics(
+            api_results,
+            evaluation,
+            product_details,
+            caract_map,
+            parcours=parcours_complet,
+            judge_client=judge_client,
+            judge_cache=judge_cache,
+            verdicts_log=verdicts_log,
+        )
 
         # Accumuler
         if parcours_metrics["total_evalues"] > 0:
             conformite_parcours = (parcours_metrics["conformes"] / parcours_metrics["total_evalues"]) * 100
             total_conformite += conformite_parcours
         else:
-            total_conformite += 50.0  # Valeur par défaut si pas d'évaluation
+            total_conformite += 0.0  # Pas de produits jugés → 0%
 
         total_parcours += 1
         total_doublons += parcours_metrics["doublons"]
-        fournisseurs_global.update(api_results["fournisseurs"])
-        coherence_scores.append(parcours_metrics["coherence"])
+        fournisseurs_par_parcours.append(parcours_metrics["fournisseurs_count"])
+        ndcg_scores.append(parcours_metrics["coherence_ndcg"])
+        precision_scores.append(parcours_metrics["coherence_precision"])
+        if parcours_metrics.get("coherence_detail"):
+            coherence_details.append(parcours_metrics["coherence_detail"])
         if parcours_metrics["estimatif_present"]:
             estimatif_present_count += 1
 
     # Calculer les moyennes
     taux_conformite = (total_conformite / total_parcours) if total_parcours > 0 else 0.0
-    coherence_moyenne = (sum(coherence_scores) / len(coherence_scores)) if coherence_scores else 0.5
+    ndcg_moyen = (sum(ndcg_scores) / len(ndcg_scores)) if ndcg_scores else 0.5
+    precision_moyenne = (sum(precision_scores) / len(precision_scores)) if precision_scores else 0.5
+    coherence_moyenne = (ndcg_moyen + precision_moyenne) / 2.0
     presence_estimatif = (estimatif_present_count / total_parcours * 100) if total_parcours > 0 else 0.0
+    diversite_moyenne = (
+        sum(fournisseurs_par_parcours) / len(fournisseurs_par_parcours)
+        if fournisseurs_par_parcours else 0.0
+    )
 
     # Créer l'objet Metrics
     metrics = Metrics(
         iteration=iteration_num,
         taux_conformite=taux_conformite,
         doublons=total_doublons,
-        diversite_fournisseurs=len(fournisseurs_global),
+        diversite_fournisseurs=diversite_moyenne,
         coherence_score=coherence_moyenne,
+        coherence_ndcg=ndcg_moyen,
+        coherence_precision=precision_moyenne,
         presence_estimatif=presence_estimatif
     )
 
     # Sauvegarder les métriques
     save_metrics(metrics)
+
+    # Persister le cache LLM juge + log des verdicts pour audit
+    save_cache(judge_cache)
+    if verdicts_log:
+        verdicts_file = RESULTS_DIR / f"judge_verdicts_{iteration_num:03d}.json"
+        with open(verdicts_file, "w", encoding="utf-8") as f:
+            json.dump(verdicts_log, f, ensure_ascii=False, indent=2)
+        print(f"Verdicts LLM sauvegardés: {verdicts_file} ({len(verdicts_log)} entrées)")
+
+    # Détail de cohérence (NDCG@10 + Precision@5 + ranking par parcours) — audit P4
+    if coherence_details:
+        coherence_file = RESULTS_DIR / f"coherence_detail_{iteration_num:03d}.json"
+        with open(coherence_file, "w", encoding="utf-8") as f:
+            json.dump(coherence_details, f, ensure_ascii=False, indent=2)
+        print(f"Détail cohérence sauvegardé: {coherence_file} ({len(coherence_details)} parcours)")
 
     # Pour l'itération 0, renseigner aussi BASELINE.json (immuable après)
     if iteration_num == 0:

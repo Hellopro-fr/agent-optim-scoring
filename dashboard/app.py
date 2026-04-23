@@ -688,6 +688,8 @@ def format_metric_value(name, value):
         return f"{value:.1f}%"
     elif name == "coherence_score":
         return f"{value:.2f}"
+    elif name == "diversite_fournisseurs":
+        return f"{value:.1f}"
     else:
         return str(int(value))
 
