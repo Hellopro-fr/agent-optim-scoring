@@ -35,6 +35,23 @@ L'environnement d'exécution est **déjà entièrement configuré**. Ne demande 
 
 **Règle** : si une action technique semble échouer, tente-la quand même (1 essai) avant de demander à l'utilisateur. La plupart du temps, l'environnement est OK et l'erreur vient d'ailleurs (chemin, permission applicative, etc.).
 
+### 🚨 Règle absolue — NE JAMAIS contourner `/rag-hp-pub`
+
+Le repo `/rag-hp-pub` est un **bind-mount vers le repo hôte** (`/home/devhp/RAG-HP-PUB`). Tout commit + push doit être fait **dans ce chemin**, nulle part ailleurs.
+
+**INTERDICTIONS ABSOLUES** :
+- 🚫 **Ne JAMAIS cloner** RAG-HP-PUB ailleurs (`/tmp/rag-clone`, `~/clone`, etc.). Un clone crée une **divergence silencieuse** entre le push GitHub et le code local → l'API Docker optim serait rebuilt sur l'ancien code, les métriques seraient fausses.
+- 🚫 **Ne JAMAIS** utiliser `git config --global` pour modifier user.email/user.name. La config est préconfigurée par l'admin (SSH, email, signing).
+- 🚫 **Ne pas** créer un repo parallèle même "juste pour tester".
+
+**Si tu rencontres `insufficient permission for adding an object to repository database .git/objects`** :
+1. **N'invente pas de workaround** (pas de `/tmp/clone`, pas de `chmod`, pas de `sudo`).
+2. **Vérifie d'abord** : `id` dans le conteneur doit montrer le groupe 1034 (`devhp`) dans la liste — c'est `HOST_GID_EXTRA=1034` dans `.env`. Sans ça, UID 1040 ne peut pas écrire dans `.git/objects/` même si les permissions filesystem semblent OK.
+3. **Si groupe devhp absent** → signale à l'utilisateur : « Permissions `.git/objects` bloquées — l'admin doit vérifier que `HOST_GID_EXTRA=1034` est dans le `.env` et que `git config core.sharedRepository=group` est appliqué dans `/home/devhp/RAG-HP-PUB` ».
+4. **Interromps l'itération proprement** : écris un résumé dans ITERATIONS.md avec la note « ROLLBACK forcé — permissions git cassées, intervention admin requise » et termine.
+
+**Pourquoi cette règle** : un workaround silencieux (clone ailleurs + push) produit des faux résultats car l'API Docker ne voit pas les modifs réellement poussées. Mieux vaut un échec visible qu'une régression cachée.
+
 ## Point de départ PROD — 2026-04-21
 
 **La date de référence PROD est le 2026-04-21** (jour de déploiement initial sur la VM HelloPro).
