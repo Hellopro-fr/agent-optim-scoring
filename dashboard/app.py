@@ -976,14 +976,22 @@ def iteration_detail(n):
             }
             for pid, result in data.get("resultats", {}).items():
                 api_resp = result.get("api_response") or {}
-                top_produit = api_resp.get("top_produit", []) if isinstance(api_resp, dict) else []
-                ecarts = api_resp.get("ecarts", []) if isinstance(api_resp, dict) else []
+                if isinstance(api_resp, dict):
+                    top_produit = api_resp.get("top_produit", []) or []
+                    liste_produit = api_resp.get("liste_produit", []) or []
+                    ecarts = api_resp.get("ecarts", []) or []
+                    temps_ms = api_resp.get("temps_de_traitement")
+                else:
+                    top_produit, liste_produit, ecarts, temps_ms = [], [], [], None
                 parcours_results[pid] = {
                     "produits": top_produit,
+                    "liste_produits": liste_produit,
+                    "ecarts_produits": ecarts,
                     "nb_top": len(top_produit),
+                    "nb_liste": len(liste_produit),
                     "nb_ecarts": len(ecarts),
                     "error": result.get("error"),
-                    "temps_ms": api_resp.get("temps_de_traitement") if isinstance(api_resp, dict) else None,
+                    "temps_ms": temps_ms,
                 }
 
             # Résolution id_caracteristique → nom humain (fallback c{id} en LOCAL sans token)
@@ -996,8 +1004,9 @@ def iteration_detail(n):
                     carac_map = get_carac_map(int(id_cat))
                 except (TypeError, ValueError):
                     carac_map = {}
-                for prod in info_p.get("produits") or []:
-                    enrich_caracs_with_labels(prod.get("caracteristique") or [], carac_map)
+                for list_key in ("produits", "liste_produits", "ecarts_produits"):
+                    for prod in info_p.get(list_key) or []:
+                        enrich_caracs_with_labels(prod.get("caracteristique") or [], carac_map)
 
     return render_template("iteration_detail.html",
                           iteration_num=n,

@@ -3,6 +3,51 @@
 {% block title %}Iteration {{ iteration_num }} — HelloPro Scoring{% endblock %}
 
 {% block content %}
+{% macro render_produits(title, produits, palette) %}
+<div style="margin-top: 1rem;">
+    <div style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); margin: 0.5rem 0; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.5rem;">
+        <span style="width: 9px; height: 9px; border-radius: 50%; background: {{ palette }}; flex-shrink: 0;"></span>
+        <span>{{ title }} ({{ produits|length }})</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 0.5rem; padding-left: 0.75rem; border-left: 2px solid {{ palette }}; max-height: 400px; overflow-y: auto;">
+        {% for produit in produits %}
+        <div style="font-size: 0.85rem;">
+            <span style="display: inline-block; min-width: 1.75rem; font-size: 0.72rem; font-weight: 600; color: var(--text-tertiary);">#{{ produit.get('rang') if produit.get('rang') is not none else loop.index }}</span>
+            <span style="font-weight: 500;">{{ produit.get('titre_produit') or (produit.get('llm_response') or {}).get('nom') or 'Sans titre' }}</span>
+            {% if produit.get('score') is not none %}
+            <span style="font-size: 0.75rem; color: var(--text-tertiary); margin-left: 0.5rem;">score {{ "%.3f"|format(produit.get('score')) }}</span>
+            {% endif %}
+            <br>
+            <span style="font-size: 0.78rem; color: var(--text-tertiary); padding-left: 1.75rem;">
+                {{ produit.get('fournisseur') or (produit.get('info_produit') or {}).get('id_fournisseur') or '—' }}
+                {% if produit.get('prix_produit') %} · {{ produit.get('prix_produit') }}{% endif %}
+            </span>
+            {% set caracs = produit.get('caracteristique') or [] %}
+            {% if caracs %}
+            <div class="carac-row">
+                {% for c in caracs %}
+                    {% set statut = c.get('statut_matching') %}
+                    {% set bareme = c.get('bareme') %}
+                    {% set is_num = c.get('type_caracteristique') == 1 %}
+                    {% set idvals = c.get('id_valeur') or [] %}
+                    {% set cid = c.get('id_caracteristique') %}
+                    {% set label = c.get('label') or ('c' ~ cid) %}
+                    {% set vlabel = c.get('value_label') %}
+                    {% set tooltip = label ~ ' · statut=' ~ statut ~ ' · type=' ~ ('num' if is_num else 'text') ~ ' · poids=' ~ c.get('poids') ~ ' · poids_q=' ~ c.get('poids_question') ~ ' · id=' ~ cid ~ ((' · id_valeur=' ~ idvals|join(',')) if idvals else '') %}
+                    {% if statut == 1 %}{% set klass = 'carac-ok' %}
+                    {% elif statut in [2, 3] %}{% set klass = 'carac-partial' %}
+                    {% elif statut == 4 %}{% set klass = 'carac-bloquant' %}
+                    {% else %}{% set klass = 'carac-neutre' %}{% endif %}
+                    <span class="carac-badge {{ klass }}" title="{{ tooltip }}">{{ label }}{% if vlabel %}: {{ vlabel }}{% endif %}{% if bareme is not none %} ({{ "%.1f"|format(bareme) }}){% endif %}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endmacro %}
+
 <div style="margin-bottom: 1.5rem;">
     <a href="/iterations" style="color: var(--text-tertiary); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: color 0.2s;">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px;"><polyline points="15 18 9 12 15 6"/></svg>
@@ -138,9 +183,12 @@
                 {% if info.error %}
                 <span class="badge-status badge-danger" title="{{ info.error }}">Erreur</span>
                 {% else %}
-                <span class="badge-status" style="background: var(--bg-secondary); color: var(--text-secondary);">Top {{ info.nb_top }}</span>
+                <span class="badge-status" style="background: #d1fae5; color: #065f46;">Top {{ info.nb_top }}</span>
+                {% if info.nb_liste %}
+                <span class="badge-status" style="background: #dbeafe; color: #1e40af;">{{ info.nb_liste }} liste</span>
+                {% endif %}
                 {% if info.nb_ecarts %}
-                <span class="badge-status" style="background: var(--bg-secondary); color: var(--text-tertiary);">{{ info.nb_ecarts }} écarts</span>
+                <span class="badge-status" style="background: #fee2e2; color: #991b1b;">{{ info.nb_ecarts }} écarts</span>
                 {% endif %}
                 {% if info.temps_ms is not none %}
                 <span style="font-size: 0.75rem; color: var(--text-tertiary);">{{ "%.0f"|format(info.temps_ms) }} ms</span>
@@ -150,44 +198,10 @@
             <div style="padding: 0.5rem 1rem 1rem 1rem; border-top: 1px solid var(--border-light);">
                 {% if info.error %}
                 <div style="padding: 0.75rem; background: var(--bg-secondary); border-radius: 4px; font-size: 0.8rem; color: var(--text-secondary); font-family: monospace; white-space: pre-wrap;">{{ info.error }}</div>
-                {% elif info.produits %}
-                <div style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); margin: 0.5rem 0 0.5rem 0; letter-spacing: 0.05em;">Produits retournés ({{ info.nb_top }})</div>
-                <div style="display: flex; flex-direction: column; gap: 0.5rem; padding-left: 0.75rem; border-left: 2px solid var(--border-light); max-height: 480px; overflow-y: auto;">
-                    {% for produit in info.produits %}
-                    <div style="font-size: 0.85rem;">
-                        <span style="display: inline-block; min-width: 1.75rem; font-size: 0.72rem; font-weight: 600; color: var(--text-tertiary);">#{{ produit.get('rang') if produit.get('rang') is not none else loop.index }}</span>
-                        <span style="font-weight: 500;">{{ produit.get('titre_produit') or (produit.get('llm_response') or {}).get('nom') or 'Sans titre' }}</span>
-                        {% if produit.get('score') is not none %}
-                        <span style="font-size: 0.75rem; color: var(--text-tertiary); margin-left: 0.5rem;">score {{ "%.3f"|format(produit.get('score')) }}</span>
-                        {% endif %}
-                        <br>
-                        <span style="font-size: 0.78rem; color: var(--text-tertiary); padding-left: 1.75rem;">
-                            {{ produit.get('fournisseur') or (produit.get('info_produit') or {}).get('id_fournisseur') or '—' }}
-                            {% if produit.get('prix_produit') %} · {{ produit.get('prix_produit') }}{% endif %}
-                        </span>
-                        {% set caracs = produit.get('caracteristique') or [] %}
-                        {% if caracs %}
-                        <div class="carac-row">
-                            {% for c in caracs %}
-                                {% set statut = c.get('statut_matching') %}
-                                {% set bareme = c.get('bareme') %}
-                                {% set is_num = c.get('type_caracteristique') == 1 %}
-                                {% set idvals = c.get('id_valeur') or [] %}
-                                {% set cid = c.get('id_caracteristique') %}
-                                {% set label = c.get('label') or ('c' ~ cid) %}
-                                {% set vlabel = c.get('value_label') %}
-                                {% set tooltip = label ~ ' · statut=' ~ statut ~ ' · type=' ~ ('num' if is_num else 'text') ~ ' · poids=' ~ c.get('poids') ~ ' · poids_q=' ~ c.get('poids_question') ~ ' · id=' ~ cid ~ ((' · id_valeur=' ~ idvals|join(',')) if idvals else '') %}
-                                {% if statut == -1 %}{% set klass = 'carac-bloquant' %}
-                                {% elif statut == 1 and bareme is not none and bareme >= 0.5 %}{% set klass = 'carac-ok' %}
-                                {% elif statut == 1 %}{% set klass = 'carac-partial' %}
-                                {% else %}{% set klass = 'carac-neutre' %}{% endif %}
-                                <span class="carac-badge {{ klass }}" title="{{ tooltip }}">{{ label }}{% if vlabel %}: {{ vlabel }}{% endif %}{% if bareme is not none %} ({{ "%.1f"|format(bareme) }}){% endif %}</span>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
-                </div>
+                {% elif info.produits or info.liste_produits or info.ecarts_produits %}
+                {% if info.produits %}{{ render_produits('Top produits', info.produits, '#10b981') }}{% endif %}
+                {% if info.liste_produits %}{{ render_produits('Liste produits', info.liste_produits, '#3b82f6') }}{% endif %}
+                {% if info.ecarts_produits %}{{ render_produits('Écarts / rejetés', info.ecarts_produits, '#ef4444') }}{% endif %}
                 {% else %}
                 <p style="color: var(--text-tertiary); font-size: 0.85rem; margin: 0.5rem 0;">Aucun produit retourné</p>
                 {% endif %}
@@ -314,6 +328,9 @@
                     let html = '';
                     html += section('Payload envoyé', payload);
                     html += section('Top produits complets (' + (apiResp.top_produit || []).length + ')', apiResp.top_produit);
+                    if (apiResp.liste_produit && apiResp.liste_produit.length) {
+                        html += section('Liste produits complets (' + apiResp.liste_produit.length + ')', apiResp.liste_produit);
+                    }
                     if (apiResp.ecarts && apiResp.ecarts.length) {
                         html += section('Écarts / rejetés (' + apiResp.ecarts.length + ')', apiResp.ecarts);
                     }
