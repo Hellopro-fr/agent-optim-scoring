@@ -243,6 +243,21 @@ Si le script échoue, diagnostique et corrige avant de continuer.
 
 ## Étape 6 — Analyser et décider
 
+### ⚠️ Rappel — catalogue vivant
+
+Entre iter N-1 et iter N, les produits remontés par l'API peuvent différer
+(contrats fournisseurs, désactivations, nouveaux produits). Règle d'interprétation :
+
+- **Analyser les métriques agrégées**, pas les IDs de produits individuels
+- **Marge de bruit catalogue : ±2-3%** → en dessous, ne pas conclure à un effet
+  de ta modif (probablement du bruit catalogue)
+- **Au-dessus de ±5%** → effet réel probable de la modif Cypher/prompt. Entre
+  3% et 5% : zone grise, note l'observation sans conclusion ferme.
+
+Voir `CLAUDE.md` §"Volatilité du catalogue produits" pour le détail.
+
+---
+
 Compare les 5 métriques avec l'itération précédente (ou la baseline pour iter 1) :
 
 | Métrique | Avant | Après | Δ |

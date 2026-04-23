@@ -69,6 +69,43 @@ Le repo `/rag-hp-pub` est un **bind-mount vers le repo hôte** (`/home/devhp/RAG
 
 **Pourquoi cette règle** : éviter que la dette cognitive du dev/test pollue l'optimisation PROD. Chaque itération doit être évaluée sur ses propres mérites vs la baseline PROD, pas vs un historique de décisions expérimentales.
 
+## Volatilité du catalogue produits (règle d'interprétation)
+
+Le catalogue HelloPro est **dynamique** entre deux itérations :
+- Fournisseurs qui activent / désactivent leurs produits selon contrat
+- Nouveaux produits qui entrent dans une catégorie
+- Produits retirés (fin de vie, désactivation, rupture de stock)
+
+**Conséquences pour l'analyse d'une itération** :
+
+- ❌ **Ne jamais supposer** que les mêmes IDs de produits remontent entre iter N
+  et iter N+1 pour un parcours donné. Le pool évolue.
+- ❌ **Ne jamais attribuer** la disparition d'un produit (ou l'apparition d'un
+  nouveau) à tes modifs dans RAG-HP-PUB. C'est presque toujours le catalogue
+  qui a bougé, pas ton Cypher.
+- ✅ **Raisonner sur les métriques agrégées** (taux conformité, NDCG, Precision,
+  diversité fournisseurs, score global) et **non sur les IDs individuels** de
+  produits retournés.
+- ✅ **Accepter une variance catalogue de ±2-3%** sur les métriques exprimées
+  en pourcentage. En dessous de ce seuil, ne pas conclure à un effet de ta modif
+  (bruit probable).
+- ✅ **Au-dessus de ±5%**, c'est probablement un effet réel de ta modif (effet >
+  bruit catalogue). Entre 3% et 5% : zone grise, noter mais ne pas décider seul.
+
+**Cas concret** :
+
+> Iter 4 : conformité P2 = 75%, produits retournés = {A, B, C, D, E}
+> Iter 5 : conformité P2 = 78%, produits retournés = {A, F, G, D, H}
+>
+> → +3% = bruit catalogue probable, pas de conclusion forte sur l'effet du Cypher.
+> → 2 produits remplacés ({B,C,E} → {F,G,H}) ≠ effet de ta modif : le catalogue
+>   a simplement remonté d'autres produits pour ce parcours.
+
+**Pourquoi cette règle** : éviter que l'agent fasse de la sur-interprétation
+(attribuer au Cypher un changement qui vient du sourcing) et prenne des décisions
+GARDÉ/ROLLBACK biaisées. Les seuils ±2-3% / ±5% sont des points de départ,
+à calibrer à l'usage.
+
 ## Fichiers immuables (NEVER modifie)
 1. EVAL.md — définit ce que "mieux" signifie (Sacred)
    - **Exception** : retrait ponctuel de `aberrations_prix` (2026-04-17) par décision humaine — scope recentré sur l'affichage des produits cohérents. Le fichier redevient immuable après cette modification.
