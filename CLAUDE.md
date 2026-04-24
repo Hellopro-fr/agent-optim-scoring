@@ -129,6 +129,53 @@ correspondant au besoin de l'acheteur.
 (algo, Cypher, prompts) de ce qui relève du sourcing (disponibilité produits,
 contrats fournisseurs). Les deux ne se corrigent pas au même endroit.
 
+## Verrouillage problème/itération (gouvernance)
+
+Le numéro d'itération reste **linéaire** (iter-3, iter-4, iter-5…) pour la
+traçabilité technique (commits, `metrics_NNN.json`, logs). **Mais le problème
+`Pn` attaqué est épinglé** et ne change pas de la propre initiative de l'agent.
+
+**Règle de verrouillage** :
+- Le `Pn` courant reste attribué aux itérations successives **tant que** :
+  - Il n'est pas résolu (métrique cible EVAL.md atteinte), **OU**
+  - L'humain n'a pas déclaré **"plafond atteint"** via CP-Escalade
+- L'agent ne change **jamais** de `Pn` de sa propre initiative, même après
+  plusieurs ROLLBACK.
+
+**Règle de lecture à chaque itération N** (intégrée dans `/iterate N`) :
+- Lire dans `ITERATIONS.md` la **dernière décision** + le **dernier `Pn`** attaqué :
+  - Dernière décision = **ROLLBACK** → **reprendre obligatoirement le même `Pn`**,
+    proposer un angle d'attaque différent (pas une hypothèse identique).
+  - Dernière décision = **GARDÉ** + métrique cible `Pn` atteinte → passer au
+    `Pn` suivant selon l'ordre des priorités (cf. §"Épingles importantes").
+  - Dernière décision = **GARDÉ** + cible pas encore atteinte → rester sur `Pn`
+    et amplifier/consolider la modif.
+
+**Escalade — CP-Escalade (après 3 ROLLBACK consécutifs sur le même `Pn`)** :
+⏹️ **STOP obligatoire** — Attendre validation humaine. Options humaines :
+- **(a) Continuer `Pn`** : l'agent propose une nouvelle hypothèse sous un angle
+  différent (reformulation obligatoire, pas de répétition d'une hypothèse déjà
+  testée).
+- **(b) Plafond atteint** : libérer `Pn`, passer au suivant. Noter dans
+  `ITERATIONS.md` « plafond atteint sur `Pn` — métrique X reste à Y% ».
+- **(c) Pause sourcing** : mettre `Pn` en pause (cf. §"Absence de produit
+  pertinent dans la catégorie"), passer au suivant, revenir quand le sourcing
+  a été enrichi.
+
+**Format `ITERATIONS.md` enrichi** — le titre de chaque bloc doit exposer le
+`Pn` + compteur d'essais :
+```
+## Itération 3 — [P2] essai 1 — 2026-04-24 14:30
+## Itération 4 — [P2] essai 2 (après ROLLBACK iter-3) — 2026-04-24 15:12
+```
+Le compteur `essai X` repart à 1 à chaque nouveau `Pn` verrouillé. Permet de
+voir d'un coup d'œil combien d'essais avant déclenchement CP-Escalade.
+
+**Pourquoi cette règle** : forcer la discipline d'attaque problème-par-problème
+selon l'ordre défini. Empêche l'agent de "fuir" un `Pn` difficile en basculant
+sur un autre plus facile, ce qui produit des gains faciles mais désordonne la
+séquence d'optimisation et masque les vrais plafonds de chaque `Pn`.
+
 ## Fichiers immuables (NEVER modifie)
 1. EVAL.md — définit ce que "mieux" signifie (Sacred)
    - **Exception 1** : retrait ponctuel de `aberrations_prix` (2026-04-17) par décision humaine — scope recentré sur l'affichage des produits cohérents.
@@ -208,7 +255,10 @@ contrats fournisseurs). Les deux ne se corrigent pas au même endroit.
 Pour chaque itération, ajouter une section :
 
 ```markdown
-## Itération N — [date HH:MM]
+## Itération N — [Pn] essai K — [date HH:MM]
+<!-- Si après ROLLBACK : "[Pn] essai K (après ROLLBACK iter-M)" -->
+
+**Problème attaqué** : `Pn` (verrouillé jusqu'à résolution ou CP-Escalade)
 
 **Hypothèse** : 
 [Courte description : quel fichier je modifie et pourquoi, basée sur les métriques précédentes]
@@ -258,6 +308,16 @@ Pour chaque itération, ajouter une section :
 - Vérifier que BASELINE.json est rempli
 - Vérifier que les 34 parcours produisent des résultats cohérents
 - Accord pour lancer les itérations autonomes ?
+
+### CP-Escalade — 3 ROLLBACK consécutifs sur le même `Pn`
+⏹️ **STOP** — Attendre décision humaine (cf. §"Verrouillage problème/itération")
+
+- L'agent présente un résumé : `Pn`, 3 hypothèses testées, pourquoi chacune a
+  échoué, métrique cible vs valeur actuelle.
+- Humain tranche entre (a) continuer `Pn` avec un nouvel angle, (b) déclarer
+  plafond atteint et passer au suivant, (c) pause sourcing.
+- L'agent **n'a jamais le droit** de basculer sur un autre `Pn` sans que cette
+  décision soit rendue.
 
 ### CP4 — Quand cibles atteintes OU pas d'amélioration possible
 ⏹️ **STOP** — Validation finale

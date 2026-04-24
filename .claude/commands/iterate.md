@@ -37,18 +37,34 @@ Commande interdite : `git log` (sans filtre) — capturerait les commits de setu
 
 ### Cas A : itérations originales (N ∈ [1, 8])
 
-Ordre suggéré par CLAUDE.md :
-- iter 1 → P1
-- iter 2 → P3
-- iter 3 → P2
-- iter 4 → P5
-- iter 5 → P6
-- iter 6 → P7
-- iter 7 → P8
-- iter 8 → P9
+**Verrouillage problème/itération** (cf. CLAUDE.md §"Verrouillage problème/itération") — le `Pn` attaqué est **épinglé** et ne change pas de l'initiative de l'agent. Procédure stricte :
 
-Si l'utilisateur a passé `P<num>` en second argument, force ce problème.
-Sinon, si les itérations précédentes ont dévié de l'ordre (rollbacks, plateau), justifie ton choix à partir des métriques dans [ITERATIONS.md](ITERATIONS.md).
+1. **Lire `ITERATIONS.md`** — récupérer le **dernier bloc d'itération** (N-1) et en extraire :
+   - Le `Pn` attaqué
+   - La décision finale (GARDÉ / ROLLBACK)
+   - Le numéro de l'essai (compteur par `Pn`)
+
+2. **Déterminer le `Pn` à attaquer pour l'itération N** selon la règle :
+   - Si l'utilisateur a passé `P<num>` en second argument → force ce problème (**override humain, priorité absolue**).
+   - Sinon, appliquer la règle de verrouillage :
+
+   | Dernière décision (iter N-1) | Métrique cible `Pn` atteinte ? | Action pour iter N |
+   |---|---|---|
+   | **ROLLBACK** | n/a | **Rester sur le même `Pn`**, proposer un angle différent |
+   | **GARDÉ** | ✅ atteinte | Passer au `Pn` suivant selon l'ordre ci-dessous |
+   | **GARDÉ** | ❌ pas encore | **Rester sur le même `Pn`**, amplifier/consolider la modif |
+
+3. **Ordre des priorités** (utilisé uniquement quand on passe à un `Pn` suivant) :
+   - P1 → P3 → P2 → P5 → P6 → P7 → P8 → P9
+
+4. **Compteur d'essais par `Pn`** :
+   - Essai 1 = première tentative sur ce `Pn`
+   - Essai K = K-ième tentative (après K-1 ROLLBACK sur le même `Pn`)
+   - Le compteur **repart à 1** dès qu'on change de `Pn`
+
+5. **Escalade automatique** — Si la dernière itération est la **3ᵉ ROLLBACK consécutive** sur le même `Pn` :
+   🚫 **NE PAS proposer de nouvelle hypothèse automatiquement**.
+   ⏹️ **Déclencher CP-Escalade** (cf. §"Checkpoints") : afficher un résumé des 3 hypothèses testées, leur échec, et **attendre la décision humaine** (continuer `Pn` / plafond atteint / pause sourcing).
 
 ### Cas B : itérations custom (N ≥ 9)
 
@@ -73,10 +89,15 @@ Règles spécifiques pour les itérations custom :
 ═══════════════════════════════════════════════════════
 Itération       : N
 Problème        : P<num> — <libellé court>
+Essai           : K/3 sur Pn  (K incrémenté après chaque ROLLBACK consécutif)
+Dernière iter   : iter N-1 → <GARDÉ | ROLLBACK> sur <P…>
 Sévérité        : <élevée | modérée | faible>
-Justification   : <1-2 phrases — pourquoi ce Pn à cette itération>
+Justification   : <1-2 phrases — pourquoi ce Pn à cette itération,
+                   en cohérence avec la règle de verrouillage>
 ═══════════════════════════════════════════════════════
 ```
+
+⚠️ **Si `Essai` = 3/3 et décision N-1 = ROLLBACK** → ne PAS continuer, déclencher CP-Escalade.
 
 🚫 **Interdit** : passer à l'Étape 2 sans avoir écrit ce bloc. Le bloc rend le problème lisible pour l'humain qui supervise et sert d'ancrage pour le self-challenge de l'Étape 2b.
 
@@ -287,9 +308,14 @@ Cocher les cases `Actions` au fur et à mesure (commit, API redémarrée).
 
 - **CP1** — après itération `0` → STOP, attendre validation humaine sur BASELINE.json
 - **CP-Hypothèse** — à chaque itération N > 0, après l'Étape 2c → STOP, attendre `GO` / `NO` / commentaire humain (voir §"Étape 2c — Checkpoint humain")
+- **CP-Escalade** — détecté à l'Étape 1 quand la 3ᵉ tentative consécutive sur le même `Pn` vient d'être ROLLBACK → STOP **avant de formuler toute nouvelle hypothèse**. Présente à l'humain :
+  - Le `Pn` concerné + métrique cible vs valeur actuelle
+  - Résumé des 3 hypothèses testées + raison de chaque ROLLBACK
+  - Attendre la décision : **(a) continuer `Pn`** (nouvel angle à proposer) / **(b) plafond atteint** (passer au `Pn` suivant) / **(c) pause sourcing** (cf. CLAUDE.md §"Absence de produit…")
+  - 🚫 L'agent **n'a jamais le droit** de basculer sur un autre `Pn` sans réponse humaine.
 - **CP4** — si cibles EVAL.md atteintes OU plateau définitif (déclaré par l'humain) → STOP, préparer merge `graphoptim-service/matching` → `graph-service/matching`
 
-À CP1 et CP4 : **ne lance pas l'itération suivante automatiquement**. Affiche le résumé et attends.
+À CP1, CP-Escalade et CP4 : **ne lance pas l'itération suivante automatiquement**. Affiche le résumé et attends.
 
 ---
 
