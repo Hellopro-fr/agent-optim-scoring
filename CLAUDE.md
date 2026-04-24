@@ -106,9 +106,34 @@ Le catalogue HelloPro est **dynamique** entre deux itérations :
 GARDÉ/ROLLBACK biaisées. Les seuils ±2-3% / ±5% sont des points de départ,
 à calibrer à l'usage.
 
+## Absence de produit pertinent dans la catégorie (corollaire)
+
+Si le taux de conformité stagne bas malgré plusieurs modifs Cypher ciblant P1,
+**ce n'est pas forcément parce que l'algorithme est trop strict**. Il se peut
+simplement que la catégorie HelloPro ne contienne pas (ou plus) de produit
+correspondant au besoin de l'acheteur.
+
+- ❌ **Ne pas forcer** le matching à remonter des produits hors-sujet pour
+  "faire monter artificiellement le taux de conformité" — c'est un symptôme
+  de sourcing, pas un problème d'algo. On ne peut pas faire apparaître un
+  produit qui n'existe pas dans le catalogue.
+- ✅ Avant de conclure "mon Cypher filtre trop", poser d'abord la question :
+  *« Ces produits existent-ils réellement dans le catalogue HelloPro ? »*
+- ✅ Si après 2-3 itérations ciblant P1 (conformité) aucun gain ne vient :
+  signaler dans ITERATIONS.md « **plafond sourcing atteint** » et passer au
+  prochain Pn (P2-P9).
+- ✅ Un taux de conformité "médiocre" stable (ex: 75-80%) peut être la limite
+  haute de ce que le catalogue permet — pas un échec algorithmique.
+
+**Pourquoi cette règle** : distinguer ce qui relève de l'optimisation
+(algo, Cypher, prompts) de ce qui relève du sourcing (disponibilité produits,
+contrats fournisseurs). Les deux ne se corrigent pas au même endroit.
+
 ## Fichiers immuables (NEVER modifie)
 1. EVAL.md — définit ce que "mieux" signifie (Sacred)
-   - **Exception** : retrait ponctuel de `aberrations_prix` (2026-04-17) par décision humaine — scope recentré sur l'affichage des produits cohérents. Le fichier redevient immuable après cette modification.
+   - **Exception 1** : retrait ponctuel de `aberrations_prix` (2026-04-17) par décision humaine — scope recentré sur l'affichage des produits cohérents.
+   - **Exception 2** : retrait de `presence_estimatif` de la pondération du score global (2026-04-24) par décision humaine — métrique dépend du sourcing fournisseur, pas de l'algorithme, donc non-impactante pour la décision GARDÉ/ROLLBACK. Conservée en affichage informatif. Total poids : 6 → 5.
+   - Le fichier redevient immuable après ces exceptions.
 2. PROBLEMS.md — liste les 9 problèmes à résoudre (source de vérité)
 3. BASELINE.json — itération 0 locked (après init)
 4. CLAUDE.md — ces règles

@@ -79,29 +79,30 @@ class Metrics:
     coherence_precision: float = 0.0  # Composante Precision@5 de coherence_score (debug)
 
     def score_global(self) -> float:
-        """Calcule le score global pondéré selon EVAL.md"""
-        # Poids: conformité x2, tous les autres x1 (total = 6)
+        """Calcule le score global pondéré selon EVAL.md.
+
+        `presence_estimatif` est conservé en affichage mais exclu du score
+        (décision humaine 2026-04-24 — dépend du sourcing fournisseur, pas
+        de l'algorithme). Total poids = 5.
+        """
         weights = {
             'taux_conformite': 2.0,
             'doublons': 1.0,
             'diversite_fournisseurs': 1.0,
             'coherence_score': 1.0,
-            'presence_estimatif': 1.0
         }
 
-        # Normaliser les métriques (0-1)
         norm_values = {
-            'taux_conformite': self.taux_conformite / 100.0,  # Déjà en %
-            'doublons': 1.0 if self.doublons == 0 else 0.0,  # 0 doublons = 1.0
-            'diversite_fournisseurs': min(self.diversite_fournisseurs / 3.0, 1.0),  # Cible >= 3
-            'coherence_score': self.coherence_score,  # Déjà 0-1
-            'presence_estimatif': self.presence_estimatif / 100.0  # Déjà en %
+            'taux_conformite': self.taux_conformite / 100.0,
+            'doublons': 1.0 if self.doublons == 0 else 0.0,
+            'diversite_fournisseurs': min(self.diversite_fournisseurs / 3.0, 1.0),
+            'coherence_score': self.coherence_score,
         }
 
         weighted_sum = sum(norm_values[k] * weights[k] for k in norm_values)
         total_weight = sum(weights.values())
 
-        return (weighted_sum / total_weight) * 100.0  # En %
+        return (weighted_sum / total_weight) * 100.0
 
     def to_dict(self) -> dict:
         """Convertit les métriques en dictionnaire"""
