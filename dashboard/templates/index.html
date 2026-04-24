@@ -546,18 +546,39 @@ function startIteration(iterationNum) {
                 return;
             }
 
-            if (info.exists && info.has_events && info.metrics_exists) {
-                // Iteration terminee mais historique encore en memoire -> choix
+            if (info.metrics_exists) {
+                // Iteration terminee (metrics_NNN.json present) -> TOUJOURS confirmer.
                 loaderArea.style.display = 'none'; stopLoaderRotation();
+
+                if (info.exists && info.has_events) {
+                    // Historique de conversation encore en memoire -> 3e voie possible
+                    const relancer = window.confirm(
+                        'Iteration ' + iterationNum + ' deja terminee.\n\n' +
+                        'OK = relancer une nouvelle iteration (ecrase l\'historique)\n' +
+                        'Annuler = revoir la conversation precedente (lecture seule)'
+                    );
+                    if (relancer) {
+                        launchFresh(iterationNum);
+                    } else {
+                        resumeSession(iterationNum, 'history');
+                    }
+                    return;
+                }
+
+                // Plus de conversation en memoire (Flask redemarre, ou session dismissed).
+                // On ne propose que relance OU abandon (pas de replay possible).
                 const relancer = window.confirm(
-                    'Iteration ' + iterationNum + ' deja terminee.\n\n' +
-                    'OK = relancer une nouvelle iteration (ecrase l\'historique)\n' +
-                    'Annuler = revoir la conversation precedente (lecture seule)'
+                    'Iteration ' + iterationNum + ' deja terminee (metrics_' +
+                    String(iterationNum).padStart(3, '0') + '.json present).\n\n' +
+                    'Cliquer OK relancera l\'iteration complete et ECRASERA\n' +
+                    'les resultats actuels (metrics + iteration JSON).\n\n' +
+                    'Continuer ?'
                 );
                 if (relancer) {
                     launchFresh(iterationNum);
                 } else {
-                    resumeSession(iterationNum, 'history');
+                    // Abort propre : on revient a l'etat avant clic.
+                    consoleOutput.innerHTML = '';
                 }
                 return;
             }
