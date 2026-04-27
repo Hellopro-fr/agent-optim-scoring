@@ -119,11 +119,14 @@ correspondant au besoin de l'acheteur.
   produit qui n'existe pas dans le catalogue.
 - ✅ Avant de conclure "mon Cypher filtre trop", poser d'abord la question :
   *« Ces produits existent-ils réellement dans le catalogue HelloPro ? »*
-- ✅ Si après 2-3 itérations ciblant P1 (conformité) aucun gain ne vient :
-  signaler dans ITERATIONS.md « **plafond sourcing atteint** » et passer au
-  prochain Pn (P2-P9).
+- ✅ Si après 2-3 itérations ciblant P1 aucun gain ne vient, l'agent doit
+  appliquer la règle CP-Escalade (cf. §"Verrouillage problème/itération") :
+  proposer une 4ᵉ hypothèse sous un angle radicalement différent **OU**
+  demander à l'utilisateur de suggérer une piste. Le constat « plafond
+  sourcing atteint » ne peut être noté dans ITERATIONS.md que **sur décision
+  explicite de l'utilisateur** — l'agent ne déclare jamais un plafond de soi-même.
 - ✅ Un taux de conformité "médiocre" stable (ex: 75-80%) peut être la limite
-  haute de ce que le catalogue permet — pas un échec algorithmique.
+  haute de ce que le catalogue permet — l'utilisateur en juge.
 
 **Pourquoi cette règle** : distinguer ce qui relève de l'optimisation
 (algo, Cypher, prompts) de ce qui relève du sourcing (disponibilité produits,
@@ -131,50 +134,89 @@ contrats fournisseurs). Les deux ne se corrigent pas au même endroit.
 
 ## Verrouillage problème/itération (gouvernance)
 
-Le numéro d'itération reste **linéaire** (iter-3, iter-4, iter-5…) pour la
-traçabilité technique (commits, `metrics_NNN.json`, logs). **Mais le problème
-`Pn` attaqué est épinglé** et ne change pas de la propre initiative de l'agent.
+**Le numéro d'itération est dicté par le bouton cliqué dans le dashboard, pas
+par un compteur linéaire que l'agent gère.** Ce bouton détermine strictement
+le `Pn` à attaquer via le mapping fixe (cf. §"Épingles importantes").
 
-**Règle de verrouillage** :
-- Le `Pn` courant reste attribué aux itérations successives **tant que** :
-  - Il n'est pas résolu (métrique cible EVAL.md atteinte), **OU**
-  - L'humain n'a pas déclaré **"plafond atteint"** via CP-Escalade
-- L'agent ne change **jamais** de `Pn` de sa propre initiative, même après
-  plusieurs ROLLBACK.
+**Mapping iter→Pn (immuable)** :
 
-**Règle de lecture à chaque itération N** (intégrée dans `/iterate N`) :
-- Lire dans `ITERATIONS.md` la **dernière décision** + le **dernier `Pn`** attaqué :
-  - Dernière décision = **ROLLBACK** → **reprendre obligatoirement le même `Pn`**,
-    proposer un angle d'attaque différent (pas une hypothèse identique).
-  - Dernière décision = **GARDÉ** + métrique cible `Pn` atteinte → passer au
-    `Pn` suivant selon l'ordre des priorités (cf. §"Épingles importantes").
-  - Dernière décision = **GARDÉ** + cible pas encore atteinte → rester sur `Pn`
-    et amplifier/consolider la modif.
+| Iter | Pn | Iter | Pn |
+|---|---|---|---|
+| 1 | P1 | 5 | P6 |
+| 2 | P3 | 6 | P7 |
+| 3 | P2 | 7 | P8 |
+| 4 | P5 | 8 | P9 |
+| ≥ 9 | P custom (depuis `custom_problems.json`) |  |  |
 
-**Escalade — CP-Escalade (après 3 ROLLBACK consécutifs sur le même `Pn`)** :
-⏹️ **STOP obligatoire** — Attendre validation humaine. Options humaines :
-- **(a) Continuer `Pn`** : l'agent propose une nouvelle hypothèse sous un angle
-  différent (reformulation obligatoire, pas de répétition d'une hypothèse déjà
-  testée).
-- **(b) Plafond atteint** : libérer `Pn`, passer au suivant. Noter dans
-  `ITERATIONS.md` « plafond atteint sur `Pn` — métrique X reste à Y% ».
-- **(c) Pause sourcing** : mettre `Pn` en pause (cf. §"Absence de produit
-  pertinent dans la catégorie"), passer au suivant, revenir quand le sourcing
-  a été enrichi.
+**Règles strictes** :
+- Le bouton cliqué est la **seule source de vérité** pour le `Pn` à attaquer.
+- L'agent **ne lit jamais `ITERATIONS.md` pour deviner le `Pn`**. Il le récupère
+  uniquement via `$ARGUMENTS` injecté par le dashboard (`build_iterate_prompt`).
+- L'agent ne change **jamais** de `Pn` de sa propre initiative — même après
+  plusieurs ROLLBACK, même si un autre `Pn` semble plus facile.
 
-**Format `ITERATIONS.md` enrichi** — le titre de chaque bloc doit exposer le
-`Pn` + compteur d'essais :
+**Numéro d'itération stable après ROLLBACK** :
+- iter `N` reste iter `N` tant que l'utilisateur n'a pas cliqué un autre bouton.
+- Plusieurs essais peuvent exister sous le même iter `N` (essai 1, essai 2, …),
+  distingués dans `ITERATIONS.md` par le compteur `essai K`.
+- C'est l'utilisateur qui décide quand passer à iter `N+1` en cliquant un autre
+  bouton dans le dashboard. L'agent ne le décide jamais automatiquement.
+
+**Lecture d'`ITERATIONS.md` (à chaque essai)** :
+- Compter les blocs existants `## Itération <N> — [P<X>] essai K` pour ce couple
+  (iter, Pn) → en déduire `K = (nb blocs trouvés) + 1`.
+- Lire la décision du dernier essai (GARDÉ / ROLLBACK) pour orienter l'angle
+  d'attaque de la nouvelle hypothèse :
+  - Dernier = **ROLLBACK** → proposer un **angle différent** (pas une variation
+    triviale).
+  - Dernier = **GARDÉ** + cible non atteinte → **amplifier/consolider** la modif.
+  - Dernier = **GARDÉ** + cible atteinte → suggérer à l'utilisateur de cliquer
+    iter `N+1` (passer au `Pn` suivant). Ne pas dévier de soi-même.
+
+**Escalade — CP-Escalade (après 3 ROLLBACK consécutifs sur le même iter `N`)** :
+⏹️ **STOP** — pas de synthèse, pas d'abandon, pas de recommandation
+« plafond atteint ». L'agent doit alors agir selon cette priorité stricte :
+
+1. **Priorité 1 (par défaut)** : proposer une **4ᵉ hypothèse sous un angle
+   radicalement différent** des 3 précédentes (pas une variation triviale).
+   L'agent doit **expliciter en quoi** cet angle diffère (ex: si les 3 essais
+   touchaient le Cypher, viser le prompt LLM ; si les 3 touchaient le scoring
+   numérique, viser la logique de filtrage).
+2. **Priorité 2 (fallback, uniquement si pistes vraiment épuisées)** : passer
+   la main à l'utilisateur en disant explicitement *« j'ai épuisé mes pistes
+   sur P<X>, peux-tu suggérer une direction ? »*. Pas de "je propose
+   d'abandonner", pas de "je suggère de passer au suivant" — juste demander
+   une piste.
+
+🚫 **Interdit pour l'agent** (à toutes les étapes de CP-Escalade) :
+- Recommander « plafond atteint » sur le `P<X>` courant.
+- Recommander de passer au `Pn` suivant (= dévier du bouton cliqué).
+- Synthétiser les 3 hypothèses pour conclure à un abandon.
+- Basculer de soi-même sur un autre `Pn`.
+
+**L'utilisateur reste libre** de cliquer iter `N+1` pour passer au `Pn` suivant
+s'il considère que P<X> a effectivement plafonné — c'est sa prérogative
+exclusive, jamais une suggestion de l'agent. S'il fait ce choix, il peut
+noter manuellement « plafond atteint sur P<X> » dans ITERATIONS.md.
+
+**Format `ITERATIONS.md`** — chaque essai = un bloc, titre exposant `[Pn]` + `essai K` :
 ```
 ## Itération 3 — [P2] essai 1 — 2026-04-24 14:30
-## Itération 4 — [P2] essai 2 (après ROLLBACK iter-3) — 2026-04-24 15:12
+## Itération 3 — [P2] essai 2 (après ROLLBACK essai 1) — 2026-04-24 15:12
+## Itération 4 — [P5] essai 1 — 2026-04-25 09:30
 ```
-Le compteur `essai X` repart à 1 à chaque nouveau `Pn` verrouillé. Permet de
-voir d'un coup d'œil combien d'essais avant déclenchement CP-Escalade.
+Le compteur `essai K` repart à 1 dès que l'utilisateur clique un autre bouton
+iter (= passage à un nouveau `Pn`).
 
-**Pourquoi cette règle** : forcer la discipline d'attaque problème-par-problème
-selon l'ordre défini. Empêche l'agent de "fuir" un `Pn` difficile en basculant
-sur un autre plus facile, ce qui produit des gains faciles mais désordonne la
-séquence d'optimisation et masque les vrais plafonds de chaque `Pn`.
+**Archivage** : `results/metrics_NNN.json` et `results/iteration_NNN.json` sont
+**écrasés** à chaque essai (ils reflètent l'essai courant). L'historique narratif
+des essais vit dans `ITERATIONS.md`. Si besoin d'archive complète, l'utilisateur
+clique le bouton 🗑️ existant qui archive vers `backup/iterations-reset/`.
+
+**Pourquoi cette règle** : éliminer toute ambiguïté sur le `Pn` à attaquer.
+L'utilisateur garde le contrôle (il choisit explicitement quel problème via le
+bouton), l'agent applique sans deviner. Empêche les dérives observées où
+l'agent attaquait P2 alors que l'utilisateur avait cliqué iter 6 (= P7).
 
 ## Fichiers immuables (NEVER modifie)
 1. EVAL.md — définit ce que "mieux" signifie (Sacred)
@@ -309,15 +351,19 @@ Pour chaque itération, ajouter une section :
 - Vérifier que les 34 parcours produisent des résultats cohérents
 - Accord pour lancer les itérations autonomes ?
 
-### CP-Escalade — 3 ROLLBACK consécutifs sur le même `Pn`
-⏹️ **STOP** — Attendre décision humaine (cf. §"Verrouillage problème/itération")
+### CP-Escalade — 3 ROLLBACK consécutifs sur le même iter `N`
+⏹️ **STOP** — pas de synthèse, pas d'abandon (cf. §"Verrouillage problème/itération").
 
-- L'agent présente un résumé : `Pn`, 3 hypothèses testées, pourquoi chacune a
-  échoué, métrique cible vs valeur actuelle.
-- Humain tranche entre (a) continuer `Pn` avec un nouvel angle, (b) déclarer
-  plafond atteint et passer au suivant, (c) pause sourcing.
-- L'agent **n'a jamais le droit** de basculer sur un autre `Pn` sans que cette
-  décision soit rendue.
+L'agent applique strictement la priorité :
+1. **Priorité 1** : proposer une 4ᵉ hypothèse sous un angle **radicalement
+   différent** des 3 précédents (préciser explicitement la différence d'angle).
+2. **Priorité 2 (fallback, pistes épuisées)** : *« j'ai épuisé mes pistes
+   sur P<X>, peux-tu suggérer une direction ? »* — passer la main à l'utilisateur.
+
+L'agent **n'a jamais le droit** de :
+- Basculer sur un autre `Pn` sans intervention humaine (clic sur autre bouton).
+- Recommander « plafond atteint » ou « passer au suivant ».
+- Synthétiser les 3 essais pour conclure à un abandon.
 
 ### CP4 — Quand cibles atteintes OU pas d'amélioration possible
 ⏹️ **STOP** — Validation finale

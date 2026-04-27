@@ -1675,6 +1675,13 @@ def session_info(n):
     })
 
 
+# Mapping iter→Pn pour les itérations originales (CLAUDE.md §"Épingles importantes").
+# Le bouton cliqué détermine strictement le Pn attaqué : iter 6 → P7, peu importe
+# l'historique d'ITERATIONS.md. Évite que l'agent dérive vers un autre Pn après
+# ROLLBACK. Pour iter ≥ 9 (custom), le Pn est défini par custom_problems.json.
+ITER_TO_PN = {1: 1, 2: 3, 3: 2, 4: 5, 5: 6, 6: 7, 7: 8, 8: 9}
+
+
 def build_iterate_prompt(n: int) -> str:
     """Construit le prompt envoyé à Claude CLI pour l'itération N.
 
@@ -1683,6 +1690,7 @@ def build_iterate_prompt(n: int) -> str:
     On lit donc le contenu de `.claude/commands/iterate.md` et on l'injecte
     comme prompt brut. Le fichier reste la source de vérité du skill.
 
+    Pour les itérations 1-8 → `$ARGUMENTS` = "<n> P<X>" selon ITER_TO_PN.
     Pour les itérations custom (N >= 9) → on ajoute en suffixe le libellé,
     la sévérité, la description et les métriques affectées lus depuis
     `custom_problems.json`.
@@ -1696,8 +1704,12 @@ def build_iterate_prompt(n: int) -> str:
             parts = content.split("---", 2)
             if len(parts) >= 3:
                 content = parts[2].lstrip()
-        # Substituer $ARGUMENTS par le numéro d'itération
-        base = content.replace("$ARGUMENTS", str(n))
+        # Injecter le Pn associé selon le mapping fixe (iter 1-8 uniquement)
+        pn = ITER_TO_PN.get(n)
+        if pn is not None:
+            base = content.replace("$ARGUMENTS", f"{n} P{pn}")
+        else:
+            base = content.replace("$ARGUMENTS", str(n))
     else:
         # Fallback si le skill manque (ne devrait pas arriver)
         base = f"Exécute l'itération {n} du protocole décrit dans CLAUDE.md"

@@ -37,34 +37,51 @@ Commande interdite : `git log` (sans filtre) — capturerait les commits de setu
 
 ### Cas A : itérations originales (N ∈ [1, 8])
 
-**Verrouillage problème/itération** (cf. CLAUDE.md §"Verrouillage problème/itération") — le `Pn` attaqué est **épinglé** et ne change pas de l'initiative de l'agent. Procédure stricte :
+**Le `Pn` est dicté par `$ARGUMENTS`** (cf. CLAUDE.md §"Verrouillage problème/itération") — pas de déduction par lecture d'`ITERATIONS.md`.
 
-1. **Lire `ITERATIONS.md`** — récupérer le **dernier bloc d'itération** (N-1) et en extraire :
-   - Le `Pn` attaqué
-   - La décision finale (GARDÉ / ROLLBACK)
-   - Le numéro de l'essai (compteur par `Pn`)
+1. **Extraire le `Pn` depuis `$ARGUMENTS`** :
+   - Format reçu : `"<n> P<X>"` (ex: `"6 P7"`).
+   - `<n>` = numéro d'itération cliqué dans le dashboard.
+   - `P<X>` = le problème à attaquer, **dicté** par le mapping fixe `ITER_TO_PN`
+     géré côté dashboard (iter 1→P1, iter 2→P3, iter 3→P2, iter 4→P5,
+     iter 5→P6, iter 6→P7, iter 7→P8, iter 8→P9).
+   - 🚫 **Ne JAMAIS lire `ITERATIONS.md` pour décider du `Pn`**. Le bouton
+     cliqué est la seule source de vérité.
 
-2. **Déterminer le `Pn` à attaquer pour l'itération N** selon la règle :
-   - Si l'utilisateur a passé `P<num>` en second argument → force ce problème (**override humain, priorité absolue**).
-   - Sinon, appliquer la règle de verrouillage :
+2. **Compter les essais existants sur ce `Pn` (lecture `ITERATIONS.md`)** :
+   - Lire les blocs `## Itération <n> — [P<X>] essai K` déjà présents.
+   - **K = (nombre de blocs trouvés) + 1**.
+   - Identifier la décision du dernier bloc trouvé (GARDÉ / ROLLBACK) pour
+     orienter l'angle d'attaque de la nouvelle hypothèse.
+   - Le compteur d'essais est **par couple (iter `<n>`, `P<X>`)** — il repart
+     à 1 si l'utilisateur clique un autre bouton iter.
 
-   | Dernière décision (iter N-1) | Métrique cible `Pn` atteinte ? | Action pour iter N |
-   |---|---|---|
-   | **ROLLBACK** | n/a | **Rester sur le même `Pn`**, proposer un angle différent |
-   | **GARDÉ** | ✅ atteinte | Passer au `Pn` suivant selon l'ordre ci-dessous |
-   | **GARDÉ** | ❌ pas encore | **Rester sur le même `Pn`**, amplifier/consolider la modif |
+3. **Si K = 1** (premier essai sur ce `Pn`) → procéder normalement vers l'Étape 2a.
 
-3. **Ordre des priorités** (utilisé uniquement quand on passe à un `Pn` suivant) :
-   - P1 → P3 → P2 → P5 → P6 → P7 → P8 → P9
+4. **Si K ≥ 2 et dernier essai = GARDÉ** :
+   - La métrique cible n'est probablement pas encore atteinte → proposer une
+     hypothèse pour **amplifier/consolider** la modif gardée.
+   - Sinon (cible atteinte), suggérer à l'utilisateur via texte : « P<X> semble
+     résolu, tu peux passer au bouton iter N+1 ». Ne pas dévier vers un autre
+     Pn de ta propre initiative.
 
-4. **Compteur d'essais par `Pn`** :
-   - Essai 1 = première tentative sur ce `Pn`
-   - Essai K = K-ième tentative (après K-1 ROLLBACK sur le même `Pn`)
-   - Le compteur **repart à 1** dès qu'on change de `Pn`
+5. **Si K ≥ 2 et dernier essai = ROLLBACK** → proposer un **angle différent**
+   (pas une variation triviale de l'hypothèse précédente).
 
-5. **Escalade automatique** — Si la dernière itération est la **3ᵉ ROLLBACK consécutive** sur le même `Pn` :
-   🚫 **NE PAS proposer de nouvelle hypothèse automatiquement**.
-   ⏹️ **Déclencher CP-Escalade** (cf. §"Checkpoints") : afficher un résumé des 3 hypothèses testées, leur échec, et **attendre la décision humaine** (continuer `Pn` / plafond atteint / pause sourcing).
+6. **CP-Escalade** — Si K ≥ 4 (= 3 essais déjà tentés et tous ROLLBACK) :
+   ⏹️ **Pas de synthèse, pas d'abandon, pas de recommandation « plafond atteint »**.
+   Application stricte (cf. CLAUDE.md §"Verrouillage problème/itération") :
+   - **Priorité 1** : proposer une **4ᵉ hypothèse sous un angle radicalement
+     différent** des 3 précédents. Préciser explicitement en quoi cet angle
+     diffère (ex: si les 3 essais touchaient le Cypher, viser le prompt LLM ;
+     si scoring numérique, viser la logique de filtrage).
+   - **Priorité 2 (fallback uniquement si pistes vraiment épuisées)** : passer
+     la main à l'utilisateur avec *« j'ai épuisé mes pistes sur P<X>, peux-tu
+     suggérer une direction ? »*. Pas de "j'abandonne", pas de "je passe
+     au suivant" — juste demander une piste.
+   - 🚫 **Interdit** : recommander « plafond atteint », « passer au suivant »,
+     ou synthétiser les 3 essais pour conclure à un abandon. L'utilisateur
+     reste seul juge de cliquer iter `<n>+1` s'il considère P<X> plafonné.
 
 ### Cas B : itérations custom (N ≥ 9)
 
@@ -87,17 +104,17 @@ Règles spécifiques pour les itérations custom :
 ═══════════════════════════════════════════════════════
 ÉTAPE 1 — PROBLÈME IDENTIFIÉ
 ═══════════════════════════════════════════════════════
-Itération       : N
-Problème        : P<num> — <libellé court>
-Essai           : K/3 sur Pn  (K incrémenté après chaque ROLLBACK consécutif)
-Dernière iter   : iter N-1 → <GARDÉ | ROLLBACK> sur <P…>
+Itération       : N (bouton cliqué)
+Problème dicté  : P<num> — <libellé court>  (dicté par mapping iter→Pn)
+Essai           : K  (K-ième tentative sur ce P<num> sous iter N)
+Dernier essai   : <aucun | essai K-1 → GARDÉ | essai K-1 → ROLLBACK>
 Sévérité        : <élevée | modérée | faible>
-Justification   : <1-2 phrases — pourquoi ce Pn à cette itération,
-                   en cohérence avec la règle de verrouillage>
+Justification   : <1-2 phrases — angle d'attaque pour cet essai,
+                   en cohérence avec le résultat de l'essai précédent>
 ═══════════════════════════════════════════════════════
 ```
 
-⚠️ **Si `Essai` = 3/3 et décision N-1 = ROLLBACK** → ne PAS continuer, déclencher CP-Escalade.
+⚠️ **Si K ≥ 4 et 3 derniers essais = ROLLBACK** → ne PAS continuer, déclencher CP-Escalade (cf. §"Checkpoints").
 
 🚫 **Interdit** : passer à l'Étape 2 sans avoir écrit ce bloc. Le bloc rend le problème lisible pour l'humain qui supervise et sert d'ancrage pour le self-challenge de l'Étape 2b.
 
@@ -308,11 +325,10 @@ Cocher les cases `Actions` au fur et à mesure (commit, API redémarrée).
 
 - **CP1** — après itération `0` → STOP, attendre validation humaine sur BASELINE.json
 - **CP-Hypothèse** — à chaque itération N > 0, après l'Étape 2c → STOP, attendre `GO` / `NO` / commentaire humain (voir §"Étape 2c — Checkpoint humain")
-- **CP-Escalade** — détecté à l'Étape 1 quand la 3ᵉ tentative consécutive sur le même `Pn` vient d'être ROLLBACK → STOP **avant de formuler toute nouvelle hypothèse**. Présente à l'humain :
-  - Le `Pn` concerné + métrique cible vs valeur actuelle
-  - Résumé des 3 hypothèses testées + raison de chaque ROLLBACK
-  - Attendre la décision : **(a) continuer `Pn`** (nouvel angle à proposer) / **(b) plafond atteint** (passer au `Pn` suivant) / **(c) pause sourcing** (cf. CLAUDE.md §"Absence de produit…")
-  - 🚫 L'agent **n'a jamais le droit** de basculer sur un autre `Pn` sans réponse humaine.
+- **CP-Escalade** — détecté à l'Étape 1 quand la 3ᵉ tentative consécutive sur le même iter `<n>` vient d'être ROLLBACK. **Pas de synthèse, pas d'abandon, pas de recommandation « plafond atteint »**. Application stricte :
+  - **Priorité 1 (par défaut)** : proposer une **4ᵉ hypothèse sous un angle radicalement différent** des 3 précédents. Préciser explicitement la différence d'angle.
+  - **Priorité 2 (fallback uniquement si pistes vraiment épuisées)** : passer la main avec *« j'ai épuisé mes pistes sur P<X>, peux-tu suggérer une direction ? »*.
+  - 🚫 **Interdit** : recommander « plafond atteint », « passer au suivant » ou synthétiser les 3 essais pour conclure à un abandon. L'agent n'a jamais le droit de basculer sur un autre `Pn` — c'est l'utilisateur qui décide en cliquant un autre bouton.
 - **CP4** — si cibles EVAL.md atteintes OU plateau définitif (déclaré par l'humain) → STOP, préparer merge `graphoptim-service/matching` → `graph-service/matching`
 
 À CP1, CP-Escalade et CP4 : **ne lance pas l'itération suivante automatiquement**. Affiche le résumé et attends.
