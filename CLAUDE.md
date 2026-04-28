@@ -292,6 +292,96 @@ l'agent attaquait P2 alors que l'utilisateur avait cliqué iter 6 (= P7).
 
 ---
 
+## Règle anti-bundling (universelle, toutes itérations)
+
+Une "modification" testée dans une itération = **UNE seule unité atomique** :
+- une seule ligne ou un seul bloc cohérent du prompt système modifié, OU
+- une seule règle de scoring (`scoring.cypher`) modifiée, OU
+- un seul reformatage structurel (TOON, ordre des champs, structure des entrées)
+
+🚫 **Interdit** : modifier plusieurs lignes "cohérentes entre elles" en une
+seule itération sous prétexte qu'elles forment un ensemble logique. Chaque
+modification est testée séparément, chaque ROLLBACK isolé. Sans ça, il est
+impossible d'identifier laquelle des N lignes a causé la régression.
+
+**Exception `[BUNDLED]`** : si plusieurs modifications sont **techniquement
+indissociables** (ex : renommage d'un champ qui nécessite la mise à jour de
+toutes ses références) :
+- Justifier explicitement dans `ITERATIONS.md` avant la modification.
+- Documenter pourquoi le découpage n'est pas possible.
+- Marquer l'itération `[BUNDLED]` dans son titre :
+  `## Itération N — [P<X>] essai K [BUNDLED] — <date>`
+- Cette exception requiert validation humaine au prochain checkpoint.
+
+**Pourquoi cette règle** : passage à l'échelle (4 500 catégories à venir).
+Sans isolation des modifs, chaque ROLLBACK gaspille un cycle entier de
+tuning et masque la cause réelle de la régression. À 4 500 catégories,
+le coût LLM + le temps cumulé deviennent prohibitifs.
+
+---
+
+## Règle Failure Mode Analysis — FMA (conditionnelle)
+
+### Quand exécuter une FMA
+
+Une FMA est **obligatoire** avant la première itération sur un problème `P`
+si l'une de ces conditions est vraie :
+- `PROBLEMS.md` liste **2+ modes d'échec hypothétiques** pour `P`, OU
+- Une itération précédente sur `P` a été ROLLBACK avec **diagnostic d'effet
+  symétrique** (gain d'un côté annulé par perte de l'autre côté).
+
+**Sinon** (P à mode unique) : itération directe avec hypothèse documentée
+dans `ITERATIONS.md`, sans FMA préalable.
+
+### Comment exécuter une FMA
+
+1. **Générer le script** `scripts/analyze_failure_modes_<P>.py` qui :
+   - Charge les verdicts de l'itération précédente
+     (`results/judge_verdicts_<N>.json`).
+   - Filtre les cas de divergence LLM-vs-juge pertinents pour `P`.
+   - Pour chaque cas, classifie le mode d'échec via un appel LLM dédié
+     (modèle Haiku ou équivalent économique — **JAMAIS** le modèle reranker).
+   - Produit `reports/failure_modes_<P>.md`.
+
+2. **Le rapport doit contenir** :
+   - Tableau de fréquence absolue et relative des modes.
+   - 3-5 exemples concrets par mode (id_produit, parcours, citation source).
+   - Recommandation d'angle d'itération en fonction de la distribution.
+
+### Décider sur la base du rapport
+
+| Distribution des modes | Stratégie d'itération |
+|---|---|
+| **Un mode > 60 %** | Cibler ce mode, levier symétrique autorisé (règles d'interdiction OK). |
+| **Modes équilibrés** (aucun > 60 %) | **Levier asymétrique uniquement** : ajout d'instruction, ajout de structure, ajout d'étape obligatoire. Jamais d'interdiction sur règles existantes. |
+| **Mode dominant hors périmètre prompt** (ex : `data-gap`, `extraction-failed`) | Marquer `P` out-of-scope, remonter au CP, suggérer chantier amont (caractérisation, enrichissement sourcing). |
+
+### Garde-fous coût (4 500 catégories à venir)
+
+- Échantillon **max 50 cas** de divergence par FMA.
+- Si le périmètre de divergence couvre **<10 cas** : skip l'analyse, log
+  *"données insuffisantes"* dans le rapport et utiliser leviers asymétriques
+  par défaut.
+- Modèle de classification : **Haiku ou équivalent économique**, jamais
+  Sonnet/Opus.
+- Coût cible par FMA : **<0,50 €**.
+- Si la FMA d'une catégorie a déjà été produite et qu'aucune nouvelle donnée
+  n'est disponible : **réutiliser**, ne pas relancer.
+
+### Traçabilité
+
+Le rapport `reports/failure_modes_<P>.md` est versionné dans Git et référencé
+dans `ITERATIONS.md` à la première itération du problème :
+
+```
+## Itération N — [P<X>] essai 1 — <date>
+**Hypothèse** : [...]
+**FMA référencée** : reports/failure_modes_<P>.md (commit <sha>)
+**Mode ciblé** : [Mode A / Mode B / asymétrique]
+```
+
+---
+
 ## Format ITERATIONS.md
 
 Pour chaque itération, ajouter une section :
@@ -376,7 +466,7 @@ L'agent **n'a jamais le droit** de :
 
 ## Contraintes
 
-1. **Une seule hypothèse cohérente par itération** — plusieurs fichiers OK si liés à la même hypothèse, rollback atomique possible. Deux hypothèses différentes = deux itérations.
+1. **Une seule modification atomique par itération** (cf. §"Règle anti-bundling"). Plusieurs essais possibles sous le même iter `N` (compteur K). L'exception `[BUNDLED]` est strictement encadrée — voir la règle.
 2. **Jamais modifier `graph-service/matching` prod** — uniquement `graphoptim-service/matching`
 3. **Toujours exécuter le pipeline réellement** — pas de simulation
 4. **Documenter AVANT d'exécuter** — ITERATIONS.md avant modification
