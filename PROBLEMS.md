@@ -24,8 +24,14 @@ Quand une caractéristique requise est absente du produit, le score actuel = 0 (
 Le système devrait appliquer une **pénalité** (ex: -0.5) plutôt que d'ignorer l'absence.
 Cela permet aux produits avec fiches incomplètes de remonter indûment.
 
-**Modes d'échec hypothétiques** : Mode unique — pas de FMA requise.
-La règle de scoring est binaire (pénalise ou pas), une seule cause structurelle.
+**Modes d'échec hypothétiques** (grille FMA, sans préjugé sur leur fréquence) :
+- **Mode A** (`penalite-uniforme-trop-forte`) : pénalité unique appliquée à tous
+  les types de caractéristiques absentes (critique + secondaire), élimine des
+  conformes à fiches incomplètes.
+- **Mode B** (`penalite-uniforme-trop-faible`) : pénalité absente ou trop douce,
+  les fiches vides remontent indûment.
+- **Mode C** (`asymetrie-critique-secondaire`) : la pénalité actuelle ne distingue
+  pas critique vs secondaire, alors que les deux ont des poids différents.
 
 **Fichiers concernés** :
 - RAG-HP-PUB: `src/matching_optim/scoring.cypher` (règles scoring)
@@ -42,10 +48,16 @@ La règle de scoring est binaire (pénalise ou pas), une seule cause structurell
 Certains produits ne correspondent pas au besoin exprimé (ex: distributeur comptoir au lieu de sur-pied)
 mais restent dans le top 5 recommandé. Le LLM reranker doit mieux filtrer ces cas.
 
-**Modes d'échec hypothétiques** : Mode unique — pas de FMA requise au démarrage.
-Si un premier rollback révèle un effet symétrique, déclencher une FMA avec les
-modes : `category-absent` (catégorie pas dans le scoring) vs `category-mispondered`
-(catégorie scorée mais sous-pondérée).
+**Modes d'échec hypothétiques** (grille FMA, sans préjugé sur leur fréquence) :
+- **Mode A** (`hors-categorie-structurel`) : sous-type fonctionnel incompatible
+  (pont enfoui ≠ pont colonnes, distributeur comptoir ≠ sur-pied). Discriminateur
+  lisible dans titre ou description.
+- **Mode B** (`hors-categorie-numerique`) : produit dans la bonne famille mais
+  hors plage de spécification (puissance, capacité, tonnage). Discriminateur
+  dans les caractéristiques techniques.
+- **Mode C** (`tolerance-limite`) : valeur en limite de tolérance numérique
+  (ex : 90-110 % vs 80-120 %), produit qui aurait dû être Score 2 et passe
+  en Score 4.
 
 **Fichiers concernés** :
 - RAG-HP-PUB: `src/matching_optim/prompt_reranking.txt` (instructions LLM)
@@ -62,7 +74,7 @@ modes : `category-absent` (catégorie pas dans le scoring) vs `category-misponde
 Le LLM analyse le titre du produit sans tenir compte de sa description technique.
 Exemple: "Tracteur" remonte même si le type (vigneron vs standard) ne correspond pas au besoin.
 
-**Modes d'échec hypothétiques** :
+**Modes d'échec hypothétiques** (grille FMA, sans préjugé sur leur fréquence) :
 - **Mode A** (`description-blind`) : discriminateur présent dans `description`,
   absent du `titre`, le LLM rate l'info parce qu'il s'arrête au titre.
   Exemple : titre "Tracteur" / description "Conçu pour vignobles étroits" /
@@ -73,9 +85,6 @@ Exemple: "Tracteur" remonte même si le type (vigneron vs standard) ne correspon
   négatif Score 1. **Ne pas dégrader ce mode.**
 - **Mode C** (`data-gap`) : discriminateur absent partout (titre + description +
   caractéristiques). Hors périmètre prompt → relève de la caractérisation amont.
-
-**Statut FMA** : ✅ obligatoire avant essai 3 (2 rollbacks consécutifs avec effet
-symétrique constaté en essais 1 et 2).
 
 **Fichiers concernés** :
 - RAG-HP-PUB: `src/matching_optim/prompt_reranking.txt` (contexte fourni au LLM)
@@ -109,7 +118,7 @@ Impact : estimatif imprécis, impossible de détecter aberrations prix.
 Certains parcours ne retournent aucun produit conforme.
 Cause possible: `liste_caracteristique` trop restritive, ou Cypher/logique matching trop stricte.
 
-**Modes d'échec hypothétiques** :
+**Modes d'échec hypothétiques** (grille FMA, sans préjugé sur leur fréquence) :
 - **Mode A** (`cypher-strict`) : les filtres Cypher sont trop stricts et éliminent
   tous les candidats avant scoring. Levier : assouplir les seuils.
 - **Mode B** (`caracteristique-mismatch`) : la `liste_caracteristique` du parcours
@@ -119,8 +128,6 @@ Cause possible: `liste_caracteristique` trop restritive, ou Cypher/logique match
 - **Mode C** (`corpus-gap`) : la catégorie n'est réellement pas couverte par
   les fournisseurs dans la base. Hors périmètre prompt → relève du sourcing
   fournisseur ou du parcours UX résultats faibles.
-
-**Statut FMA** : ✅ obligatoire avant la première itération sur P5.
 
 **Fichiers concernés** :
 - RAG-HP-PUB: `src/matching_optim/scoring.cypher` (filtrages)
@@ -138,9 +145,13 @@ Cause possible: `liste_caracteristique` trop restritive, ou Cypher/logique match
 Quand le parcours spécifie "Neuf", l'API retourne aussi des produits d'occasion.
 Le filtre sur `etat_produit` ne fonctionne pas correctement.
 
-**Modes d'échec hypothétiques** : Mode unique — pas de FMA requise.
-Cause unique : le filtre `etat_produit` ne fonctionne pas. Itération directe sur
-le filtre, fallback "neuf par défaut" si la question n'a pas été posée.
+**Modes d'échec hypothétiques** (grille FMA, sans préjugé sur leur fréquence) :
+- **Mode A** (`filtre-defaillant`) : filtre `etat_produit` ne s'applique pas
+  côté Cypher. Levier : corriger ou ajouter le filtre.
+- **Mode B** (`question-non-posee`) : le parcours n'a pas demandé l'état à
+  l'acheteur, donc pas d'input pour filtrer. Levier : fallback "neuf par défaut".
+- **Mode C** (`mapping-defaillant`) : la valeur est demandée mais mal mappée
+  vers le champ `etat_produit` côté API. Levier : corriger le mapping.
 
 **Fichiers concernés** :
 - RAG-HP-PUB: `src/matching_optim/scoring.cypher` (filtre etat)
@@ -158,9 +169,15 @@ le filtre, fallback "neuf par défaut" si la question n'a pas été posée.
 La même marque/fournisseur apparaît plusieurs fois dans le top 5 (ex: même modèle en deux variantes).
 Le système doit diversifier par fournisseur.
 
-**Modes d'échec hypothétiques** : Mode unique — pas de FMA requise.
-Cause unique : la logique de déduplication est absente ou mal calibrée.
-Itération directe avec règle "max 2 par fournisseur".
+**Modes d'échec hypothétiques** (grille FMA, sans préjugé sur leur fréquence) :
+- **Mode A** (`dedup-absente`) : aucune logique de déduplication appliquée.
+  Levier : ajouter une règle "max N par fournisseur".
+- **Mode B** (`dedup-trop-large`) : dedup sur produit identique uniquement,
+  ne traite pas les variantes du même fournisseur. Levier : élargir la
+  définition du "même produit".
+- **Mode C** (`top-N-trop-restreint`) : déduplication réduit à si peu de
+  produits qu'on retombe sur le même fournisseur dominant la catégorie.
+  Levier : élargir le pool initial avant dedup.
 
 **Fichiers concernés** :
 - RAG-HP-PUB: `src/matching_optim/deduplication.py` (ou logique intégrée dans Cypher)
@@ -178,7 +195,7 @@ Itération directe avec règle "max 2 par fournisseur".
 Certaines caractéristiques critiques (ex: largeur de passage pour minipelle)
 ne sont pas prises en compte par le scoring, ou ont un poids insuffisant.
 
-**Modes d'échec hypothétiques** :
+**Modes d'échec hypothétiques** (grille FMA, sans préjugé sur leur fréquence) :
 - **Mode A** (`poids-faible`) : la caractéristique est bien intégrée dans le
   scoring mais sous-pondérée. Levier : repondérer.
 - **Mode B** (`caracteristique-absente-prompt`) : la caractéristique n'est pas
@@ -187,8 +204,6 @@ ne sont pas prises en compte par le scoring, ou ont un poids insuffisant.
 - **Mode C** (`extraction-failed`) : la caractéristique est demandée à l'acheteur
   mais absente de la majorité des fiches produit côté fournisseur.
   Hors périmètre prompt → relève de la caractérisation amont.
-
-**Statut FMA** : ✅ obligatoire avant la première itération sur P8.
 
 **Fichiers concernés** :
 - RAG-HP-PUB: `src/matching_optim/scoring.cypher` (poids caractéristiques)
@@ -206,7 +221,7 @@ ne sont pas prises en compte par le scoring, ou ont un poids insuffisant.
 Inversement de P5: certains parcours retournent des produits non pertinents ou trop restrictifs.
 Exemple: un filtre sur capacité exclut tous les produits viables.
 
-**Modes d'échec hypothétiques** :
+**Modes d'échec hypothétiques** (grille FMA, sans préjugé sur leur fréquence) :
 - **Mode A** (`filtre-dur-trop-strict`) : un filtre Cypher exclut des produits
   viables sur un cas-limite de seuil. Levier : assouplir le seuil ou passer
   en filtre souple.
@@ -217,8 +232,6 @@ Exemple: un filtre sur capacité exclut tous les produits viables.
   le système comble la sélection avec du hors sujet pour atteindre N résultats.
   Levier : score plancher de qualité (mieux vaut afficher 2 résultats que 5
   dont 3 hors sujet).
-
-**Statut FMA** : ✅ obligatoire avant la première itération sur P9.
 
 **Fichiers concernés** :
 - RAG-HP-PUB: `src/matching_optim/scoring.cypher`
@@ -232,22 +245,21 @@ Exemple: un filtre sur capacité exclut tous les produits viables.
 
 ## Suivi par itération
 
-| Problème | Statut | Itération | FMA requise | Hypothèse | Raison décision |
-|---|---|---|---|---|---|
-| P1 | ⏳ PENDING | 1 | ❌ | — | Mono-cause |
-| P2 | ⏳ BACKLOG | 3 | ⚠️ | — | Si rollback symétrique |
-| P3 | 🔄 EN COURS | 2 | ✅ | — | 2 rollbacks essai 1 et 2 |
-| P4 | ⏹️ SKIPPED | — | — | N/A | Limitation données, pas corrigible |
-| P5 | ⏳ BACKLOG | 4 | ✅ | — | Multi-modes |
-| P6 | ⏳ BACKLOG | 5 | ❌ | — | Mono-cause |
-| P7 | ⏳ BACKLOG | 6 | ❌ | — | Mono-cause |
-| P8 | ⏳ BACKLOG | 7 | ✅ | — | Multi-modes |
-| P9 | ⏳ BACKLOG | 8 | ✅ | — | Multi-modes |
+> La FMA est désormais **universelle** (cf. CLAUDE.md §"Règle Failure Mode
+> Analysis (FMA)") : exécutée systématiquement avant la 1ʳᵉ itération de
+> chaque P. La colonne "FMA requise" n'a donc plus lieu d'être.
 
-**Légende FMA** :
-- ✅ obligatoire avant la première itération
-- ⚠️ conditionnelle (déclenchée si rollback à effet symétrique)
-- ❌ pas de FMA (mode unique)
+| Problème | Statut | Itération | Hypothèse | Raison décision |
+|---|---|---|---|---|
+| P1 | ⏳ PENDING | 1 | — | À attaquer en priorité (🔴 CRITIQUE) |
+| P2 | ⏳ BACKLOG | 3 | — | Après P1, P3 |
+| P3 | 🔄 EN COURS | 2 | — | 2 rollbacks essai 1 et 2 |
+| P4 | ⏹️ SKIPPED | — | N/A | Limitation données, pas corrigible |
+| P5 | ⏳ BACKLOG | 4 | — | Après P1-P3 |
+| P6 | ⏳ BACKLOG | 5 | — | — |
+| P7 | ⏳ BACKLOG | 6 | — | — |
+| P8 | ⏳ BACKLOG | 7 | — | — |
+| P9 | ⏳ BACKLOG | 8 | — | — |
 
 ---
 
@@ -274,9 +286,9 @@ Exemple: un filtre sur capacité exclut tous les produits viables.
 ## Notes importantes
 
 - Chaque itération applique **UNE seule modification atomique** (cf. CLAUDE.md §"Règle anti-bundling")
-- Pour les `Pn` à modes multiples (P3, P5, P8, P9), une **FMA** est obligatoire avant la première itération (cf. CLAUDE.md §"Règle Failure Mode Analysis — FMA")
+- Pour **tous les Pn**, une **FMA est exécutée avant la 1ʳᵉ itération** (universelle, cf. CLAUDE.md §"Règle Failure Mode Analysis (FMA)"). Le verdict (mono-cause / multi-modes / hors périmètre) est dérivé des données et conditionne le levier autorisé.
 - P4 est marqué SKIPPED (diagnostic, pas corrigible par code)
-- Les hypothèses spécifiques sont documentées dans ITERATIONS.md avant chaque modif (avec référence FMA si applicable)
+- Les hypothèses spécifiques sont documentées dans ITERATIONS.md avant chaque modif, avec référence au rapport FMA et au mode ciblé
 - En cas de régression → ROLLBACK immédiat, essai K+1 sous le même iter N
 - Après 3 ROLLBACK consécutifs : CP-Escalade (proposer 4ᵉ hypothèse ou main à l'utilisateur — jamais d'abandon agent)
 

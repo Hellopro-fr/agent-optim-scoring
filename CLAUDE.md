@@ -320,53 +320,74 @@ le coût LLM + le temps cumulé deviennent prohibitifs.
 
 ---
 
-## Règle Failure Mode Analysis — FMA (conditionnelle)
+## Règle Failure Mode Analysis — FMA (universelle)
 
-### Quand exécuter une FMA
+### Principe
 
-Une FMA est **obligatoire** avant la première itération sur un problème `P`
-si l'une de ces conditions est vraie :
-- `PROBLEMS.md` liste **2+ modes d'échec hypothétiques** pour `P`, OU
-- Une itération précédente sur `P` a été ROLLBACK avec **diagnostic d'effet
-  symétrique** (gain d'un côté annulé par perte de l'autre côté).
+La FMA est exécutée **systématiquement** avant la première itération sur un
+problème `P`, quel que soit le `P`. **Aucune classification a priori**
+"mono-cause" / "multi-modes" n'est faite à la rédaction de PROBLEMS.md — c'est
+la FMA qui détermine, à partir des **données réelles**, la nature du problème
+et conditionne le levier autorisé pour l'itération.
 
-**Sinon** (P à mode unique) : itération directe avec hypothèse documentée
-dans `ITERATIONS.md`, sans FMA préalable.
+**Justification** : le retour d'expérience montre que la classification a priori
+se trompe (cas P2 classé mono-cause, révélé multi-modes après 3 rollbacks).
+Confier la classification aux données plutôt qu'au jugement humain à froid est
+plus fiable, plus uniforme, et fournit un signal d'alarme automatique quand
+un `P` est mal compris.
 
 ### Comment exécuter une FMA
 
-1. **Générer le script** `scripts/analyze_failure_modes_<P>.py` qui :
+1. **Utiliser le script générique** `scripts/analyze_failure_modes.py --problem <P>`
+   (un seul script pour tous les Pn — paramétrable, jamais dupliqué) qui :
    - Charge les verdicts de l'itération précédente
      (`results/judge_verdicts_<N>.json`).
    - Filtre les cas de divergence LLM-vs-juge pertinents pour `P`.
+   - Lit la grille des modes hypothétiques de `P` depuis `PROBLEMS.md`.
    - Pour chaque cas, classifie le mode d'échec via un appel LLM dédié
      (modèle Haiku ou équivalent économique — **JAMAIS** le modèle reranker).
    - Produit `reports/failure_modes_<P>.md`.
 
-2. **Le rapport doit contenir** :
-   - Tableau de fréquence absolue et relative des modes.
-   - 3-5 exemples concrets par mode (id_produit, parcours, citation source).
-   - Recommandation d'angle d'itération en fonction de la distribution.
+2. **Le rapport doit contenir, en en-tête** :
+   - **Verdict automatique** : mono-cause / multi-modes / hors périmètre
+   - **Levier autorisé** correspondant au verdict
+   - **Distribution des modes** (tableau de fréquence)
+   - 3-5 exemples concrets par mode (id_produit, parcours, citation source)
 
-### Décider sur la base du rapport
+### Verdict automatique — règle de décision
 
-| Distribution des modes | Stratégie d'itération |
-|---|---|
-| **Un mode > 60 %** | Cibler ce mode, levier symétrique autorisé (règles d'interdiction OK). |
-| **Modes équilibrés** (aucun > 60 %) | **Levier asymétrique uniquement** : ajout d'instruction, ajout de structure, ajout d'étape obligatoire. Jamais d'interdiction sur règles existantes. |
-| **Mode dominant hors périmètre prompt** (ex : `data-gap`, `extraction-failed`) | Marquer `P` out-of-scope, remonter au CP, suggérer chantier amont (caractérisation, enrichissement sourcing). |
+L'agent applique la règle suivante **sans intervention humaine** :
+
+| Distribution observée | Verdict | Levier autorisé |
+|---|---|---|
+| **1 mode représenté à ≥ 85 %** | **Mono-cause** | Tous leviers, y compris symétriques (interdictions, restrictions, refonte de règle). |
+| **Aucun mode ≥ 85 %** et plusieurs modes ≥ 15 % | **Multi-modes** | Leviers **asymétriques uniquement** : ajout d'instruction, ajout de structure, ajout d'étape obligatoire. **Jamais** d'interdiction sur règles existantes. |
+| **Mode dominant identifié comme hors périmètre prompt** (`data-gap`, `extraction-failed`, `sourcing-issue`, `corpus-gap`) | **Hors périmètre** | **Aucun levier prompt autorisé**. `P` marqué out-of-scope, ticket ouvert sur le chantier amont (caractérisation, enrichissement, sourcing). |
+
+### Cas particuliers
+
+- **Pas de duplication par Pn** : un seul script générique
+  `scripts/analyze_failure_modes.py` est maintenu et paramétré via `--problem <P>`.
+  🚫 Jamais `analyze_failure_modes_P3.py` + `analyze_failure_modes_P5.py` etc.
+  (anti-pattern : code dupliqué × 9 P × 4 500 catégories = ingérable).
+- **<10 cas de divergence** : skip de la FMA, log *"données insuffisantes"*
+  dans le rapport, leviers asymétriques par défaut (mode le plus prudent).
+- **FMA déjà produite pour cette catégorie + ce `P`** : réutilisation si aucune
+  nouvelle donnée n'est disponible. Ne pas relancer.
+- **Verdict "Mono-cause"** sur un `P` initialement supposé multi-modes :
+  pas de signal d'alarme, l'agent procède normalement.
+- **Verdict "Multi-modes"** sur un `P` initialement supposé mono-cause :
+  ⚠️ **signal d'alarme** dans le rapport — l'agent flag la découverte pour
+  retour d'expérience humain au prochain checkpoint.
 
 ### Garde-fous coût (4 500 catégories à venir)
 
 - Échantillon **max 50 cas** de divergence par FMA.
-- Si le périmètre de divergence couvre **<10 cas** : skip l'analyse, log
-  *"données insuffisantes"* dans le rapport et utiliser leviers asymétriques
-  par défaut.
 - Modèle de classification : **Haiku ou équivalent économique**, jamais
   Sonnet/Opus.
 - Coût cible par FMA : **<0,50 €**.
-- Si la FMA d'une catégorie a déjà été produite et qu'aucune nouvelle donnée
-  n'est disponible : **réutiliser**, ne pas relancer.
+- Coût cible total à l'échelle : **<20 000 €** pour les 9 `P` × 4 500 catégories,
+  largement compensé par les rollbacks évités.
 
 ### Traçabilité
 
@@ -375,9 +396,11 @@ dans `ITERATIONS.md` à la première itération du problème :
 
 ```
 ## Itération N — [P<X>] essai 1 — <date>
+**FMA verdict** : Mono-cause / Multi-modes / Hors périmètre
+**Levier autorisé** : [tous / asymétriques / aucun]
 **Hypothèse** : [...]
-**FMA référencée** : reports/failure_modes_<P>.md (commit <sha>)
-**Mode ciblé** : [Mode A / Mode B / asymétrique]
+**Mode ciblé** : [Mode A / Mode B / asymétrique global]
+**Rapport FMA** : reports/failure_modes_<P>.md (commit <sha>)
 ```
 
 ---
